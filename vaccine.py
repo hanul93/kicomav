@@ -3,9 +3,17 @@
 
 import hashlib
 import os
+import sys
+
+# Check argument
+if len(sys.argv) != 2 :
+	print 'Usage : vaccine.py [filename]'
+	exit()
+
+fname = sys.argv[1]
 
 # Open a file
-fp = open('eicar.txt', 'rb')
+fp = open(fname, 'rb')
 fbuf = fp.read()
 fp.close()
 
@@ -17,6 +25,6 @@ fmd5 = md5.hexdigest()
 # Detection of malware
 if fmd5 == '44d88612fea8a8f36de82e1278abb02f' :
 	print 'Found Virus & Repaired Virus'
-	os.remove('eicar.txt') # Remove malware
+	os.remove(fname) # Remove malware
 else :
 	print 'Not Found'
