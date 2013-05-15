@@ -2,6 +2,7 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 import hashlib
+import os
 
 # Open a file
 fp = open('eicar.txt', 'rb')
@@ -15,6 +16,7 @@ fmd5 = md5.hexdigest()
 
 # Detection of malware
 if fmd5 == '44d88612fea8a8f36de82e1278abb02f' :
-    print 'Found Virus'
+	print 'Found Virus & Repaired Virus'
+	os.remove('eicar.txt') # Remove malware
 else :
-    print 'Not Found'
+	print 'Not Found'
