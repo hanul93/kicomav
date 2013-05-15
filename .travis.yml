@@ -1,0 +1,12 @@
+# https://travis-ci.org/hanul93/kicomav
+language: python
+python:
+  - "2.7"
+
+before_script:
+  - chmod 755 ./test_build.sh 
+  - ./test_build.sh
+  - cd Test
+
+script: 
+  - python -m unittest discover
