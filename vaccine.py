@@ -6,10 +6,12 @@ import os
 import sys
 
 # Malware Patterns
-VirusDB = [ \
-	'EICAR Test:68:44d88612fea8a8f36de82e1278abb02f',  
-	'EICAR Test2:68:44d88612fea8a8f36de82e1278abb02e'  # Test Pattern
-]
+VirusDB = []
+fp = open('virus.db')
+for c in fp.readlines() :
+    line = c.strip()
+    VirusDB.append(line)
+fp.close()
 
 # Check argument
 if len(sys.argv) != 2 :
