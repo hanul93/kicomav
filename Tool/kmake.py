@@ -6,6 +6,7 @@ import sys
 import zlib
 import hashlib
 import os
+import shutil
 
 # Check arguments
 if len(sys.argv) != 2 :
@@ -14,10 +15,15 @@ if len(sys.argv) != 2 :
     
 # Compile python source files
 fname = sys.argv[1] 
-py_compile.compile(fname)
+if fname.split('.')[1] == 'py' :
+    py_compile.compile(fname) # 컴파일
+    pyc_name = fname+'c'      # 컴파일 이후 파일명
+else :
+    pyc_name = fname.split('.')[0]+'.pyc'
+    shutil.copy (fname, pyc_name) # lst 파일을 pyc 파일로 복사
 
 # Compress
-buf1 = open(fname+'c', 'rb').read()
+buf1 = open(pyc_name, 'rb').read()
 buf2 = zlib.compress(buf1, 9)
 
 # XOR Encryption
@@ -49,5 +55,5 @@ fp.write(buf3)
 fp.close()
 
 # remove pyc file
-os.remove(fname + 'c')
+os.remove(pyc_name)
 print 'Success : %s -> %s' % (fname, kmd_name)  
