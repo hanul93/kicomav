@@ -55,8 +55,7 @@ def load_set(plugins) :
 
     try :
         # kicom.kmd 파일을 복호화
-        pathname = plugins + '\\kicom.kmd'
-        pathname = os.path.normcase(pathname)
+        pathname = plugins + os.sep + 'kicom.kmd'
         ret, buf = load_kmd(pathname)
 
         if ret == True : # 성공
@@ -122,8 +121,7 @@ class Engine :
 
             # kmd 로딩 우선순위 리스트 순으로 동적 로딩
             for kmd in kmd_list :
-                pathname = plugins + '\\' + kmd
-                pathname = os.path.normcase(pathname)
+                pathname = plugins + os.sep + kmd
                 ret_kmd, buf = load_kmd(pathname)
                 if ret_kmd == True :
                     mod = import_kmd(kmd.split('.')[0], buf)
