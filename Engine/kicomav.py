@@ -9,7 +9,7 @@ import imp      # 동적모듈 로딩을 위해 import
 import sys      # 모듈 등록을 위해 import
 import types    # 타입 채킹을 위해 import
 import os
-import traceback
+
 #---------------------------------------------------------------------
 # load_kmd(fname)
 # 암호화 된 백신 엔진 모듈인 kmd 파일을 복호화 하는 함수
@@ -43,7 +43,6 @@ def load_kmd(fname) :
         
         return True, buf4 # kmd 복호화 성공 그리고 복호화된 내용 리턴
     except : # 예외 발생
-        print traceback.format_exc()
         return False, '' # 에러
 
 #---------------------------------------------------------------------
@@ -69,7 +68,6 @@ def load_set(plugins) :
                 else :
                     break
     except :
-        print traceback.format_exc()
         pass
     
     return kmd_list # kmd 순서 리스트 리턴
@@ -143,7 +141,6 @@ class Engine :
 
             ret = True
         except :
-            print traceback.format_exc()
             pass
 
         return ret
