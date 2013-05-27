@@ -1,3 +1,6 @@
+## v0.20a (May 28, 2013)
+- Add build.sh
+
 ## v0.20 (May 27, 2013)
 - Redesigned **Plug-in** architecture
 
