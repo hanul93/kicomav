@@ -1,6 +1,10 @@
 <img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
 
+<<<<<<< HEAD
 # KicomAV v0.20 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+=======
+# KicomAV v0.20a [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+>>>>>>> Kav_Plugin
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
 
