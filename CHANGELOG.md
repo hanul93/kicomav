@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-=======
 ## v0.20a (May 28, 2013)
 - Add build.sh
 
->>>>>>> Kav_Plugin
 ## v0.20 (May 27, 2013)
 - Redesigned **Plug-in** architecture
 
