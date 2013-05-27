@@ -4,7 +4,7 @@ import os
 
 class Test_Eicar_Cure(unittest.TestCase):
     def test_cure(self):
-        cmd = 'python vaccine.py eicar.txt'
+        cmd = 'python kicomav.py eicar.txt'
         os.system(cmd)
         ret = False
         try :

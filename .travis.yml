@@ -6,7 +6,7 @@ python:
 before_script:
   - chmod 755 ./test_build.sh 
   - ./test_build.sh
-  - cd Test
+  - cd Release
 
 script: 
   - python -m unittest discover
