@@ -1,11 +1,20 @@
 @echo off
 
 @mkdir Release
-@copy Engine\* Release
-@copy Tool\* Release
-@cd Release
-@kmake.py curemod.py
+@mkdir Release\plugins
 
+@copy Engine\* Release
+@copy Engine\plugins\* Release\plugins
+
+@copy Tool\kmake.py Release\plugins
+@cd Release\plugins
+
+@kmake.py kicom.lst
+@kmake.py dummy.py
+@kmake.py eicar.py
+
+@del *.py
 @del *.pyc
-@del curemod.py
-@del kmake.py
+@del kicom.lst
+
+@cd ..
