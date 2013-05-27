@@ -8,6 +8,7 @@ import marshal  # 직렬화 된 문자열을 위해 import
 import imp      # 동적모듈 로딩을 위해 import
 import sys      # 모듈 등록을 위해 import
 import types    # 타입 채킹을 위해 import
+import os
 
 #---------------------------------------------------------------------
 # load_kmd(fname)
@@ -53,14 +54,16 @@ def load_set(plugins) :
 
     try :
         # kicom.kmd 파일을 복호화
-        ret, buf = load_kmd(plugins + '\\kicom.kmd')
+        pathname = plugins + '\\kicom.kmd'
+        pathname = os.path.normcase(pathname)
+        ret, buf = load_kmd(pathname)
 
         if ret == True : # 성공
             msg = StringIO.StringIO(buf) # 버퍼 IO 준비
 
             while 1 :
                 # 버퍼 한 줄을 읽어 엔터키 제거
-                line = msg.readline().rstrip('\r\n')
+                line = msg.readline().strip()
                 if line.find('.kmd') != -1 : # kmd 확장자가 존재한다면
                     kmd_list.append(line) # kmd 순서 리스트에 추가
                 else :
@@ -117,7 +120,9 @@ class Engine :
 
             # kmd 로딩 우선순위 리스트 순으로 동적 로딩
             for kmd in kmd_list :
-                ret_kmd, buf = load_kmd(plugins + '\\' + kmd)
+                pathname = plugins + '\\' + kmd
+                pathname = os.path.normcase(pathname)
+                ret_kmd, buf = load_kmd(pathname)
                 if ret_kmd == True :
                     mod = import_kmd(kmd.split('.')[0], buf)
                     # 동적 로딩 되었으면 모듈 관리 리스트에 추가
