@@ -71,7 +71,8 @@ class OLE :
             
             # OLE 파일 시그너처 체크
             if GetDword_file(self.fp, 0x0) != 0xe011cfd0L or GetDword_file(self.fp, 0x4) != 0xe11ab1a1L:
-                return -1
+                self.Error = -1
+                raise AttributeError
 
             # BBD 블럭 개수만큼 BDB 읽기
             num_of_bbd_blocks = GetDword_file(self.fp, 0x2c)
