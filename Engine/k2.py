@@ -1,0 +1,263 @@
+# -*- coding:utf-8 -*-
+# Made by Kei Choi(hanul93@gmail.com)
+'''
++-----------------------------------------------------------------------------+
+|                                              KICOM Anti-Virus (Disinfector) |
+|                                              Copyright (C) 95-2013, Hanul93 |
+|                                              Version 0.20, Made by Kei Choi |
++-----------------------------------------------------------------------------+
+'''
+import sys
+import os
+import string
+from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+
+KAV_VERSION   = '0.20a'
+KAV_BUILDDATE = 'May 27 2013'
+KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
+
+#---------------------------------------------------------------------
+# PrintLogo()
+# 키콤백신의 로고를 출력한다
+#---------------------------------------------------------------------
+def PrintLogo() :
+    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.' 
+
+    print '------------------------------------------------------------'
+    print logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
+    print '------------------------------------------------------------'
+    print
+
+#---------------------------------------------------------------------
+# PrintUsage()
+# 키콤백신의 사용법을 출력한다
+#---------------------------------------------------------------------
+def PrintUsage() :
+    print 'Usage: k2.py path[s] [options]'
+
+#---------------------------------------------------------------------
+# PrintOptions()
+# 키콤백신의 옵션을 출력한다
+#---------------------------------------------------------------------
+def PrintOptions() :
+    options_string = \
+'''Options:
+        -f,  --files           scan files *
+        -b,  --boot            scan boot sector and mbr
+        -r,  --arc             scan archives
+        -i,  --mail            scan mail databases
+        -k,  --nopack          don't scan packed programs
+        -h,  --nohed           no heuristics
+        -X,  --xcl=ext1;ext2;  exclude from scan this extensions
+        -G,  --log[=file]      create log file
+        -S,  --cd              scan cd-rom
+        -N,  --fixed           scan all fixed drives
+        -M,  --floppy          scan floppy
+        -I,  --list            display all files
+        -g,  --prog            scan only program files
+        -e,  --app             append to log file
+        -F,  --infp=path       set infected quarantine folder
+        -U,  --susp=path       set suspected quarantine folder
+        -R,  --nor             do not recurse into folders
+        -p,  --prompt          prompt for action
+        -O,  --info            information
+        -W,  --nowarn          no warnings
+        -V,  --vlist           display virus list
+        -d,  --dis             disinfect files
+        -o,  --copy            copy infected files in quarantine folder
+        -y,  --copys           copy suspect files in quarantine folder
+        -l,  --del             delete infected files
+             --noclean         don't display clean files
+             --move            move infected files in quarantine folder
+             --moves           move suspect files in quarantine folder
+             --ren             rename infected files
+             --infext=ext      set rename extension
+             --alev[=n]        set maximum archive depth level
+             --flev[=n]        set maximum folder depth level
+             --update          update
+        -?,  --help            this help
+                               * = default option'''
+
+    print options_string
+
+#---------------------------------------------------------------------
+# DefineOptions()
+# 키콤백신의 옵션을 정의한다
+#---------------------------------------------------------------------
+def DefineOptions() :  
+    try :
+        # fmt = IndentedHelpFormatter(indent_increment=8, max_help_position=40, width=77, short_first=1)
+        # usage = "usage: %prog path[s] [options]"
+        # parser = OptionParser(add_help_option=False, usage=usage, formatter=fmt)
+
+        usage = "Usage: %prog path[s] [options]"
+        parser = OptionParser(add_help_option=False, usage=usage)
+        
+        parser.add_option("-f", "--files",
+                      action="store_true", dest="opt_files",
+                      default=True)
+        parser.add_option("-b", "--boot",
+                      action="store_true", dest="opt_boot", 
+                      default=False)
+        parser.add_option("-r", "--arc",
+                      action="store_true", dest="opt_arc",
+                      default=False)
+        parser.add_option("-i", "--mail",
+                      action="store_true", dest="opt_mail",
+                      default=False)
+        parser.add_option("-k", "--nopack",
+                      action="store_true", dest="opt_nopack",
+                      default=False)
+        parser.add_option("-h", "--nohed",
+                      action="store_true", dest="opt_nohed",
+                      default=False)
+        parser.add_option("-X", "--xcl=ext1;ext2",
+                      action="store_true", dest="opt_xcl",
+                      default=False)
+        parser.add_option("-G", "--log[=file]",
+                      action="store_true", dest="opt_log",
+                      default=False)
+        parser.add_option("-S", "--cd",
+                      action="store_true", dest="opt_cd",
+                      default=False)
+        parser.add_option("-N", "--fixed",
+                      action="store_true", dest="opt_fixed",
+                      default=False)
+        parser.add_option("-M", "--floppy",
+                      action="store_true", dest="opt_floppy",
+                      default=False)
+        parser.add_option("-I", "--list",
+                      action="store_true", dest="opt_list",
+                      default=False)
+        parser.add_option("-g", "--prog",
+                      action="store_true", dest="opt_prog",
+                      default=False)
+        parser.add_option("-e", "--app",
+                      action="store_true", dest="opt_app",
+                      default=False)
+        parser.add_option("-F", "--infp=path",
+                      action="store_true", dest="opt_infp",
+                      default=False)
+        parser.add_option("-U", "--susp=path",
+                      action="store_true", dest="opt_susp",
+                      default=False)
+        parser.add_option("-R", "--nor",
+                      action="store_true", dest="opt_nor",
+                      default=False)
+        parser.add_option("-p", "--prompt",
+                      action="store_true", dest="opt_prompt",
+                      default=False)
+        parser.add_option("-O", "--info",
+                      action="store_true", dest="opt_info",
+                      default=False)
+        parser.add_option("-W", "--nowarn",
+                      action="store_true", dest="opt_nowarn",
+                      default=False)
+        parser.add_option("-V", "--vlist",
+                      action="store_true", dest="opt_vlist",
+                      default=False)
+        parser.add_option("-d", "--dis",
+                      action="store_true", dest="opt_dis",
+                      default=False)
+        parser.add_option("-o", "--copy",
+                      action="store_true", dest="opt_copy",
+                      default=False)
+        parser.add_option("-y", "--copys",
+                      action="store_true", dest="opt_copys",
+                      default=False)
+        parser.add_option("-l", "--del",
+                      action="store_true", dest="opt_del",
+                      default=False)
+
+        parser.add_option("", "--noclean",
+                      action="store_true", dest="opt_noclean",
+                      default=False)
+        parser.add_option("", "--move",
+                      action="store_true", dest="opt_move",
+                      default=False)
+        parser.add_option("", "--moves",
+                      action="store_true", dest="opt_moves",
+                      default=False)
+        parser.add_option("", "--ren",
+                      action="store_true", dest="opt_ren",
+                      default=False)
+        parser.add_option("", "--infext=ext",
+                      action="store_true", dest="opt_infext",
+                      default=False)
+        parser.add_option("", "--alev[=n]",
+                      action="store_true", dest="opt_alev",
+                      default=False)
+        parser.add_option("", "--flev[=n]",
+                      action="store_true", dest="opt_flev",
+                      default=False)
+        parser.add_option("", "--update",
+                      action="store_true", dest="opt_update",
+                      default=False)
+
+        parser.add_option("-?", "--help",
+                      action="store_true", dest="opt_help",
+                      default=False)
+
+        return parser
+    except :
+        pass
+
+    return None
+
+#---------------------------------------------------------------------
+# ParserOptions()
+# 키콤백신의 옵션을 분석한다
+#---------------------------------------------------------------------
+def ParserOptions() :
+    parser = DefineOptions()
+
+    if parser == None or len( sys.argv ) < 2 :
+        # parser.print_help()
+        PrintUsage()
+        PrintOptions()
+        return None
+    else :
+        try :
+            (options, args) = parser.parse_args()
+        except :
+            print
+            PrintOptions()
+            return None
+
+        return options                
+
+#---------------------------------------------------------------------
+# MAIN
+#---------------------------------------------------------------------
+def main() :
+    # 로고 출력
+    PrintLogo()
+
+    # 옵션 분석
+    options = ParserOptions()
+    if options == None :
+        return 0
+
+    # Help 옵션 셋팅?
+    if options.opt_help == True :
+        PrintUsage()
+        PrintOptions()
+        return 0
+
+    # 검사용 Path
+    scan_path = sys.argv[1]
+    scan_path = os.path.abspath(scan_path)
+
+    # 출력용 Path
+    fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+    disp_scan_path = unicode(scan_path, fsencoding).encode(sys.stdout.encoding, 'replace')
+
+    print disp_scan_path
+
+    fp = open(scan_path, 'rb')
+    print fp.read(2)
+    fp.close()
+
+
+if __name__ == '__main__' :
+    main()
