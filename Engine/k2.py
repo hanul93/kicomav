@@ -10,7 +10,7 @@
 import sys
 import os
 import string
-from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+from optparse import OptionParser
 
 KAV_VERSION   = '0.20a'
 KAV_BUILDDATE = 'May 27 2013'

@@ -9,10 +9,10 @@ cp Sample/* Release
 cd Release/plugins
 
 python kmake.py kicom.lst
+python kmake.py ole.py
 python kmake.py dummy.py
 python kmake.py eicar.py
 
-rm -rf *.py
 rm -rf *.pyc
 rm -rf kicom.lst
 
