@@ -16,6 +16,7 @@ python kmake.py eicar.py
 rm -rf *.pyc
 rm -rf kicom.lst
 
+cp ole.py ..
 cd ..
 
 cp ../Test/* .
