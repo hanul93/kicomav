@@ -2,28 +2,10 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 # EXTRA BBD 적용 버전
+# mmap 지원
 import struct
-
-#---------------------------------------------------------------------
-# GetDword_file(fp, offset)
-# GetWord_file(fp, offset)
-# GetRead_file(fp, offset, size)
-# 파일에서 지정한 크기만큼 읽어온다
-#---------------------------------------------------------------------
-# 파일 데이터에서 4Byte 값 추출
-def GetDword_file(fp, offset) :
-  s = GetRead_file(fp, offset, 4)
-  return struct.unpack("<L", s[0:4])[0]
-
-# 파일 데이터에서 2Byte 값 추출
-def GetWord_file(fp, offset) :
-  s = GetRead_file(fp, offset, 2)
-  return struct.unpack("<H", s[0:2])[0]
-
-# 파일 데이터에서 특정 크기만큼 읽기
-def GetRead_file(fp, offset, size) :
-  fp.seek(offset)
-  return fp.read(size)
+import mmap
+import kavutil
 
 #---------------------------------------------------------------------
 # GetDword(s, offset)
@@ -64,39 +46,87 @@ class OLE :
 
     def __init__ (self, filename) :
         self.olefile = filename
+        self.open()
+
+    def open(self) :
+        self.fp = open(self.olefile, 'r+b') #open(self.olefile, 'rb')
+        self.mm = mmap.mmap(self.fp.fileno(), 0)
+
+        _OLE_HEADER = (
+            'OLE_Header', 
+            (
+                'L,e_magic1',
+                'L,e_magic2',
+                'L,e_reserved1',
+                'L,e_reserved2',
+                'L,e_reserved3',
+                'L,e_reserved4',
+                'H,e_reserved5',
+                'H,e_reserved6',
+                'H,e_reserved7',
+                'B,e_reserved8',
+                'B,e_reserved9',
+                'L,e_reserved10',
+                'L,e_reserved11',
+                'L,e_reserved12',
+                'L,e_num_of_bbd_blocks',
+                'L,e_root_startblock',
+                'L,e_reserved13',
+                'L,e_reserved14',
+                'L,e_sbd_startblock',
+                'L,e_num_of_sbd_blocks',
+                'L,e_xbbd_start',
+                'L,e_num_of_Xbbd_blocks'
+            )
+        )
+
+        self.OleHeader = kavutil.Structure(_OLE_HEADER, self.mm[0:0x200], 0)
+        self.OleHeader.analysis()
+        # print self.OleHeader.dump()
+
+    def close(self) :
+        self.mm.close()
+        self.fp.close()
+
+    def isOLE(self) :
+        if self.OleHeader.e_magic1 != 0xe011cfd0L or self.OleHeader.e_magic2 != 0xe11ab1a1L:
+            return 0
+        else :
+            return 1 # OLE 파일 맞음
+
+    def readBDB(self, num_of_bbd_blocks) :
+        if num_of_bbd_blocks > 109 :
+            j = 109
+        else :
+            j = num_of_bbd_blocks
+
+        for i in range(j) :
+            self.bbd_list.append(GetDword(self.mm, 0x4c + (i*4)))
+            self.bbd_list_pos.append((self.bbd_list[i]+1) << 9)
+
 
     def parse(self) :
         try :
-            self.fp = open(self.olefile, 'rb')
-            
             # OLE 파일 시그너처 체크
-            if GetDword_file(self.fp, 0x0) != 0xe011cfd0L or GetDword_file(self.fp, 0x4) != 0xe11ab1a1L:
+            if self.isOLE() == 0:
                 self.Error = -1
                 raise AttributeError
 
             # BBD 블럭 개수만큼 BDB 읽기
-            num_of_bbd_blocks = GetDword_file(self.fp, 0x2c)
-
-
-            if num_of_bbd_blocks > 109 :
-                j = 109
-            else :
-                j = num_of_bbd_blocks
-
-            for i in range(j) :
-                self.bbd_list.append(GetDword_file(self.fp, 0x4c + (i*4)))
-                self.bbd_list_pos.append((self.bbd_list[i]+1) << 9)
+            num_of_bbd_blocks = self.OleHeader.e_num_of_bbd_blocks
+            self.readBDB(num_of_bbd_blocks)
 
             # XBBD 블럭 처리
-            num_of_Xbbd_blocks = GetDword_file(self.fp, 0x48)
-            xbbd_start         = GetDword_file(self.fp, 0x44)
+            num_of_Xbbd_blocks = self.OleHeader.e_num_of_Xbbd_blocks
+            xbbd_start         = self.OleHeader.e_xbbd_start
+
 
             if xbbd_start != 0xFFFFFEL :
                 xbbd = ""
                 val = xbbd_start
 
                 for i in range(num_of_Xbbd_blocks) :
-                    buf = GetRead_file(self.fp, (val+1)<<9, 0x200)
+                    buf = GetRead(self.mm, (val+1)<<9, 0x200)
                     xbbd += buf[0:0x1FC]
                     val = GetDword(buf, 0x1FC)
 
@@ -108,11 +138,11 @@ class OLE :
             # BBD 갖기
     #       bbd = ""
             for i in range(num_of_bbd_blocks) :
-                self.bbd += GetRead_file(self.fp, self.bbd_list_pos[i], 0x200)
+                self.bbd += GetRead(self.mm, self.bbd_list_pos[i], 0x200)
 
             # SBD 블럭 개수만큼 SBD 읽기
-            sbd_startblock = GetDword_file(self.fp, 0x3c)
-            num_of_sbd_blocks = GetDword_file(self.fp, 0x40)
+            sbd_startblock = self.OleHeader.e_sbd_startblock
+            num_of_sbd_blocks = self.OleHeader.e_num_of_sbd_blocks
 
             self.sbd_list.append(sbd_startblock)
             self.sbd_list_pos.append((sbd_startblock+1)<<9)
@@ -129,11 +159,11 @@ class OLE :
             # SBD 갖기
     #       sbd = ""
             for i in range(num_of_sbd_blocks) :
-                self.sbd += GetRead_file(self.fp, self.sbd_list_pos[i], 0x200)
+                self.sbd += GetRead(self.mm, self.sbd_list_pos[i], 0x200)
 
 
             # Root Entry 추척하기
-            root_startblock = GetDword_file(self.fp, 0x30)
+            root_startblock = self.OleHeader.e_root_startblock
 
             self.root_list.append(root_startblock)
             self.root_list_pos.append((root_startblock+1)<<9)
@@ -150,7 +180,7 @@ class OLE :
             # root 갖기
             root = ""
             for i in range(len(self.root_list_pos)) :
-                root += GetRead_file(self.fp, self.root_list_pos[i], 0x200)
+                root += GetRead(self.mm, self.root_list_pos[i], 0x200)
 
             # PPS 추출
             for i in range(len(self.root_list_pos) * 4) :
@@ -187,7 +217,6 @@ class OLE :
         except :
             pass
 
-        self.fp.close()
         return self.Error
 
     # PPS 트리를 얻는다
