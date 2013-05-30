@@ -19,12 +19,11 @@ class Structure(object):
     'q': 8, 'Q': 8, 'd': 8,
     's': 1 }    
     
-    __warnings = []
-    
     def __init__(self, format, data, file_offset=None):
         # Format is forced little endian, for big endian non Intel platforms
         self.__format__ = '<'
         self.__keys__ = []
+        self.__warnings = []
         #self.values = {}
         self.__data__ = data 
         self.__format_length__ = 0
