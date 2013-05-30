@@ -30,26 +30,27 @@ def GetRead(s, offset, size) :
 # OLE Å¬·¡½º
 #---------------------------------------------------------------------
 class OLE :
+    bbd_list      = []
+    bbd_list_pos  = []
+    sbd_list      = []
+    sbd_list_pos  = []
+    root_list     = []
+    root_list_pos = []
+    pps_list      = []
+    sdb_list     = []
+    sdb_list_pos = []
+    deep  = 0
+    Error = -1
+    bbd = ""
+    sbd = ""
+
     def __init__ (self, filename) :
-        self.bbd_list      = []
-        self.bbd_list_pos  = []
-        self.sbd_list      = []
-        self.sbd_list_pos  = []
-        self.root_list     = []
-        self.root_list_pos = []
-        self.pps_list      = []
-        self.sdb_list      = []
-        self.sdb_list_pos  = []
-        self.deep  = 0
-        self.Error = -1
-        self.bbd = ""
-        self.sbd = ""
         self.olefile = filename
         self.open()
 
     def open(self) :
-        self.fp = open(self.olefile, 'r+b') #open(self.olefile, 'rb')
-        self.mm = mmap.mmap(self.fp.fileno(), 0)
+        self.fp = open(self.olefile, 'rb')
+        self.mm = mmap.mmap(self.fp.fileno(), 0, access=mmap.ACCESS_READ)
 
         _OLE_HEADER = (
             'OLE_Header', 
