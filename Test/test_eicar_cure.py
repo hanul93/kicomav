@@ -4,7 +4,10 @@ import os
 
 class Test_Eicar_Cure(unittest.TestCase):
     def test_cure(self):
-        cmd = 'python kicomav.py eicar.txt'
+        if os.name == 'nt' :
+            cmd = 'c:\\python27\\python kicomav.py eicar.txt'
+        else :
+            cmd = 'python kicomav.py eicar.txt'
         os.system(cmd)
         ret = False
         try :
