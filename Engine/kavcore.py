@@ -111,6 +111,37 @@ class EngineInstance :
     # 키콤백신 엔진이 악성코드를 진단한다.
     #-----------------------------------------------------------------
     def scan(self, filename) :
+        # 1. 검사 대상 리스트에 파일을 등록
+        file_scan_list = []
+
+        # 출력용 이름
+        fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+        display_filename = unicode(filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+
+        # 검사 대상 리스트에는 검사 대상 파일 이름과 출력용 이름을 동시에 저장
+        file_scan_list.append([filename, display_filename])
+
+        # 검사 대상 리스트에 파일이 있으면...
+        while len(file_scan_list) != 0 :
+            # 1. 검사 대상 리스트에서 파일 하나 빼오기
+            #    파일이 없으면 검사 종료
+            scan_file = file_scan_list.pop(0)
+            real_name = scan_file[0] # 검사 대상 파일 이름
+            disp_name = scan_file[1] # 출력용 파일 이름
+            
+            # 2. 포맷 분석
+
+            # 3. 파일로 악성코드 검사
+            ret = self.__scan_file__(real_name)
+            
+            #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
+            if ret[0] == True :
+                return ret, scan_file
+
+            # 4. 압축 파일이면 검사대상 리스트에 추가
+
+
+    def __scan_file__(self, filename) :
         ret = False
 
         try :
@@ -302,6 +333,7 @@ class KMD :
 #---------------------------------------------------------------------
 # TEST
 #---------------------------------------------------------------------
+'''
 def cb(list_vir) :
     for vir in list_vir :
         print vir
@@ -341,3 +373,4 @@ print kav1.scan('kavcore.py')
 print '----------------------------'
 kav1.uninit()
 kav2.uninit()
+'''

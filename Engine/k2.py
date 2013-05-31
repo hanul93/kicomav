@@ -10,6 +10,7 @@
 import sys
 import os
 import string
+import kavcore
 from optparse import OptionParser
 
 KAV_VERSION   = '0.20a'
@@ -244,20 +245,34 @@ def main() :
         PrintOptions()
         return 0
 
+    # 키콤백신 엔진 구동
+    kav = kavcore.Engine() # 엔진 클래스
+    kav.SetPlugings('plugins') # 플러그인 폴더 설정
+
+    # 엔진 인스턴스 생성1
+    kav1 = kav.CreateInstance()
+    if kav1 == None :
+        print 'Error : KICOM Anti-Virus Engine CreateInstance'
+        return 0
+
+    # 엔진 초기화
+    if kav1.init() == False :
+        print 'Error : KICOM Anti-Virus Engine Init'
+        return 0
+
+    # 로딩된 엔진 출력
+    s = kav1.getinfo()
+    for i in s :
+        print i['title']
+    print
+
     # 검사용 Path
     scan_path = sys.argv[1]
     scan_path = os.path.abspath(scan_path)
 
-    # 출력용 Path
-    fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    disp_scan_path = unicode(scan_path, fsencoding).encode(sys.stdout.encoding, 'replace')
-
-    print disp_scan_path
-
-    fp = open(scan_path, 'rb')
-    print fp.read(2)
-    fp.close()
-
+    kav1.scan(scan_path)
+    
+    kav1.uninit()
 
 if __name__ == '__main__' :
     main()
