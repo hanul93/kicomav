@@ -9,6 +9,7 @@ import imp      # 동적모듈 로딩을 위해 import
 import sys      # 모듈 등록을 위해 import
 import types    # 타입 채킹을 위해 import
 import os
+import mmap
 
 #---------------------------------------------------------------------
 # load_kmd(fname)
@@ -226,18 +227,20 @@ class Engine :
 
         try :
             fp = open(filename, 'rb')
+            mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
             
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for i in range(len(self.modules)) :
                 mod = self.modules[i]
                 for api in dir(mod) :
                     if api == 'scan' :
-                        ret, vname, id = mod.scan(fp, filename)
+                        ret, vname, id = mod.scan(mm, filename)
                         if ret == True : # 악성코드 발견이면 검사 중단
                             break
                 if ret == True :
                     break
 
+            mm.close()
             fp.close()
 
             return ret, i, vname, id
