@@ -107,9 +107,13 @@ class EngineInstance :
             if dir(mod).count('uninit') != 0 : # API 존재
                 ret_uninit = mod.uninit()
 
+    #-----------------------------------------------------------------
+    # set_result(self)
+    # 키콤백신 엔진의 검사 결과를 초기화 한다.
+    #-----------------------------------------------------------------
     def set_result(self) :
         self.result = {}
-        self.identified_virus = []
+        self.identified_virus = [] # 유니크한 악성코드 개수를 구하기 위해 사용
 
         self.result['Folders']            = 0
         self.result['Files']              = 0
@@ -120,8 +124,29 @@ class EngineInstance :
         self.result['Identified_viruses'] = 0
         self.result['IO_errors']          = 0
 
+        return True
+
+    #-----------------------------------------------------------------
+    # get_result(self)
+    # 키콤백신 엔진의 검사 결과를 얻는다.
+    #-----------------------------------------------------------------
     def get_result(self) :
         return self.result
+
+    #-----------------------------------------------------------------
+    # set_options(self, options)
+    # 키콤백신 엔진의 옵션을 설정한다.
+    #-----------------------------------------------------------------
+    def set_options(self, options) :
+        self.options = options
+        return True
+
+    #-----------------------------------------------------------------
+    # get_options(self)
+    # 키콤백신 엔진의 옵션을 설정한다.
+    #-----------------------------------------------------------------
+    def get_options(self) :
+        return self.options
 
     #-----------------------------------------------------------------
     # scan(self, filename)
@@ -164,7 +189,8 @@ class EngineInstance :
                 self.result['Folders'] += 1 # 폴더 수 증가 
                 ret_value['result'] = False # 폴더이므로 바이러스 없음
 
-                cb(ret_value)
+                if self.options.opt_list == True : # 모든 리스트 출력인가?
+                    cb(ret_value)
 
                 # 폴더 안의 파일들을 검사대상 리스트에 추가
                 flist = glob.glob(real_name + os.sep + '*')
@@ -185,7 +211,11 @@ class EngineInstance :
                 ret_value['virus_name'] = ret[2] # 바이러스 이름
                 ret_value['virus_id']   = ret[3] # 바이러스 ID
 
-                cb(ret_value)
+                if self.options.opt_list == True : # 모든 리스트 출력인가?
+                    cb(ret_value)
+                else : # 아니라면 바이러스인 것만 출력
+                    if ret_value['result'] == True :
+                        cb(ret_value)
 
                 # 4. 압축 파일이면 검사대상 리스트에 추가
 
@@ -217,6 +247,7 @@ class EngineInstance :
                     self.result['Identified_viruses'] += 1
                 return ret, self.modules.index(mod), vname, id
         except :
+            self.result['IO_errors'] += 1 # 오류 발생 수 증가
             pass
 
         return False, -1, '', -1

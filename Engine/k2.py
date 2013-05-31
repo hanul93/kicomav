@@ -12,6 +12,7 @@ import os
 import string
 import kavcore
 from optparse import OptionParser
+import traceback
 
 KAV_VERSION   = '0.20a'
 KAV_BUILDDATE = 'May 31 2013'
@@ -316,54 +317,67 @@ def scan_callback(ret_value) :
 # MAIN
 #---------------------------------------------------------------------
 def main() :
-    # 로고 출력
-    PrintLogo()
+    try :
+        # 로고 출력
+        PrintLogo()
 
-    # 옵션 분석
-    options = ParserOptions()
-    if options == None :
-        return 0
+        # 옵션 분석
+        options = ParserOptions()
+        if options == None :
+            return 0
 
-    # Help 옵션 셋팅?
-    if options.opt_help == True :
-        PrintUsage()
-        PrintOptions()
-        return 0
+        # Help 옵션 셋팅?
+        if options.opt_help == True :
+            PrintUsage()
+            PrintOptions()
+            return 0
 
-    # 키콤백신 엔진 구동
-    kav = kavcore.Engine() # 엔진 클래스
-    kav.SetPlugings('plugins') # 플러그인 폴더 설정
+        # 키콤백신 엔진 구동
+        kav = kavcore.Engine() # 엔진 클래스
+        kav.SetPlugings('plugins') # 플러그인 폴더 설정
 
-    # 엔진 인스턴스 생성1
-    kav1 = kav.CreateInstance()
-    if kav1 == None :
-        print 'Error : KICOM Anti-Virus Engine CreateInstance'
-        return 0
+        # 엔진 인스턴스 생성1
+        kav1 = kav.CreateInstance()
+        if kav1 == None :
+            print 'Error : KICOM Anti-Virus Engine CreateInstance'
+            return 0
 
-    # 엔진 초기화
-    if kav1.init() == False :
-        print 'Error : KICOM Anti-Virus Engine Init'
-        return 0
+        # 엔진 초기화
+        if kav1.init() == False :
+            print 'Error : KICOM Anti-Virus Engine Init'
+            raise SystemError
 
-    # 로딩된 엔진 출력
-    s = kav1.getinfo()
-    for i in s :
-        print 'Loaded Engine : %s' % i['title']
-    print
+        # 옵션을 설정한다
+        if kav1.set_options(options) == False :
+            print 'Error : KICOM Anti-Virus Engine Options'
+            raise SystemError
 
-    kav1.set_result()
+        # 로딩된 엔진 출력
+        s = kav1.getinfo()
+        for i in s :
+            print 'Loaded Engine : %s' % i['title']
+        print
 
-    # 검사용 Path
-    scan_path = sys.argv[1]
-    scan_path = os.path.abspath(scan_path)
+        kav1.set_result()
 
-    kav1.scan(scan_path, scan_callback)
+        # 검사용 Path
+        scan_path = sys.argv[1]
+        scan_path = os.path.abspath(scan_path)
 
-    # 결과 출력
-    ret = kav1.get_result()
-    print_result(ret)
+        kav1.scan(scan_path, scan_callback)
+
+        # 결과 출력
+        ret = kav1.get_result()
+        print_result(ret)
+        
+        kav1.uninit()
+    except :
+        print traceback.format_exc()
+        if kav1 != None :
+            kav1.uninit()
+        pass
+
     
-    kav1.uninit()
 
 if __name__ == '__main__' :
     if os.name == 'nt' :
