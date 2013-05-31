@@ -107,6 +107,22 @@ class EngineInstance :
             if dir(mod).count('uninit') != 0 : # API 존재
                 ret_uninit = mod.uninit()
 
+    def set_result(self) :
+        self.result = {}
+        self.identified_virus = []
+
+        self.result['Folders']            = 0
+        self.result['Files']              = 0
+        self.result['Packed']             = 0
+        self.result['Infected_files']     = 0
+        self.result['Suspect_files']      = 0
+        self.result['Warnings']           = 0
+        self.result['Identified_viruses'] = 0
+        self.result['IO_errors']          = 0
+
+    def get_result(self) :
+        return self.result
+
     #-----------------------------------------------------------------
     # scan(self, filename)
     # 키콤백신 엔진이 악성코드를 진단한다.
@@ -145,6 +161,7 @@ class EngineInstance :
 
             # 파일이면 검사
             if os.path.isdir(real_name) == True :
+                self.result['Folders'] += 1 # 폴더 수 증가 
                 ret_value['result'] = False # 폴더이므로 바이러스 없음
 
                 cb(ret_value)
@@ -156,6 +173,7 @@ class EngineInstance :
                     file_scan_list.append([rfname, dfname])
 
             else :
+                self.result['Files'] += 1 # 파일 수 증가
                 # 2. 포맷 분석
 
                 # 3. 파일로 악성코드 검사
@@ -192,6 +210,11 @@ class EngineInstance :
             fp.close()
 
             if ret == True :
+                self.result['Infected_files'] += 1 # 악성코드 발견 수 증가
+                # 동일한 악성코드 발견 유무 체크
+                if self.identified_virus.count(vname) == 0 :
+                    self.identified_virus.append(vname)
+                    self.result['Identified_viruses'] += 1
                 return ret, self.modules.index(mod), vname, id
         except :
             pass

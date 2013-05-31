@@ -14,7 +14,7 @@ import kavcore
 from optparse import OptionParser
 
 KAV_VERSION   = '0.20a'
-KAV_BUILDDATE = 'May 27 2013'
+KAV_BUILDDATE = 'May 31 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 
@@ -228,6 +228,30 @@ def ParserOptions() :
 
         return options                
 
+def print_result(result) :
+    print
+    print
+
+    if os.name == 'nt' :
+        default_colors = cons.get_text_attr()
+        default_bg = default_colors & 0x0070
+        cons.set_text_attr(cons.FOREGROUND_GREY | default_bg | cons.FOREGROUND_INTENSITY)
+
+    print 'Results:'
+    print 'Folders           :%d' % result['Folders']            
+    print 'Files             :%d' % result['Files']              
+    print 'Packed            :%d' % result['Packed']             
+    print 'Infected files    :%d' % result['Infected_files']     
+    print 'Suspect files     :%d' % result['Suspect_files']      
+    print 'Warnings          :%d' % result['Warnings']           
+    print 'Identified viruses:%d' % result['Identified_viruses'] 
+    print 'I/O errors        :%d' % result['IO_errors']          
+
+    if os.name == 'nt' :
+        cons.set_text_attr(default_colors)
+    
+    print
+
 #---------------------------------------------------------------------
 # 악성코드 결과를 한줄에 출력하기 위한 함수
 #---------------------------------------------------------------------
@@ -324,8 +348,10 @@ def main() :
     # 로딩된 엔진 출력
     s = kav1.getinfo()
     for i in s :
-        print i['title']
+        print 'Loaded Engine : %s' % i['title']
     print
+
+    kav1.set_result()
 
     # 검사용 Path
     scan_path = sys.argv[1]
@@ -333,6 +359,9 @@ def main() :
 
     kav1.scan(scan_path, scan_callback)
 
+    # 결과 출력
+    ret = kav1.get_result()
+    print_result(ret)
     
     kav1.uninit()
 
