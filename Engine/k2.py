@@ -17,6 +17,7 @@ KAV_VERSION   = '0.20a'
 KAV_BUILDDATE = 'May 27 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
+
 #---------------------------------------------------------------------
 # PrintLogo()
 # 키콤백신의 로고를 출력한다
@@ -228,18 +229,68 @@ def ParserOptions() :
         return options                
 
 #---------------------------------------------------------------------
-# MAIN
+# 악성코드 결과를 한줄에 출력하기 위한 함수
+#---------------------------------------------------------------------
+def display_line(filename, message, filename_color=None, message_color=None) :
+    len_fname = len(filename)
+    len_msg   = len(message)
+
+    if len_fname + 1 + len_msg < 79 :
+        fname = '%s' % filename
+        msg   = '%s' % message
+    else :
+        able_size = 79 - len_msg
+        able_size -= 5 # ...
+        min_size = able_size / 2
+        if able_size % 2 == 0 :
+            fname1 = filename[0:min_size-1]
+        else :
+            fname1 = filename[0:min_size]
+        fname2 = filename[len_fname - min_size:]
+
+        fname = '%s ... %s' % (fname1, fname2)
+        msg   = '%s' % message
+
+    if os.name == 'nt' :
+        default_colors = cons.get_text_attr()
+        default_bg = default_colors & 0x0070
+        cons.set_text_attr(cons.FOREGROUND_GREY | default_bg)
+
+    print fname,
+
+    if os.name == 'nt' :
+        cons.set_text_attr(message_color | default_bg)
+
+    print message
+
+    if os.name == 'nt' :
+        cons.set_text_attr(default_colors)
+
+
+#---------------------------------------------------------------------
+# scan 콜백 함수
 #---------------------------------------------------------------------
 def scan_callback(ret_value) :
     real_name = ret_value['real_filename']
     disp_name = ret_value['display_filename']
 
+    message_color = None
+
     if ret_value['result'] == True :
         vname = ret_value['virus_name']
-        print '%s [%s]' % (disp_name, vname)
+        message = 'infected : %s' % vname
+        if os.name == 'nt' :
+            message_color = cons.FOREGROUND_RED | cons.FOREGROUND_INTENSITY
     else :
-        print '%s : ok' % (disp_name)
+        message = 'ok'
+        if os.name == 'nt' :
+            message_color = cons.FOREGROUND_GREY | cons.FOREGROUND_INTENSITY
 
+    display_line(disp_name, message, message_color = message_color)
+
+#---------------------------------------------------------------------
+# MAIN
+#---------------------------------------------------------------------
 def main() :
     # 로고 출력
     PrintLogo()
@@ -281,8 +332,12 @@ def main() :
     scan_path = os.path.abspath(scan_path)
 
     kav1.scan(scan_path, scan_callback)
+
     
     kav1.uninit()
 
 if __name__ == '__main__' :
+    if os.name == 'nt' :
+        import color_console as cons
+
     main()

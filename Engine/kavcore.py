@@ -10,6 +10,7 @@ import sys
 import os
 import types
 import mmap
+import glob
 import traceback
 
 #---------------------------------------------------------------------
@@ -127,8 +128,7 @@ class EngineInstance :
         file_scan_list = []
 
         # 출력용 이름
-        fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-        display_filename = unicode(filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+        display_filename = self.__convert_display_filename__(filename)
 
         # 검사 대상 리스트에는 검사 대상 파일 이름과 출력용 이름을 동시에 저장
         file_scan_list.append([filename, display_filename])
@@ -136,28 +136,41 @@ class EngineInstance :
         # 검사 대상 리스트에 파일이 있으면...
         while len(file_scan_list) != 0 :
             # 1. 검사 대상 리스트에서 파일 하나 빼오기
-            #    파일이 없으면 검사 종료
             scan_file = file_scan_list.pop(0)
             real_name = scan_file[0] # 검사 대상 파일 이름
             disp_name = scan_file[1] # 출력용 파일 이름
-            
-            # 2. 포맷 분석
-
-            # 3. 파일로 악성코드 검사
-            ret = self.__scan_file__(real_name)
 
             ret_value['real_filename'] = real_name    # 실제 파일 이름
             ret_value['display_filename'] = disp_name # 출력용 파일 이름
 
-            #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
-            ret_value['result']     = ret[0] # 바이러스 발견 여부
-            ret_value['engine_id']  = ret[1] # 엔진 ID
-            ret_value['virus_name'] = ret[2] # 바이러스 이름
-            ret_value['virus_id']   = ret[3] # 바이러스 ID
+            # 파일이면 검사
+            if os.path.isdir(real_name) == True :
+                ret_value['result'] = False # 폴더이므로 바이러스 없음
 
-            cb(ret_value)
+                cb(ret_value)
 
-            # 4. 압축 파일이면 검사대상 리스트에 추가
+                # 폴더 안의 파일들을 검사대상 리스트에 추가
+                flist = glob.glob(real_name + os.sep + '*')
+                for rfname in flist :
+                    dfname = self.__convert_display_filename__(rfname)
+                    file_scan_list.append([rfname, dfname])
+
+            else :
+                # 2. 포맷 분석
+
+                # 3. 파일로 악성코드 검사
+                ret = self.__scan_file__(real_name)
+
+                #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
+                ret_value['result']     = ret[0] # 바이러스 발견 여부
+                ret_value['engine_id']  = ret[1] # 엔진 ID
+                ret_value['virus_name'] = ret[2] # 바이러스 이름
+                ret_value['virus_id']   = ret[3] # 바이러스 ID
+
+                cb(ret_value)
+
+                # 4. 압축 파일이면 검사대상 리스트에 추가
+
 
         return 0 # 정상적으로 검사 종료
 
@@ -184,6 +197,12 @@ class EngineInstance :
             pass
 
         return False, -1, '', -1
+
+    def __convert_display_filename__(self, real_filename) :
+        # 출력용 이름
+        fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+        display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+        return display_filename
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, modID, virusID)
