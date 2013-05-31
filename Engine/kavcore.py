@@ -110,7 +110,19 @@ class EngineInstance :
     # scan(self, filename)
     # 키콤백신 엔진이 악성코드를 진단한다.
     #-----------------------------------------------------------------
-    def scan(self, filename) :
+    def scan(self, filename, *callback) :
+        ret_value = {}
+
+        # 가변인자 확인
+        argc = len(callback)
+
+        if argc == 0 : # 인자가 없으면
+            return -1
+        elif argc == 1 : # callback 함수가 존재하는지 체크
+            cb = callback[0]
+        else : # 인자가 너무 많으면 에러
+            return -1
+
         # 1. 검사 대상 리스트에 파일을 등록
         file_scan_list = []
 
@@ -133,13 +145,21 @@ class EngineInstance :
 
             # 3. 파일로 악성코드 검사
             ret = self.__scan_file__(real_name)
-            
+
+            ret_value['real_filename'] = real_name    # 실제 파일 이름
+            ret_value['display_filename'] = disp_name # 출력용 파일 이름
+
             #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
-            if ret[0] == True :
-                return ret, scan_file
+            ret_value['result']     = ret[0] # 바이러스 발견 여부
+            ret_value['engine_id']  = ret[1] # 엔진 ID
+            ret_value['virus_name'] = ret[2] # 바이러스 이름
+            ret_value['virus_id']   = ret[3] # 바이러스 ID
+
+            cb(ret_value)
 
             # 4. 압축 파일이면 검사대상 리스트에 추가
 
+        return 0 # 정상적으로 검사 종료
 
     def __scan_file__(self, filename) :
         ret = False

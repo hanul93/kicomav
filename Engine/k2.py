@@ -230,6 +230,16 @@ def ParserOptions() :
 #---------------------------------------------------------------------
 # MAIN
 #---------------------------------------------------------------------
+def scan_callback(ret_value) :
+    real_name = ret_value['real_filename']
+    disp_name = ret_value['display_filename']
+
+    if ret_value['result'] == True :
+        vname = ret_value['virus_name']
+        print '%s [%s]' % (disp_name, vname)
+    else :
+        print '%s : ok' % (disp_name)
+
 def main() :
     # 로고 출력
     PrintLogo()
@@ -270,7 +280,7 @@ def main() :
     scan_path = sys.argv[1]
     scan_path = os.path.abspath(scan_path)
 
-    kav1.scan(scan_path)
+    kav1.scan(scan_path, scan_callback)
     
     kav1.uninit()
 
