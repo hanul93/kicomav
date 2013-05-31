@@ -94,7 +94,11 @@ class EngineInstance :
                         raise SystemError
         except :
             return False
-            
+        
+        self.options = {}
+        self.set_options() # 옵션 초기화  
+        
+        self.set_result() # 결과 초기화
         return True        
 
     #-----------------------------------------------------------------
@@ -137,8 +141,77 @@ class EngineInstance :
     # set_options(self, options)
     # 키콤백신 엔진의 옵션을 설정한다.
     #-----------------------------------------------------------------
-    def set_options(self, options) :
-        self.options = options
+    def set_options(self, options = None) :
+        if options == None :
+            self.options['opt_files']   = True
+            self.options['opt_boot']    = False
+            self.options['opt_arc']     = False
+            self.options['opt_mail']    = False
+            self.options['opt_nopack']  = False
+            self.options['opt_nohed']   = False
+            self.options['opt_xcl']     = False
+            self.options['opt_log']     = False
+            self.options['opt_cd']      = False
+            self.options['opt_fixed']   = False
+            self.options['opt_floppy']  = False
+            self.options['opt_list']    = False
+            self.options['opt_prog']    = False
+            self.options['opt_app']     = False
+            self.options['opt_infp']    = False
+            self.options['opt_susp']    = False
+            self.options['opt_nor']     = False
+            self.options['opt_prompt']  = False
+            self.options['opt_info']    = False
+            self.options['opt_nowarn']  = False
+            self.options['opt_vlist']   = False
+            self.options['opt_dis']     = False
+            self.options['opt_copy']    = False
+            self.options['opt_copys']   = False
+            self.options['opt_del']     = False
+            self.options['opt_noclean'] = False
+            self.options['opt_move']    = False
+            self.options['opt_moves']   = False
+            self.options['opt_ren']     = False
+            self.options['opt_infext']  = False
+            self.options['opt_alev']    = False
+            self.options['opt_flev']    = False
+            self.options['opt_update']  = False
+            # self.options['opt_help']  = False
+        else :
+            self.options['opt_files']   = options.opt_files
+            self.options['opt_boot']    = options.opt_boot
+            self.options['opt_arc']     = options.opt_arc
+            self.options['opt_mail']    = options.opt_mail
+            self.options['opt_nopack']  = options.opt_nopack
+            self.options['opt_nohed']   = options.opt_nohed
+            self.options['opt_xcl']     = options.opt_xcl
+            self.options['opt_log']     = options.opt_log
+            self.options['opt_cd']      = options.opt_cd
+            self.options['opt_fixed']   = options.opt_fixed
+            self.options['opt_floppy']  = options.opt_floppy
+            self.options['opt_list']    = options.opt_list
+            self.options['opt_prog']    = options.opt_prog
+            self.options['opt_app']     = options.opt_app
+            self.options['opt_infp']    = options.opt_infp
+            self.options['opt_susp']    = options.opt_susp
+            self.options['opt_nor']     = options.opt_nor
+            self.options['opt_prompt']  = options.opt_prompt
+            self.options['opt_info']    = options.opt_info
+            self.options['opt_nowarn']  = options.opt_nowarn
+            self.options['opt_vlist']   = options.opt_vlist
+            self.options['opt_dis']     = options.opt_dis
+            self.options['opt_copy']    = options.opt_copy
+            self.options['opt_copys']   = options.opt_copys
+            self.options['opt_del']     = options.opt_del
+            self.options['opt_noclean'] = options.opt_noclean
+            self.options['opt_move']    = options.opt_move
+            self.options['opt_moves']   = options.opt_moves
+            self.options['opt_ren']     = options.opt_ren
+            self.options['opt_infext']  = options.opt_infext
+            self.options['opt_alev']    = options.opt_alev
+            self.options['opt_flev']    = options.opt_flev
+            self.options['opt_update']  = options.opt_update
+            # self.options['opt_help']  = # options.opt_help
         return True
 
     #-----------------------------------------------------------------
@@ -159,7 +232,7 @@ class EngineInstance :
         argc = len(callback)
 
         if argc == 0 : # 인자가 없으면
-            return -1
+            cb = None
         elif argc == 1 : # callback 함수가 존재하는지 체크
             cb = callback[0]
         else : # 인자가 너무 많으면 에러
@@ -189,8 +262,9 @@ class EngineInstance :
                 self.result['Folders'] += 1 # 폴더 수 증가 
                 ret_value['result'] = False # 폴더이므로 바이러스 없음
 
-                if self.options.opt_list == True : # 모든 리스트 출력인가?
-                    cb(ret_value)
+                if self.options['opt_list'] == True : # 모든 리스트 출력인가?
+                    if cb != None :
+                        cb(ret_value)
 
                 # 폴더 안의 파일들을 검사대상 리스트에 추가
                 flist = glob.glob(real_name + os.sep + '*')
@@ -211,11 +285,13 @@ class EngineInstance :
                 ret_value['virus_name'] = ret[2] # 바이러스 이름
                 ret_value['virus_id']   = ret[3] # 바이러스 ID
 
-                if self.options.opt_list == True : # 모든 리스트 출력인가?
-                    cb(ret_value)
+                if self.options['opt_list'] == True : # 모든 리스트 출력인가?
+                    if cb != None :
+                        cb(ret_value)
                 else : # 아니라면 바이러스인 것만 출력
                     if ret_value['result'] == True :
-                        cb(ret_value)
+                        if cb != None :
+                            cb(ret_value)
 
                 # 4. 압축 파일이면 검사대상 리스트에 추가
 
