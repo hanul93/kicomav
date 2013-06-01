@@ -103,6 +103,8 @@ class KavMain :
         if mm[0:5] == 'Dummy' : # 헤더 체크
             fformat['size'] = len(mm) # 포맷 주요 정보 저장
 
-        ret = {}
-        ret['ff_dummy'] = fformat
-        return ret
+            ret = {}
+            ret['ff_dummy'] = fformat
+            return ret
+
+        return None

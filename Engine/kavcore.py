@@ -274,7 +274,9 @@ class EngineInstance :
 
             else :
                 self.result['Files'] += 1 # 파일 수 증가
+
                 # 2. 포맷 분석
+                ff = self.__get_fileformat__(real_name)
 
                 # 3. 파일로 악성코드 검사
                 ret = self.__scan_file__(real_name)
@@ -333,6 +335,26 @@ class EngineInstance :
         fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
         display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
         return display_filename
+
+    def __get_fileformat__(self, filename) :
+        ret = {}
+        try :
+            fp = open(filename, 'rb')
+            mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
+            
+            # 백신 엔진 모듈의 scan 멤버 함수 호출
+            for mod in self.modules :
+                if dir(mod).count('format') != 0 : # API 존재
+                    ff = mod.format(mm, filename)
+                    if ff != None :
+                        ret.update(ff)
+
+            mm.close()
+            fp.close()
+        except :
+            pass
+
+        return ret
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, modID, virusID)
