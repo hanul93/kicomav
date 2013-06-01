@@ -73,7 +73,8 @@ Warnings          :0
 Identified viruses:2
 I/O errors        :0
 
-C:\kicomav\Release> _```
+C:\kicomav\Release> _
+```
 
 
 ## Author
