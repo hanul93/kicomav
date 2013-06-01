@@ -135,7 +135,6 @@ def DefineOptions() :
         parser.add_option("-f", "--files",
                       action="store_true", dest="opt_files",
                       default=True)
-        '''
         parser.add_option("-b", "--boot",
                       action="store_true", dest="opt_boot", 
                       default=False)
@@ -166,11 +165,9 @@ def DefineOptions() :
         parser.add_option("-M", "--floppy",
                       action="store_true", dest="opt_floppy",
                       default=False)
-        '''
         parser.add_option("-I", "--list",
                       action="store_true", dest="opt_list",
-                      default=False)
-        '''                
+                      default=False)              
         parser.add_option("-g", "--prog",
                       action="store_true", dest="opt_prog",
                       default=False)
@@ -235,7 +232,7 @@ def DefineOptions() :
         parser.add_option("", "--update",
                       action="store_true", dest="opt_update",
                       default=False)
-        '''
+
         parser.add_option("-?", "--help",
                       action="store_true", dest="opt_help",
                       default=False)
