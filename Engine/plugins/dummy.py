@@ -91,3 +91,18 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'Dummy Scan Engine' # 엔진 설명
         return info
+
+    #-----------------------------------------------------------------
+    # format(self, mmhandle, filename)
+    # Dummy 전용 포맷 분석기이다.
+    #-----------------------------------------------------------------
+    def format(self, mmhandle, filename) :
+        fformat = {} # 포맷 정보를 담을 공간
+
+        mm = mmhandle
+        if mm[0:5] == 'Dummy' : # 헤더 체크
+            fformat['size'] = len(mm) # 포맷 주요 정보 저장
+
+        ret = {}
+        ret['ff_dummy'] = fformat
+        return ret
