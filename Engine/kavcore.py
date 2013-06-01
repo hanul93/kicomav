@@ -279,7 +279,7 @@ class EngineInstance :
                 ff = self.__get_fileformat__(real_name)
 
                 # 3. 파일로 악성코드 검사
-                ret = self.__scan_file__(real_name)
+                ret = self.__scan_file__(real_name, ff)
 
                 #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
                 ret_value['result']     = ret[0] # 바이러스 발견 여부
@@ -300,7 +300,7 @@ class EngineInstance :
 
         return 0 # 정상적으로 검사 종료
 
-    def __scan_file__(self, filename) :
+    def __scan_file__(self, filename, format) :
         ret = False
 
         try :
@@ -310,7 +310,7 @@ class EngineInstance :
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('scan') != 0 : # API 존재
-                    ret, vname, id = mod.scan(mm, filename)
+                    ret, vname, id = mod.scan(mm, filename, format)
                     if ret == True : # 악성코드 발견이면 검사 중단
                         break
 
