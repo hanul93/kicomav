@@ -3,6 +3,7 @@
 
 import os # 파일 삭제를 위해 import
 import hashlib # MD5 해시를 위해 import
+import mmap
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -13,16 +14,16 @@ class KavMain :
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
     # 악성코드를 검사한다.
-    # 인자값 : filehandle - 파일 핸들
+    # 인자값 : mmhandle   - 파일 mmap 핸들
     #        : filename   - 파일 이름
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
     #-----------------------------------------------------------------
-    def scan(self, filehandle, filename) :
+    def scan(self, mmhandle, filename) :
         try : # 백신 엔진의 오류를 방지하기 위해 예외 처리를 선언 
-            fp = filehandle # 파일 핸들을 fp에 저장
+            mm = mmhandle # 파일 mmap 핸들을 mm에 저장
 
-            fp.seek(0) # 파일 포인터를 제일 앞으로 이동
-            buf = fp.read(68) # 68 Byte를 읽음
+            buf = mm[0:68] # 파일 처음부터 68 Byte를 읽음
+
             if len(buf) == 68 : # buf에 68 Byte가 읽혔나?
                 md5 = hashlib.md5() # MD5 해시를 구함
                 md5.update(buf)
@@ -31,7 +32,7 @@ class KavMain :
                 eicar_pattern = '44d88612fea8a8f36de82e1278abb02f'
 
                 if f_md5 == eicar_pattern :  # 패턴이 같은지를 비교
-                    return True, 'EICAR Test', 0 # 맞다면 검사 결과와 이름, ID를 리턴
+                    return True, 'EICAR-Test-File (not a virus)', 0 # 맞다면 검사 결과와 이름, ID를 리턴
         except : # 모든 예외사항을 처리
             pass
         

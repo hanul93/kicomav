@@ -14,7 +14,7 @@ class KavMain :
     # 백신 엔진 모듈의 초기화 작업을 수행한다.
     #-----------------------------------------------------------------
     def init(self) : # 백신 모듈 초기화
-        self.virus_name = 'Dummy Malware' # 진단하는 악성코드 이름
+        self.virus_name = 'Dummy-Test-File (not a virus)' # 진단하는 악성코드 이름
         # 악성코드 패턴 등록
         self.dummy_pattern = 'Dummy Engine test file - KICOM Anti-Virus Project, 2012, Kei Choi'
         return 0
@@ -31,11 +31,11 @@ class KavMain :
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
     # 악성코드를 검사한다.
-    # 인자값 : filehandle - 파일 핸들
+    # 인자값 : mmhandle   - 파일 mmap 핸들
     #        : filename   - 파일 이름
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
     #-----------------------------------------------------------------
-    def scan(self, filehandle, filename) :
+    def scan(self, mmhandle, filename) :
         try :
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
             fp = open(filename)

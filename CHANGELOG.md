@@ -1,3 +1,6 @@
+## v0.20b (June 1, 2013)
+- Command line support : k2.py
+
 ## v0.20a (May 28, 2013)
 - Add build.sh
 
