@@ -45,7 +45,6 @@ class KavMain :
             if fformat['size'] != len(self.dummy_pattern) :
                 raise SystemError
 
-            print fformat['size']
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
             fp = open(filename)
             buf = fp.read(len(self.dummy_pattern)) # 패턴은 65 Byte 크기
@@ -104,14 +103,17 @@ class KavMain :
     # Dummy 전용 포맷 분석기이다.
     #-----------------------------------------------------------------
     def format(self, mmhandle, filename) :
-        fformat = {} # 포맷 정보를 담을 공간
+        try :
+            fformat = {} # 포맷 정보를 담을 공간
 
-        mm = mmhandle
-        if mm[0:5] == 'Dummy' : # 헤더 체크
-            fformat['size'] = len(mm) # 포맷 주요 정보 저장
+            mm = mmhandle
+            if mm[0:5] == 'Dummy' : # 헤더 체크
+                fformat['size'] = len(mm) # 포맷 주요 정보 저장
 
-            ret = {}
-            ret['ff_dummy'] = fformat
-            return ret
+                ret = {}
+                ret['ff_dummy'] = fformat
+                return ret
+        except :
+            pass
 
         return None
