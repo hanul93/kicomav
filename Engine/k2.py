@@ -14,8 +14,8 @@ import kavcore
 from optparse import OptionParser
 import traceback
 
-KAV_VERSION   = '0.20a'
-KAV_BUILDDATE = 'May 31 2013'
+KAV_VERSION   = '0.20b'
+KAV_BUILDDATE = 'June 1 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 #---------------------------------------------------------------------
@@ -113,38 +113,7 @@ def PrintOptions() :
     options_string = \
 '''Options:
         -f,  --files           scan files *
-        -b,  --boot            scan boot sector and mbr
-        -r,  --arc             scan archives
-        -i,  --mail            scan mail databases
-        -k,  --nopack          don't scan packed programs
-        -h,  --nohed           no heuristics
-        -X,  --xcl=ext1;ext2;  exclude from scan this extensions
-        -G,  --log[=file]      create log file
-        -S,  --cd              scan cd-rom
-        -N,  --fixed           scan all fixed drives
-        -M,  --floppy          scan floppy
         -I,  --list            display all files
-        -g,  --prog            scan only program files
-        -e,  --app             append to log file
-        -F,  --infp=path       set infected quarantine folder
-        -U,  --susp=path       set suspected quarantine folder
-        -R,  --nor             do not recurse into folders
-        -p,  --prompt          prompt for action
-        -O,  --info            information
-        -W,  --nowarn          no warnings
-        -V,  --vlist           display virus list
-        -d,  --dis             disinfect files
-        -o,  --copy            copy infected files in quarantine folder
-        -y,  --copys           copy suspect files in quarantine folder
-        -l,  --del             delete infected files
-             --noclean         don't display clean files
-             --move            move infected files in quarantine folder
-             --moves           move suspect files in quarantine folder
-             --ren             rename infected files
-             --infext=ext      set rename extension
-             --alev[=n]        set maximum archive depth level
-             --flev[=n]        set maximum folder depth level
-             --update          update
         -?,  --help            this help
                                * = default option'''
 
@@ -166,6 +135,7 @@ def DefineOptions() :
         parser.add_option("-f", "--files",
                       action="store_true", dest="opt_files",
                       default=True)
+        '''
         parser.add_option("-b", "--boot",
                       action="store_true", dest="opt_boot", 
                       default=False)
@@ -196,9 +166,11 @@ def DefineOptions() :
         parser.add_option("-M", "--floppy",
                       action="store_true", dest="opt_floppy",
                       default=False)
+        '''
         parser.add_option("-I", "--list",
                       action="store_true", dest="opt_list",
                       default=False)
+        '''                
         parser.add_option("-g", "--prog",
                       action="store_true", dest="opt_prog",
                       default=False)
@@ -263,7 +235,7 @@ def DefineOptions() :
         parser.add_option("", "--update",
                       action="store_true", dest="opt_update",
                       default=False)
-
+        '''
         parser.add_option("-?", "--help",
                       action="store_true", dest="opt_help",
                       default=False)
