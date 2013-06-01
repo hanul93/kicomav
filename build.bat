@@ -11,7 +11,6 @@
 
 @kmake.py kicom.lst
 @kmake.py kavutil.py
-@kmake.py ole.py
 @kmake.py dummy.py
 @kmake.py eicar.py
 
