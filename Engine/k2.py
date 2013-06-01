@@ -18,6 +18,73 @@ KAV_VERSION   = '0.20a'
 KAV_BUILDDATE = 'May 31 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
+#---------------------------------------------------------------------
+# 콘솔에 색깔 출력을 위한 클래스 및 함수들
+#---------------------------------------------------------------------
+if os.name == 'nt' :
+    from ctypes import windll, Structure, c_short, c_ushort, byref
+
+    SHORT = c_short
+    WORD = c_ushort
+
+    class COORD(Structure):
+      """struct in wincon.h."""
+      _fields_ = [
+        ("X", SHORT),
+        ("Y", SHORT)]
+
+    class SMALL_RECT(Structure):
+        _fields_ = [
+            ("Left", SHORT),
+            ("Top", SHORT),
+            ("Right", SHORT),
+            ("Bottom", SHORT)]
+
+    class CONSOLE_SCREEN_BUFFER_INFO(Structure):
+        _fields_ = [
+            ("dwSize", COORD),
+            ("dwCursorPosition", COORD),
+            ("wAttributes", WORD),
+            ("srWindow", SMALL_RECT),
+            ("dwMaximumWindowSize", COORD)]
+
+    # winbase.h
+    STD_INPUT_HANDLE = -10
+    STD_OUTPUT_HANDLE = -11
+    STD_ERROR_HANDLE = -12
+
+    # wincon.h
+    FOREGROUND_BLACK     = 0x0000
+    FOREGROUND_BLUE      = 0x0001
+    FOREGROUND_GREEN     = 0x0002
+    FOREGROUND_CYAN      = 0x0003
+    FOREGROUND_RED       = 0x0004
+    FOREGROUND_MAGENTA   = 0x0005
+    FOREGROUND_YELLOW    = 0x0006
+    FOREGROUND_GREY      = 0x0007
+    FOREGROUND_INTENSITY = 0x0008 # foreground color is intensified.
+
+    BACKGROUND_BLACK     = 0x0000
+    BACKGROUND_BLUE      = 0x0010
+    BACKGROUND_GREEN     = 0x0020
+    BACKGROUND_CYAN      = 0x0030
+    BACKGROUND_RED       = 0x0040
+    BACKGROUND_MAGENTA   = 0x0050
+    BACKGROUND_YELLOW    = 0x0060
+    BACKGROUND_GREY      = 0x0070
+    BACKGROUND_INTENSITY = 0x0080 # background color is intensified.
+
+    stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+    SetConsoleTextAttribute = windll.kernel32.SetConsoleTextAttribute
+    GetConsoleScreenBufferInfo = windll.kernel32.GetConsoleScreenBufferInfo
+
+    def get_text_attr():
+        csbi = CONSOLE_SCREEN_BUFFER_INFO()
+        GetConsoleScreenBufferInfo(stdout_handle, byref(csbi))
+        return csbi.wAttributes
+
+    def set_text_attr(color):
+        SetConsoleTextAttribute(stdout_handle, color)
 
 #---------------------------------------------------------------------
 # PrintLogo()
@@ -234,9 +301,9 @@ def print_result(result) :
     print
 
     if os.name == 'nt' :
-        default_colors = cons.get_text_attr()
+        default_colors = get_text_attr()
         default_bg = default_colors & 0x0070
-        cons.set_text_attr(cons.FOREGROUND_GREY | default_bg | cons.FOREGROUND_INTENSITY)
+        set_text_attr(FOREGROUND_GREY | default_bg | FOREGROUND_INTENSITY)
 
     print 'Results:'
     print 'Folders           :%d' % result['Folders']            
@@ -249,7 +316,7 @@ def print_result(result) :
     print 'I/O errors        :%d' % result['IO_errors']          
 
     if os.name == 'nt' :
-        cons.set_text_attr(default_colors)
+        set_text_attr(default_colors)
     
     print
 
@@ -277,19 +344,19 @@ def display_line(filename, message, filename_color=None, message_color=None) :
         msg   = '%s' % message
 
     if os.name == 'nt' :
-        default_colors = cons.get_text_attr()
+        default_colors = get_text_attr()
         default_bg = default_colors & 0x0070
-        cons.set_text_attr(cons.FOREGROUND_GREY | default_bg)
+        set_text_attr(FOREGROUND_GREY | default_bg)
 
     print fname,
 
     if os.name == 'nt' :
-        cons.set_text_attr(message_color | default_bg)
+        set_text_attr(message_color | default_bg)
 
     print message
 
     if os.name == 'nt' :
-        cons.set_text_attr(default_colors)
+        set_text_attr(default_colors)
 
 
 #---------------------------------------------------------------------
@@ -305,11 +372,11 @@ def scan_callback(ret_value) :
         vname = ret_value['virus_name']
         message = 'infected : %s' % vname
         if os.name == 'nt' :
-            message_color = cons.FOREGROUND_RED | cons.FOREGROUND_INTENSITY
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else :
         message = 'ok'
         if os.name == 'nt' :
-            message_color = cons.FOREGROUND_GREY | cons.FOREGROUND_INTENSITY
+            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color = message_color)
 
@@ -380,7 +447,4 @@ def main() :
     
 
 if __name__ == '__main__' :
-    if os.name == 'nt' :
-        import color_console as cons
-
     main()
