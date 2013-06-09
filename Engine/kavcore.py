@@ -239,25 +239,28 @@ class EngineInstance :
             return -1
 
         # 1. 검사 대상 리스트에 파일을 등록
-        file_scan_list = []
+        file_scan_list = [] # 검사 대상 정보를 모두 가짐
+        file_info = {}  # 파일 한개의 정보
 
         # 출력용 이름
         display_filename = self.__convert_display_filename__(filename)
 
         # 검사 대상 리스트에는 검사 대상 파일 이름과 출력용 이름을 동시에 저장
-        file_scan_list.append([filename, display_filename])
+        file_info['real_filename'] = filename
+        file_info['display_filename'] = display_filename
+        file_scan_list.append(file_info)
 
         # 검사 대상 리스트에 파일이 있으면...
         while len(file_scan_list) != 0 :
             # 1. 검사 대상 리스트에서 파일 하나 빼오기
             scan_file = file_scan_list.pop(0)
-            real_name = scan_file[0] # 검사 대상 파일 이름
-            disp_name = scan_file[1] # 출력용 파일 이름
+            real_name = scan_file['real_filename'] # 검사 대상 파일 이름
+            disp_name = scan_file['display_filename'] # 출력용 파일 이름
 
             ret_value['real_filename'] = real_name    # 실제 파일 이름
             ret_value['display_filename'] = disp_name # 출력용 파일 이름
 
-            # 파일이면 검사
+            # 폴더면 내부 파일리스트만 검사 대상 리스트에 등록
             if os.path.isdir(real_name) == True :
                 self.result['Folders'] += 1 # 폴더 수 증가 
                 ret_value['result'] = False # 폴더이므로 바이러스 없음
@@ -269,17 +272,24 @@ class EngineInstance :
                 # 폴더 안의 파일들을 검사대상 리스트에 추가
                 flist = glob.glob(real_name + os.sep + '*')
                 for rfname in flist :
-                    dfname = self.__convert_display_filename__(rfname)
-                    file_scan_list.append([rfname, dfname])
+                    tmp_info = {}
 
-            else :
+                    dfname = self.__convert_display_filename__(rfname)
+                    tmp_info['real_filename'] = rfname
+                    tmp_info['display_filename'] = dfname
+                    file_scan_list.append(tmp_info)
+
+            else : # 파일이면 검사
                 self.result['Files'] += 1 # 파일 수 증가
 
+                # 압축된 파일이면 해제하기
+                scan_file['real_filename'] = self.__unarc_file__(scan_file)
+
                 # 2. 포맷 분석
-                ff = self.__get_fileformat__(real_name)
+                ff = self.__get_fileformat__(scan_file)
 
                 # 3. 파일로 악성코드 검사
-                ret = self.__scan_file__(real_name, ff)
+                ret = self.__scan_file__(scan_file, ff)
 
                 #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
                 ret_value['result']     = ret[0] # 바이러스 발견 여부
@@ -295,13 +305,77 @@ class EngineInstance :
                         if cb != None :
                             cb(ret_value)
 
-                # 4. 압축 파일이면 검사대상 리스트에 추가
+                # 이미 해당 파일이 바이러스라고 판명되었다면
+                # 그 파일을 압축해제해서 내부를 볼 필요는 없다.
+                if ret_value['result'] == False : # 따라서 바이러스가 아닌경우만 검사
+                    # 4. 압축 파일이면 검사대상 리스트에 추가
+                    if self.options['opt_arc'] == True : # 압축 검사해야 하나?
+                        arc_file_list = self.__get_list_arc__(scan_file, ff)
+                        if len(arc_file_list) != 0 :
+                            file_scan_list += arc_file_list
 
+                # 파일 한개에 대한 검사를 마무리 한다
+                # 여기까지 왔다면 임시에 풀어둔 압축 파일 검사가 끝났으니 삭제한다
+                try :
+                    if scan_file['is_arc'] == True :
+                        os.remove(scan_file['real_filename'])
+                except :
+                    pass
 
         return 0 # 정상적으로 검사 종료
 
-    def __scan_file__(self, filename, format) :
+    def __unarc_file__(self, scan_file_struct) :
+        try :
+            if scan_file_struct['is_arc'] == True :
+                import zipfile
+                import tempfile
+                
+                arc_name = scan_file_struct['arc_filename']
+                filename = scan_file_struct['real_filename']
+
+                zfile = zipfile.ZipFile(arc_name)
+                data = zfile.read(filename)
+                zfile.close()
+
+                # 압축을 해제하여 임시 파일을 생성
+                rname = tempfile.mktemp()
+                fp = open(rname, 'wb')
+                fp.write(data)
+                fp.close()
+
+                return rname
+        except :
+            pass
+
+        return scan_file_struct['real_filename']
+
+    def __get_list_arc__(self, scan_file_struct, format) :
+        file_scan_list = [] # 검사 대상 정보를 모두 가짐
+
+        filename = scan_file_struct['real_filename']
+        import zipfile
+        try :
+            zfile = zipfile.ZipFile(filename)
+            for name in zfile.namelist() :
+                file_info = {}  # 파일 한개의 정보
+
+                rfname = '%s (%s)' % (filename, name)
+                dfname = self.__convert_display_filename__(rfname)
+                file_info['is_arc']           = True     # 압축 여부
+                file_info['arc_filename']     = filename # 압축 파일명
+                file_info['real_filename']    = name     # 압축 내부 파일명
+                file_info['display_filename'] = dfname   # 출력 파일명
+                
+                file_scan_list.append(file_info)
+            zfile.close()
+        except :
+            pass
+
+        return file_scan_list
+
+    def __scan_file__(self, scan_file_struct, format) :
         ret = False
+        filename = scan_file_struct['real_filename']
 
         try :
             fp = open(filename, 'rb')
@@ -336,8 +410,10 @@ class EngineInstance :
         display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
         return display_filename
 
-    def __get_fileformat__(self, filename) :
+    def __get_fileformat__(self, scan_file_struct) :
         ret = {}
+        filename = scan_file_struct['real_filename']
+
         try :
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)

@@ -113,6 +113,7 @@ def PrintOptions() :
     options_string = \
 '''Options:
         -f,  --files           scan files *
+        -r,  --arc             scan archives
         -I,  --list            display all files
         -?,  --help            this help
                                * = default option'''
