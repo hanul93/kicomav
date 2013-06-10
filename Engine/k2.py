@@ -14,8 +14,8 @@ import kavcore
 from optparse import OptionParser
 import traceback
 
-KAV_VERSION   = '0.20b'
-KAV_BUILDDATE = 'June 1 2013'
+KAV_VERSION   = '0.21'
+KAV_BUILDDATE = 'June 11 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 #---------------------------------------------------------------------

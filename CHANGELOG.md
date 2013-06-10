@@ -1,3 +1,7 @@
+## v0.21 (June 11, 2013)
+- Add Command line Option : -r (scan archives)
+- Support for ZIP
+
 ## v0.20b (June 1, 2013)
 - Command line support : k2.py
 
