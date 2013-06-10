@@ -1,7 +1,7 @@
 <img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
 
 
-# KicomAV v0.20b [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+# KicomAV v0.21 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
 
@@ -33,13 +33,14 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.20b (June 1 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Usage: k2.py path[s] [options]
 Options:
         -f,  --files           scan files *
+        -r,  --arc             scan archives
         -I,  --list            display all files
         -?,  --help            this help
                                * = default option
@@ -52,10 +53,12 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.20b (June 1 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
+Loaded Engine : KicomAV Util
+Loaded Engine : Zip Engine
 Loaded Engine : Dummy Scan Engine
 Loaded Engine : EICAR Test Engine
 
@@ -68,6 +71,66 @@ Folders           :2
 Files             :15
 Packed            :0
 Infected files    :2
+Suspect files     :0
+Warnings          :0
+Identified viruses:2
+I/O errors        :0
+
+C:\kicomav\Release> _
+```
+
+**Example 3 :** Scan for ZIP files
+
+```
+C:\kicomav\Release> python k2.py c:\temp -r -I
+------------------------------------------------------------
+KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
+Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+------------------------------------------------------------
+
+Loaded Engine : KicomAV Util
+Loaded Engine : Zip Engine
+Loaded Engine : Dummy Scan Engine
+Loaded Engine : EICAR Test Engine
+
+c:\temp ok
+c:\temp\1.zip ok
+c:\temp\1.zip (eicar.txt) infected : EICAR-Test-File (not a virus)
+c:\temp\1.zip (test.zip) ok
+c:\temp\1.zip (test.zip/dummy.txt) infected : Dummy-Test-File (not a virus)
+c:\temp\1.zip (test.zip/eicar.txt) infected : EICAR-Test-File (not a virus)
+c:\temp\CSS2013.docx ok
+c:\temp\CSS2013.docx ([Content_Types].xml) ok
+c:\temp\CSS2013.docx (_rels/.rels) ok
+c:\temp\CSS2013.docx (word/_rels/document.xml.rels) ok
+c:\temp\CSS2013.docx (word/document.xml) ok
+c:\temp\CSS2013.docx (word/endnotes.xml) ok
+c:\temp\CSS2013.docx (word/footnotes.xml) ok
+c:\temp\CSS2013.docx (word/footer1.xml) ok
+c:\temp\CSS2013.docx (word/_rels/footer1.xml.rels) ok
+c:\temp\CSS2013.docx (word/_rels/header1.xml.rels) ok
+c:\temp\CSS2013.docx (word/header1.xml) ok
+c:\temp\CSS2013.docx (word/media/image2.jpeg) ok
+c:\temp\CSS2013.docx (word/theme/theme1.xml) ok
+c:\temp\CSS2013.docx (word/media/image1.png) ok
+c:\temp\CSS2013.docx (word/settings.xml) ok
+c:\temp\CSS2013.docx (word/styles.xml) ok
+c:\temp\CSS2013.docx (customXml/itemProps1.xml) ok
+c:\temp\CSS2013.docx (word/numbering.xml) ok
+c:\temp\CSS2013.docx (customXml/_rels/item1.xml.rels) ok
+c:\temp\CSS2013.docx (customXml/item1.xml) ok
+c:\temp\CSS2013.docx (docProps/core.xml) ok
+c:\temp\CSS2013.docx (word/fontTable.xml) ok
+c:\temp\CSS2013.docx (word/webSettings.xml) ok
+c:\temp\CSS2013.docx (word/stylesWithEffects.xml) ok
+c:\temp\CSS2013.docx (docProps/app.xml) ok
+
+
+Results:
+Folders           :1
+Files             :30
+Packed            :0
+Infected files    :3
 Suspect files     :0
 Warnings          :0
 Identified viruses:2

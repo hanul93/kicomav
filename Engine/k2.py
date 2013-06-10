@@ -14,8 +14,8 @@ import kavcore
 from optparse import OptionParser
 import traceback
 
-KAV_VERSION   = '0.20b'
-KAV_BUILDDATE = 'June 1 2013'
+KAV_VERSION   = '0.21'
+KAV_BUILDDATE = 'June 11 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 #---------------------------------------------------------------------
@@ -113,6 +113,7 @@ def PrintOptions() :
     options_string = \
 '''Options:
         -f,  --files           scan files *
+        -r,  --arc             scan archives
         -I,  --list            display all files
         -?,  --help            this help
                                * = default option'''
@@ -292,7 +293,15 @@ def print_result(result) :
 #---------------------------------------------------------------------
 # 악성코드 결과를 한줄에 출력하기 위한 함수
 #---------------------------------------------------------------------
+def convert_display_filename(real_filename) :
+    # 출력용 이름
+    fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+    display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+    return display_filename
+
+
 def display_line(filename, message, filename_color=None, message_color=None) :
+    filename = convert_display_filename(filename)
     len_fname = len(filename)
     len_msg   = len(message)
 
@@ -332,6 +341,29 @@ def display_line(filename, message, filename_color=None, message_color=None) :
 # scan 콜백 함수
 #---------------------------------------------------------------------
 def scan_callback(ret_value) :
+    real_name = ret_value['real_filename']
+    scan_info = ret_value['scan_info']
+
+    if len(scan_info['deep_filename']) != 0 :
+        disp_name = '%s (%s)' % (scan_info['display_filename'], scan_info['deep_filename'])
+    else :
+        disp_name = '%s' % (scan_info['display_filename'])
+
+    message_color = None
+
+    if ret_value['result'] == True :
+        vname = ret_value['virus_name']
+        message = 'infected : %s' % vname
+        if os.name == 'nt' :
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+    else :
+        message = 'ok'
+        if os.name == 'nt' :
+            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
+
+    display_line(disp_name, message, message_color = message_color)
+
+def scan_callback1(ret_value) :
     real_name = ret_value['real_filename']
     disp_name = ret_value['display_filename']
 
