@@ -31,12 +31,12 @@ class KavMain :
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
     # 악성코드를 검사한다.
-    # 인자값 : mmhandle   - 파일 mmap 핸들
-    #        : filename   - 파일 이름
-    #        : format     - 미리 분석된 파일 포맷
+    # 인자값 : mmhandle         - 파일 mmap 핸들
+    #        : scan_file_struct - 파일 구조체
+    #        : format           - 미리 분석된 파일 포맷
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
     #-----------------------------------------------------------------
-    def scan(self, mmhandle, filename, format) :
+    def scan(self, mmhandle, scan_file_struct, format) :
         try :
             # 미리 분석된 파일 포맷중에 Dummy 포맷이 있는가?
             fformat = format['ff_dummy']
@@ -46,6 +46,7 @@ class KavMain :
                 raise SystemError
 
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
+            filename = scan_file_struct['real_filename']
             fp = open(filename)
             buf = fp.read(len(self.dummy_pattern)) # 패턴은 65 Byte 크기
             fp.close()

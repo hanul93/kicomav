@@ -400,7 +400,7 @@ class EngineInstance :
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('scan') != 0 : # API 존재
-                    ret, vname, id = mod.scan(mm, filename, format)
+                    ret, vname, id = mod.scan(mm, scan_file_struct, format)
                     if ret == True : # 악성코드 발견이면 검사 중단
                         break
 

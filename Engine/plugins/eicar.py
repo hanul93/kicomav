@@ -14,12 +14,12 @@ class KavMain :
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
     # 악성코드를 검사한다.
-    # 인자값 : mmhandle   - 파일 mmap 핸들
-    #        : filename   - 파일 이름
-    #        : format     - 미리 분석된 파일 포맷
+    # 인자값 : mmhandle         - 파일 mmap 핸들
+    #        : scan_file_struct - 파일 구조체
+    #        : format           - 미리 분석된 파일 포맷
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
     #-----------------------------------------------------------------
-    def scan(self, mmhandle, filename, format) :
+    def scan(self, mmhandle, scan_file_struct, format) :
         try : # 백신 엔진의 오류를 방지하기 위해 예외 처리를 선언 
             mm = mmhandle # 파일 mmap 핸들을 mm에 저장
 
