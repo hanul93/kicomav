@@ -2,6 +2,7 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 import os # 파일 삭제를 위해 import
+import kavutil
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -34,9 +35,15 @@ class KavMain :
     # 인자값 : mmhandle         - 파일 mmap 핸들
     #        : scan_file_struct - 파일 구조체
     #        : format           - 미리 분석된 파일 포맷
-    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
+        ret_value = {}
+        ret_value['result']     = False # 바이러스 발견 여부
+        ret_value['virus_name'] = ''    # 바이러스 이름
+        ret_value['scan_state'] = kavutil.NOT_FOUND     # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['virus_id']   = -1    # 바이러스 ID
+
         try :
             # 미리 분석된 파일 포맷중에 Dummy 포맷이 있는가?
             fformat = format['ff_dummy']
@@ -54,12 +61,16 @@ class KavMain :
             # 악성코드 패턴을 비교한다.
             if buf == self.dummy_pattern :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                return True, self.virus_name, 0
+                ret_value['result']     = True            # 바이러스 발견 여부
+                ret_value['virus_name'] = self.virus_name # 바이러스 이름
+                ret_value['scan_state'] = kavutil.INFECTED# 0:없음, 1:감염, 2:의심, 3:경고
+                ret_value['virus_id']   = 0               # 바이러스 ID
+                return ret_value
         except :
             pass
 
         # 악성코드를 발견하지 못했음을 리턴한다.
-        return False, '', -1
+        return ret_value
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)

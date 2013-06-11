@@ -351,9 +351,17 @@ def scan_callback(ret_value) :
 
     message_color = None
 
+    import kavutil
     if ret_value['result'] == True :
+        if ret_value['scan_state'] == kavutil.INFECTED :
+            s = 'infected'
+        elif ret_value['scan_state'] == kavutil.SUSPECT :
+            s = 'Suspect'
+        elif ret_value['scan_state'] == kavutil.WARNING :
+            s = 'Warning'
+
         vname = ret_value['virus_name']
-        message = 'infected : %s' % vname
+        message = '%s : %s' % (s, vname)
         if os.name == 'nt' :
             message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else :

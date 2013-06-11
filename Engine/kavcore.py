@@ -227,7 +227,10 @@ class EngineInstance :
     def scan(self, filename, *callback) :
         del_master_file = ''
         del_temp_list = [] # 검사를 위해 임시로 생성된 파일들
-        ret_value = {}
+        ret_value = {
+            'result':False, 'engine_id':-1, 'virus_name':'', 
+            'virus_id':-1, 'scan_state':None, 'scan_info':None
+        }
 
         # 가변인자 확인
         argc = len(callback)
@@ -319,10 +322,11 @@ class EngineInstance :
                 ret = self.__scan_file__(scan_file, ff)
 
                 #    악성코드 발견이면 콜백 호출 또는 검사 리턴값 누적 생성
-                ret_value['result']     = ret[0] # 바이러스 발견 여부
-                ret_value['engine_id']  = ret[1] # 엔진 ID
-                ret_value['virus_name'] = ret[2] # 바이러스 이름
-                ret_value['virus_id']   = ret[3] # 바이러스 ID
+                ret_value['result']     = ret['result'    ] # 바이러스 발견 여부
+                ret_value['engine_id']  = ret['engine_id' ] # 엔진 ID
+                ret_value['virus_name'] = ret['virus_name'] # 바이러스 이름
+                ret_value['scan_state'] = ret['scan_state'] # 바이러스 검사 상태
+                ret_value['virus_id']   = ret['virus_id'  ] # 바이러스 ID
                 ret_value['scan_info']  = scan_file
 
                 if self.options['opt_list'] == True : # 모든 리스트 출력인가?
@@ -390,7 +394,7 @@ class EngineInstance :
 
 
     def __scan_file__(self, scan_file_struct, format) :
-        ret = False
+        ret_value = {}
         filename = scan_file_struct['real_filename']
 
         try :
@@ -400,7 +404,10 @@ class EngineInstance :
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('scan') != 0 : # API 존재
-                    ret, vname, id = mod.scan(mm, scan_file_struct, format)
+                    ret_value = mod.scan(mm, scan_file_struct, format)
+                    ret   = ret_value['result']     # 바이러스 발견 여부
+                    vname = ret_value['virus_name'] # 바이러스 이름
+        
                     if ret == True : # 악성코드 발견이면 검사 중단
                         break
 
@@ -408,17 +415,27 @@ class EngineInstance :
             fp.close()
 
             if ret == True :
-                self.result['Infected_files'] += 1 # 악성코드 발견 수 증가
+                import kavutil
+                if ret_value['scan_state'] == kavutil.INFECTED :
+                    self.result['Infected_files'] += 1 # 악성코드 발견 수 증가
+                elif ret_value['scan_state'] == kavutil.SUSPECT :
+                    self.result['Suspect_files'] += 1 # 악성코드 발견 수 증가
+                elif ret_value['scan_state'] == kavutil.WARNING :
+                    self.result['Warnings'] += 1 # 악성코드 발견 수 증가
+
                 # 동일한 악성코드 발견 유무 체크
                 if self.identified_virus.count(vname) == 0 :
                     self.identified_virus.append(vname)
                     self.result['Identified_viruses'] += 1
-                return ret, self.modules.index(mod), vname, id
+
+                ret_value['engine_id'] = self.modules.index(mod) # 발견된 엔진 ID
+                return ret_value
         except :
             self.result['IO_errors'] += 1 # 오류 발생 수 증가
             pass
 
-        return False, -1, '', -1
+        ret_value['engine_id'] = -1
+        return ret_value
 
 
     def __get_fileformat__(self, scan_file_struct) :

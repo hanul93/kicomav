@@ -4,6 +4,12 @@
 import struct
 import string
 
+# 악성코드 상태값
+NOT_FOUND = 0 # 악성코드 찾지 못함
+INFECTED  = 1 # 감염
+SUSPECT   = 2 # 의심
+WARNING   = 3 # 경고
+
 class Structure(object):
     """Prepare structure object to extract members from data.
     

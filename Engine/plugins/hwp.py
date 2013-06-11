@@ -3,7 +3,8 @@
 
 import os # 파일 삭제를 위해 import
 import zlib
-import struct, mmap, traceback
+import struct, mmap
+import kavutil
 
 class HWPTag :
     fnTagID = {0x43:'self.HWPTAG_PARA_TEXT'}
@@ -141,9 +142,15 @@ class KavMain :
     # 인자값 : mmhandle         - 파일 mmap 핸들
     #        : scan_file_struct - 파일 구조체
     #        : format           - 미리 분석된 파일 포맷
-    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
+        ret_value = {}
+        ret_value['result']     = False # 바이러스 발견 여부
+        ret_value['virus_name'] = ''    # 바이러스 이름
+        ret_value['scan_state'] = kavutil.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['virus_id']   = -1    # 바이러스 ID
+
         try :
             # HWP Exploit은 주로 BodyText/SectionXX에 존재한다
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
@@ -157,16 +164,24 @@ class KavMain :
             # HWP의 잘못된 태그를 체크한다.
             h = HWPTag()
             ret, tagid = h.Check(data, len(data), 1)
+            if tagid == 0x5A : # Tagid가 0x5A인것은 악성코드 확실
+                scan_state = kavutil.INFECTED # 감염
+            else :
+                scan_state = kavutil.SUSPECT  # 의심
 
             if ret != 0 :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
                 s = 'Exploit.HWP.Generic.%2X' % tagid
-                return True, s, 0
+                ret_value['result']     = True # 바이러스 발견 여부
+                ret_value['virus_name'] = s    # 바이러스 이름
+                ret_value['scan_state'] = scan_state # 0:없음, 1:감염, 2:의심, 3:경고
+                ret_value['virus_id']   = 0    # 바이러스 ID
+                return ret_value
         except :
             pass
 
         # 악성코드를 발견하지 못했음을 리턴한다.
-        return False, '', -1
+        return ret_value
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
