@@ -145,11 +145,11 @@ class KavMain :
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
         try :
-            # HWP Exploit은 주로 /BodyText/SectionXX에 존재한다
+            # HWP Exploit은 주로 BodyText/SectionXX에 존재한다
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
             section_name = scan_file_struct['deep_filename']
 
-            if section_name.find(r'/BodyText/Section') == -1 :
+            if section_name.find(r'BodyText/Section') == -1 :
                 raise SystemError
 
             data = mmhandle[:] # 파일 전체 내용

@@ -402,7 +402,7 @@ class KavMain :
             if self.pps_list[node]['Type'] == 2 : # Stream∏∏ ¿˙¿Â
                 plist = {}
                 plist['Node'] = node
-                plist['Name'] = name
+                plist['Name'] = name[1:]
                 self.full_list.append(plist)
 
         if self.pps_list[node]['Dir'] != 0xFFFFFFFFL :
