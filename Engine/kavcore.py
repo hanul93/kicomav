@@ -2,6 +2,7 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 import zlib
+import zipfile
 import hashlib
 import StringIO
 import marshal
@@ -11,7 +12,6 @@ import os
 import types
 import mmap
 import glob
-import traceback
 
 #---------------------------------------------------------------------
 # Engine 클래스
@@ -39,7 +39,6 @@ class Engine :
             
             ret = True
         except :
-            print traceback.format_exc()
             pass
 
         return ret
@@ -534,7 +533,6 @@ class KMD :
                     else :
                         break
         except :
-            print traceback.format_exc()
             pass
         
         return kmd_list # kmd 순서 리스트 리턴  
@@ -568,7 +566,6 @@ class KMD :
             
             return True, buf4 # kmd 복호화 성공 그리고 복호화된 내용 리턴
         except : # 예외 발생
-            print traceback.format_exc()
             return False, '' # 에러     
     
     def Import(self, plugins, kmd_list) :
@@ -576,6 +573,7 @@ class KMD :
         
         for kmd in kmd_list :
             ret_kmd, buf = self.Decrypt(plugins + os.sep + kmd)
+
             if ret_kmd == True :
                 ret_imp, mod = self.LoadModule(kmd.split('.')[0], buf)
                 if ret_imp == True :

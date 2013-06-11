@@ -13,6 +13,7 @@
 @c:\python27\python.exe kmake.py kicom.lst
 @c:\python27\python.exe kmake.py kavutil.py
 @c:\python27\python.exe kmake.py zip.py
+@c:\python27\python.exe kmake.py ole.py
 @c:\python27\python.exe kmake.py dummy.py
 @c:\python27\python.exe kmake.py eicar.py
 

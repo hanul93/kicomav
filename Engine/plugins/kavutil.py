@@ -1,10 +1,9 @@
-# -*- coding:utf-8 -*-
+﻿# -*- coding:utf-8 -*-
 # Made by Kei Choi(hanul93@naver.com)
 
 import struct
 import string
 
-        
 class Structure(object):
     """Prepare structure object to extract members from data.
     
@@ -227,7 +226,7 @@ class Structure(object):
             self.__warnings.append(
                     'Corrupt header "%s" at file offset %d. Exception' % (
                             self.name, self.__file_offset__ ))
-            print self.__warnings
+            #print self.__warnings
             return 0 # Error
         
         return 1 # Success
