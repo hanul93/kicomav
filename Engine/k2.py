@@ -301,6 +301,7 @@ def convert_display_filename(real_filename) :
 
 
 def display_line(filename, message, filename_color=None, message_color=None) :
+    filename += ' '
     filename = convert_display_filename(filename)
     len_fname = len(filename)
     len_msg   = len(message)
@@ -359,6 +360,8 @@ def scan_callback(ret_value) :
             s = 'Suspect'
         elif ret_value['scan_state'] == kavutil.WARNING :
             s = 'Warning'
+        else :
+            s = 'Unknown'
 
         vname = ret_value['virus_name']
         message = '%s : %s' % (s, vname)

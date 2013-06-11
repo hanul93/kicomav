@@ -282,6 +282,10 @@ class EngineInstance :
                     if cb != None :
                         cb(ret_value)
 
+                # 폴더 등을 처리할 때를 위해 뒤에 붇는 os.sep는 우선 제거
+                if real_name[len(real_name)-1] == os.sep :
+                    real_name = real_name[:len(real_name)-1]
+                
                 # 폴더 안의 파일들을 검사대상 리스트에 추가
                 flist = glob.glob(real_name + os.sep + '*')
                 for rfname in flist :
@@ -394,10 +398,18 @@ class EngineInstance :
 
 
     def __scan_file__(self, scan_file_struct, format) :
-        ret_value = {}
+        ret_value = {
+            'result':False, 'engine_id':-1, 'virus_name':'', 
+            'virus_id':-1, 'scan_state':None, 'scan_info':None
+        }
+
         filename = scan_file_struct['real_filename']
 
         try :
+            fsize = os.path.getsize(filename)
+            if fsize == 0 : # 파일 크기가 0인 경우 검사 제외
+                raise SystemError
+
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
             
@@ -431,6 +443,10 @@ class EngineInstance :
                 ret_value['engine_id'] = self.modules.index(mod) # 발견된 엔진 ID
                 return ret_value
         except :
+            '''
+            import traceback
+            print traceback.format_exc()
+            '''
             self.result['IO_errors'] += 1 # 오류 발생 수 증가
             pass
 
