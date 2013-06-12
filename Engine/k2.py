@@ -115,6 +115,8 @@ def PrintOptions() :
         -f,  --files           scan files *
         -r,  --arc             scan archives
         -I,  --list            display all files
+        -V,  --vlist           display virus list
+             --update          update
         -?,  --help            this help
                                * = default option'''
 
@@ -352,13 +354,13 @@ def scan_callback(ret_value) :
 
     message_color = None
 
-    import kavutil
+    import kernel
     if ret_value['result'] == True :
-        if ret_value['scan_state'] == kavutil.INFECTED :
+        if ret_value['scan_state'] == kernel.INFECTED :
             s = 'infected'
-        elif ret_value['scan_state'] == kavutil.SUSPECT :
+        elif ret_value['scan_state'] == kernel.SUSPECT :
             s = 'Suspect'
-        elif ret_value['scan_state'] == kavutil.WARNING :
+        elif ret_value['scan_state'] == kernel.WARNING :
             s = 'Warning'
         else :
             s = 'Unknown'

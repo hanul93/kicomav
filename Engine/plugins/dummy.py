@@ -2,7 +2,7 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 import os # 파일 삭제를 위해 import
-import kavutil
+import kernel
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -41,7 +41,7 @@ class KavMain :
         ret_value = {}
         ret_value['result']     = False # 바이러스 발견 여부
         ret_value['virus_name'] = ''    # 바이러스 이름
-        ret_value['scan_state'] = kavutil.NOT_FOUND     # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['scan_state'] = kernel.NOT_FOUND     # 0:없음, 1:감염, 2:의심, 3:경고
         ret_value['virus_id']   = -1    # 바이러스 ID
 
         try :
@@ -63,7 +63,7 @@ class KavMain :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
                 ret_value['result']     = True            # 바이러스 발견 여부
                 ret_value['virus_name'] = self.virus_name # 바이러스 이름
-                ret_value['scan_state'] = kavutil.INFECTED# 0:없음, 1:감염, 2:의심, 3:경고
+                ret_value['scan_state'] = kernel.INFECTED# 0:없음, 1:감염, 2:의심, 3:경고
                 ret_value['virus_id']   = 0               # 바이러스 ID
                 return ret_value
         except :

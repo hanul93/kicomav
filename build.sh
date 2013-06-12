@@ -9,6 +9,7 @@ cp Sample/* Release
 cd Release/plugins
 
 python kmake.py kicom.lst
+python kmake.py kernel.py
 python kmake.py kavutil.py
 python kmake.py zip.py
 python kmake.py ole.py

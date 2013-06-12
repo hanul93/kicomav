@@ -4,7 +4,7 @@
 import os # 파일 삭제를 위해 import
 import hashlib # MD5 해시를 위해 import
 import mmap
-import kavutil
+import kernel
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -24,7 +24,7 @@ class KavMain :
         ret_value = {}
         ret_value['result']     = False # 바이러스 발견 여부
         ret_value['virus_name'] = ''    # 바이러스 이름
-        ret_value['scan_state'] = kavutil.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
         ret_value['virus_id']   = -1    # 바이러스 ID
 
         try : # 백신 엔진의 오류를 방지하기 위해 예외 처리를 선언 
@@ -43,7 +43,7 @@ class KavMain :
                     # 맞다면 검사 결과와 이름, ID를 리턴
                     ret_value['result']     = True             # 바이러스 발견 여부
                     ret_value['virus_name'] = 'EICAR-Test-File (not a virus)' # 바이러스 이름
-                    ret_value['scan_state'] = kavutil.INFECTED # 0:없음, 1:감염, 2:의심, 3:경고
+                    ret_value['scan_state'] = kernel.INFECTED # 0:없음, 1:감염, 2:의심, 3:경고
                     ret_value['virus_id']   = 0                # 바이러스 ID
                     return ret_value
         except : # 모든 예외사항을 처리

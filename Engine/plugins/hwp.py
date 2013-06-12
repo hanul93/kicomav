@@ -4,7 +4,7 @@
 import os # 파일 삭제를 위해 import
 import zlib
 import struct, mmap
-import kavutil
+import kernel
 
 class HWPTag :
     fnTagID = {0x43:'self.HWPTAG_PARA_TEXT'}
@@ -148,7 +148,7 @@ class KavMain :
         ret_value = {}
         ret_value['result']     = False # 바이러스 발견 여부
         ret_value['virus_name'] = ''    # 바이러스 이름
-        ret_value['scan_state'] = kavutil.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
         ret_value['virus_id']   = -1    # 바이러스 ID
 
         try :
@@ -165,9 +165,9 @@ class KavMain :
             h = HWPTag()
             ret, tagid = h.Check(data, len(data), 1)
             if tagid == 0x5A : # Tagid가 0x5A인것은 악성코드 확실
-                scan_state = kavutil.INFECTED # 감염
+                scan_state = kernel.INFECTED # 감염
             else :
-                scan_state = kavutil.SUSPECT  # 의심
+                scan_state = kernel.SUSPECT  # 의심
 
             if ret != 0 :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.

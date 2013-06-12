@@ -427,12 +427,12 @@ class EngineInstance :
             fp.close()
 
             if ret == True :
-                import kavutil
-                if ret_value['scan_state'] == kavutil.INFECTED :
+                import kernel
+                if ret_value['scan_state'] == kernel.INFECTED :
                     self.result['Infected_files'] += 1 # 악성코드 발견 수 증가
-                elif ret_value['scan_state'] == kavutil.SUSPECT :
+                elif ret_value['scan_state'] == kernel.SUSPECT :
                     self.result['Suspect_files'] += 1 # 악성코드 발견 수 증가
-                elif ret_value['scan_state'] == kavutil.WARNING :
+                elif ret_value['scan_state'] == kernel.WARNING :
                     self.result['Warnings'] += 1 # 악성코드 발견 수 증가
 
                 # 동일한 악성코드 발견 유무 체크
