@@ -12,7 +12,6 @@ import os
 import string
 import kavcore
 from optparse import OptionParser
-import traceback
 
 KAV_VERSION   = '0.21'
 KAV_BUILDDATE = 'June 11 2013'
@@ -85,6 +84,17 @@ if os.name == 'nt' :
 
     def set_text_attr(color):
         SetConsoleTextAttribute(stdout_handle, color)
+
+    def cprint(msg, color) :
+        if os.name == 'nt' :
+            default_colors = get_text_attr()
+            default_bg = default_colors & 0x0070
+
+            set_text_attr(color | default_bg)
+            sys.stdout.write(msg)
+            set_text_attr(default_colors)
+        else :
+            sys.stdout.write(msg)
 
 #---------------------------------------------------------------------
 # PrintLogo()
@@ -272,23 +282,15 @@ def print_result(result) :
     print
     print
 
-    if os.name == 'nt' :
-        default_colors = get_text_attr()
-        default_bg = default_colors & 0x0070
-        set_text_attr(FOREGROUND_GREY | default_bg | FOREGROUND_INTENSITY)
-
-    print 'Results:'
-    print 'Folders           :%d' % result['Folders']            
-    print 'Files             :%d' % result['Files']              
-    print 'Packed            :%d' % result['Packed']             
-    print 'Infected files    :%d' % result['Infected_files']     
-    print 'Suspect files     :%d' % result['Suspect_files']      
-    print 'Warnings          :%d' % result['Warnings']           
-    print 'Identified viruses:%d' % result['Identified_viruses'] 
-    print 'I/O errors        :%d' % result['IO_errors']          
-
-    if os.name == 'nt' :
-        set_text_attr(default_colors)
+    cprint ('Results:\n', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Folders           :%d\n' % result['Folders'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Files             :%d\n' % result['Files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Packed            :%d\n' % result['Packed'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Infected files    :%d\n' % result['Infected_files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Suspect files     :%d\n' % result['Suspect_files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Warnings          :%d\n' % result['Warnings'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Identified viruses:%d\n' % result['Identified_viruses'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('I/O errors        :%d\n' % result['IO_errors'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     
     print
 
@@ -324,20 +326,8 @@ def display_line(filename, message, filename_color=None, message_color=None) :
         fname = '%s ... %s' % (fname1, fname2)
         msg   = '%s' % message
 
-    if os.name == 'nt' :
-        default_colors = get_text_attr()
-        default_bg = default_colors & 0x0070
-        set_text_attr(FOREGROUND_GREY | default_bg)
-
-    print fname,
-
-    if os.name == 'nt' :
-        set_text_attr(message_color | default_bg)
-
-    print message
-
-    if os.name == 'nt' :
-        set_text_attr(default_colors)
+    cprint (fname + ' ', FOREGROUND_GREY)
+    cprint (message + '\n', message_color)
 
 
 #---------------------------------------------------------------------
@@ -367,12 +357,10 @@ def scan_callback(ret_value) :
 
         vname = ret_value['virus_name']
         message = '%s : %s' % (s, vname)
-        if os.name == 'nt' :
-            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else :
         message = 'ok'
-        if os.name == 'nt' :
-            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
+        message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color = message_color)
 
@@ -385,12 +373,10 @@ def scan_callback1(ret_value) :
     if ret_value['result'] == True :
         vname = ret_value['virus_name']
         message = 'infected : %s' % vname
-        if os.name == 'nt' :
-            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else :
         message = 'ok'
-        if os.name == 'nt' :
-            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
+        message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color = message_color)
 
@@ -453,7 +439,10 @@ def main() :
         
         kav1.uninit()
     except :
-        print traceback.format_exc()
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
+
         if kav1 != None :
             kav1.uninit()
         pass
