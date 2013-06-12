@@ -11,6 +11,8 @@ import sys
 import os
 import string
 import kavcore
+import hashlib
+import urllib
 from optparse import OptionParser
 
 KAV_VERSION   = '0.21'
@@ -107,6 +109,101 @@ def PrintLogo() :
     print logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
     print '------------------------------------------------------------'
     print
+
+#---------------------------------------------------------------------
+# Update()
+# 키콤백신 최신 버전을 업데이트 한다
+#---------------------------------------------------------------------
+def Update() :
+    try :
+        url = 'https://dl.dropboxusercontent.com/u/5806441/k2/'
+
+        # 업데이트해야 할 파일 목록을 구한다.
+        down_list = GetDownloadList(url)
+
+        while len(down_list) != 0 :
+            filename = down_list.pop(0)
+            # 파일 한개씩 업데이트 한다.
+            Download_file(url, filename, hook)
+
+        # 업데이트 완료 메시지 출력
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update complete', FOREGROUND_GREEN)
+        cprint(']\n', FOREGROUND_GREY)
+
+        # 업데이트 설정 파일 삭제
+        os.remove('update.cfg')
+    except :
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
+
+# 업데이트 진행율 표시
+def hook(blocknumber, blocksize, totalsize) :
+    cprint('.', FOREGROUND_GREY)
+
+# 한개의 파일을 다운로드 한다.
+def Download_file(url, file, fnhook=None) :
+    rurl = url
+
+    # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
+    rurl += file.replace('\\', '/')
+    
+    # 저장해야 할 파일의 전체 경로를 구한다
+    pwd = os.path.abspath('') + os.sep + file
+
+    if fnhook != None :
+        cprint(file + ' ', FOREGROUND_GREY)
+    
+    # 파일을 다운로드 한다
+    urllib.urlretrieve(rurl, pwd, fnhook)
+
+    if fnhook != None :
+        cprint(' update\n', FOREGROUND_GREEN)
+
+# 업데이트 해야 할 파일의 목록을 구한다
+def GetDownloadList(url) :
+    down_list = []
+    
+    pwd = os.path.abspath('')
+
+    # 업데이트 설정 파일을 다운로드 한다
+    Download_file(url, 'update.cfg')
+
+    fp = open('update.cfg', 'r')
+
+    while 1 :
+        line = fp.readline().strip()
+        if not line :
+            break
+        t = line.split(' ') # 업데이트 목록 한개를 구한다
+        
+        # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+        if ChekNeedUpdate(pwd + os.sep + t[1], t[0]) == 1:
+            # 다르면 업데이트 목록에 추가
+            down_list.append(t[1])
+        
+    fp.close()
+
+    return down_list
+
+# 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+def ChekNeedUpdate(file, hash) :
+    try :
+        # 로컬 파일의 해시를 구한다
+        fp = open(file, 'rb')
+        data = fp.read()
+        fp.close()
+
+        # 해시를 비교한다
+        s = hashlib.sha1()
+        s.update(data)
+        if s.hexdigest() == hash :
+            return 0 # 업데이트 대상 아님
+    except :
+        pass
+
+    return 1 # 업데이트 대상
 
 #---------------------------------------------------------------------
 # PrintUsage()
@@ -384,6 +481,8 @@ def scan_callback1(ret_value) :
 # MAIN
 #---------------------------------------------------------------------
 def main() :
+    kav1 = None
+
     try :
         # 로고 출력
         PrintLogo()
@@ -397,6 +496,11 @@ def main() :
         if options.opt_help == True :
             PrintUsage()
             PrintOptions()
+            return 0
+
+        # 업데이트?
+        if options.opt_update == True :
+            Update()
             return 0
 
         # 키콤백신 엔진 구동
@@ -446,8 +550,6 @@ def main() :
         if kav1 != None :
             kav1.uninit()
         pass
-
-    
 
 if __name__ == '__main__' :
     main()

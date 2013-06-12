@@ -44,13 +44,17 @@ class Engine :
         return ret
 
     def CreateInstance(self) :
-        ei = EngineInstance()
-        ret = ei.SetModuleList(self.ckmd, self.mod_list)
+        try :
+            sys.modules['kernel'] # kernel.kmd는 무조건 있어야 함
+            ei = EngineInstance()
+            ret = ei.SetModuleList(self.ckmd, self.mod_list)
 
-        if ret == 0 :
-            return ei
-        else :
-            return None
+            if ret == 0 :
+                return ei
+        except :
+            pass
+
+        return None
         
 #---------------------------------------------------------------------
 # EngineInstance 클래스
@@ -603,7 +607,7 @@ class KMD :
     
     def Import(self, plugins, kmd_list) :
         mod_list = []
-        
+
         for kmd in kmd_list :
             ret_kmd, buf = self.Decrypt(plugins + os.sep + kmd)
 
@@ -611,7 +615,7 @@ class KMD :
                 ret_imp, mod = self.LoadModule(kmd.split('.')[0], buf)
                 if ret_imp == True :
                     mod_list.append(mod)
-                    
+
         return mod_list
         
     def LoadModule(self, kmd_name, buf) :
