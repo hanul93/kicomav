@@ -25,6 +25,8 @@ KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 if os.name == 'nt' :
     from ctypes import windll, Structure, c_short, c_ushort, byref
 
+    NOCOLOR = False
+
     SHORT = c_short
     WORD = c_ushort
 
@@ -88,9 +90,9 @@ if os.name == 'nt' :
         SetConsoleTextAttribute(stdout_handle, color)
 
     def cprint(msg, color) :
-        if os.name == 'nt' :
+        if os.name == 'nt' and NOCOLOR == False :
             default_colors = get_text_attr()
-            default_bg = default_colors & 0x0070
+            default_bg = default_colors & 0x00F0
 
             set_text_attr(color | default_bg)
             sys.stdout.write(msg)
@@ -224,6 +226,7 @@ def PrintOptions() :
         -I,  --list            display all files
         -V,  --vlist           display virus list
              --update          update
+             --no-color        not print color
         -?,  --help            this help
                                * = default option'''
 
@@ -318,6 +321,9 @@ def DefineOptions() :
                       action="store_true", dest="opt_del",
                       default=False)
 
+        parser.add_option("", "--no-color",
+                      action="store_true", dest="opt_nocolor",
+                      default=False)
         parser.add_option("", "--noclean",
                       action="store_true", dest="opt_noclean",
                       default=False)
@@ -481,6 +487,8 @@ def scan_callback1(ret_value) :
 # MAIN
 #---------------------------------------------------------------------
 def main() :
+    global NOCOLOR
+
     kav1 = None
 
     try :
@@ -491,6 +499,10 @@ def main() :
         options = ParserOptions()
         if options == None :
             return 0
+
+        # 출력 색깔 없애기
+        if os.name == 'nt' and options.opt_nocolor == True :
+            NOCOLOR = True
 
         # Help 옵션 셋팅?
         if options.opt_help == True :
@@ -543,6 +555,8 @@ def main() :
         
         kav1.uninit()
     except :
+        import traceback
+        print traceback.format_exc()
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
