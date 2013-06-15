@@ -4,6 +4,7 @@
 import os # 파일 삭제를 위해 import
 import hashlib # MD5 해시를 위해 import
 import mmap
+import kernel
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -14,12 +15,18 @@ class KavMain :
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
     # 악성코드를 검사한다.
-    # 인자값 : mmhandle   - 파일 mmap 핸들
-    #        : filename   - 파일 이름
-    #        : format     - 미리 분석된 파일 포맷
-    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID)
+    # 인자값 : mmhandle         - 파일 mmap 핸들
+    #        : scan_file_struct - 파일 구조체
+    #        : format           - 미리 분석된 파일 포맷
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
-    def scan(self, mmhandle, filename, format) :
+    def scan(self, mmhandle, scan_file_struct, format) :
+        ret_value = {}
+        ret_value['result']     = False # 바이러스 발견 여부
+        ret_value['virus_name'] = ''    # 바이러스 이름
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
+        ret_value['virus_id']   = -1    # 바이러스 ID
+
         try : # 백신 엔진의 오류를 방지하기 위해 예외 처리를 선언 
             mm = mmhandle # 파일 mmap 핸들을 mm에 저장
 
@@ -33,11 +40,16 @@ class KavMain :
                 eicar_pattern = '44d88612fea8a8f36de82e1278abb02f'
 
                 if f_md5 == eicar_pattern :  # 패턴이 같은지를 비교
-                    return True, 'EICAR-Test-File (not a virus)', 0 # 맞다면 검사 결과와 이름, ID를 리턴
+                    # 맞다면 검사 결과와 이름, ID를 리턴
+                    ret_value['result']     = True             # 바이러스 발견 여부
+                    ret_value['virus_name'] = 'EICAR-Test-File (not a virus)' # 바이러스 이름
+                    ret_value['scan_state'] = kernel.INFECTED # 0:없음, 1:감염, 2:의심, 3:경고
+                    ret_value['virus_id']   = 0                # 바이러스 ID
+                    return ret_value
         except : # 모든 예외사항을 처리
             pass
         
-        return False, '', -1
+        return ret_value
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
@@ -75,4 +87,5 @@ class KavMain :
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
         info['title'] = 'EICAR Test Engine' # 엔진 설명
+        info['kmd_name'] = 'eicar' # 엔진 파일명
         return info

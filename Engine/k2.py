@@ -11,11 +11,12 @@ import sys
 import os
 import string
 import kavcore
+import hashlib
+import urllib
 from optparse import OptionParser
-import traceback
 
-KAV_VERSION   = '0.21'
-KAV_BUILDDATE = 'June 11 2013'
+KAV_VERSION   = '0.22'
+KAV_BUILDDATE = 'June 16 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 #---------------------------------------------------------------------
@@ -23,6 +24,8 @@ KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 #---------------------------------------------------------------------
 if os.name == 'nt' :
     from ctypes import windll, Structure, c_short, c_ushort, byref
+
+    NOCOLOR = False
 
     SHORT = c_short
     WORD = c_ushort
@@ -86,6 +89,17 @@ if os.name == 'nt' :
     def set_text_attr(color):
         SetConsoleTextAttribute(stdout_handle, color)
 
+    def cprint(msg, color) :
+        if os.name == 'nt' and NOCOLOR == False :
+            default_colors = get_text_attr()
+            default_bg = default_colors & 0x00F0
+
+            set_text_attr(color | default_bg)
+            sys.stdout.write(msg)
+            set_text_attr(default_colors)
+        else :
+            sys.stdout.write(msg)
+
 #---------------------------------------------------------------------
 # PrintLogo()
 # 키콤백신의 로고를 출력한다
@@ -97,6 +111,101 @@ def PrintLogo() :
     print logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
     print '------------------------------------------------------------'
     print
+
+#---------------------------------------------------------------------
+# Update()
+# 키콤백신 최신 버전을 업데이트 한다
+#---------------------------------------------------------------------
+def Update() :
+    try :
+        url = 'https://dl.dropboxusercontent.com/u/5806441/k2/'
+
+        # 업데이트해야 할 파일 목록을 구한다.
+        down_list = GetDownloadList(url)
+
+        while len(down_list) != 0 :
+            filename = down_list.pop(0)
+            # 파일 한개씩 업데이트 한다.
+            Download_file(url, filename, hook)
+
+        # 업데이트 완료 메시지 출력
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update complete', FOREGROUND_GREEN)
+        cprint(']\n', FOREGROUND_GREY)
+
+        # 업데이트 설정 파일 삭제
+        os.remove('update.cfg')
+    except :
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
+
+# 업데이트 진행율 표시
+def hook(blocknumber, blocksize, totalsize) :
+    cprint('.', FOREGROUND_GREY)
+
+# 한개의 파일을 다운로드 한다.
+def Download_file(url, file, fnhook=None) :
+    rurl = url
+
+    # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
+    rurl += file.replace('\\', '/')
+    
+    # 저장해야 할 파일의 전체 경로를 구한다
+    pwd = os.path.abspath('') + os.sep + file
+
+    if fnhook != None :
+        cprint(file + ' ', FOREGROUND_GREY)
+    
+    # 파일을 다운로드 한다
+    urllib.urlretrieve(rurl, pwd, fnhook)
+
+    if fnhook != None :
+        cprint(' update\n', FOREGROUND_GREEN)
+
+# 업데이트 해야 할 파일의 목록을 구한다
+def GetDownloadList(url) :
+    down_list = []
+    
+    pwd = os.path.abspath('')
+
+    # 업데이트 설정 파일을 다운로드 한다
+    Download_file(url, 'update.cfg')
+
+    fp = open('update.cfg', 'r')
+
+    while 1 :
+        line = fp.readline().strip()
+        if not line :
+            break
+        t = line.split(' ') # 업데이트 목록 한개를 구한다
+        
+        # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+        if ChekNeedUpdate(pwd + os.sep + t[1], t[0]) == 1:
+            # 다르면 업데이트 목록에 추가
+            down_list.append(t[1])
+        
+    fp.close()
+
+    return down_list
+
+# 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+def ChekNeedUpdate(file, hash) :
+    try :
+        # 로컬 파일의 해시를 구한다
+        fp = open(file, 'rb')
+        data = fp.read()
+        fp.close()
+
+        # 해시를 비교한다
+        s = hashlib.sha1()
+        s.update(data)
+        if s.hexdigest() == hash :
+            return 0 # 업데이트 대상 아님
+    except :
+        pass
+
+    return 1 # 업데이트 대상
 
 #---------------------------------------------------------------------
 # PrintUsage()
@@ -115,6 +224,9 @@ def PrintOptions() :
         -f,  --files           scan files *
         -r,  --arc             scan archives
         -I,  --list            display all files
+        -V,  --vlist           display virus list
+             --update          update
+             --no-color        not print color
         -?,  --help            this help
                                * = default option'''
 
@@ -209,6 +321,9 @@ def DefineOptions() :
                       action="store_true", dest="opt_del",
                       default=False)
 
+        parser.add_option("", "--no-color",
+                      action="store_true", dest="opt_nocolor",
+                      default=False)
         parser.add_option("", "--noclean",
                       action="store_true", dest="opt_noclean",
                       default=False)
@@ -270,23 +385,15 @@ def print_result(result) :
     print
     print
 
-    if os.name == 'nt' :
-        default_colors = get_text_attr()
-        default_bg = default_colors & 0x0070
-        set_text_attr(FOREGROUND_GREY | default_bg | FOREGROUND_INTENSITY)
-
-    print 'Results:'
-    print 'Folders           :%d' % result['Folders']            
-    print 'Files             :%d' % result['Files']              
-    print 'Packed            :%d' % result['Packed']             
-    print 'Infected files    :%d' % result['Infected_files']     
-    print 'Suspect files     :%d' % result['Suspect_files']      
-    print 'Warnings          :%d' % result['Warnings']           
-    print 'Identified viruses:%d' % result['Identified_viruses'] 
-    print 'I/O errors        :%d' % result['IO_errors']          
-
-    if os.name == 'nt' :
-        set_text_attr(default_colors)
+    cprint ('Results:\n', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Folders           :%d\n' % result['Folders'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Files             :%d\n' % result['Files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Packed            :%d\n' % result['Packed'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Infected files    :%d\n' % result['Infected_files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Suspect files     :%d\n' % result['Suspect_files'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Warnings          :%d\n' % result['Warnings'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('Identified viruses:%d\n' % result['Identified_viruses'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    cprint ('I/O errors        :%d\n' % result['IO_errors'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     
     print
 
@@ -301,6 +408,7 @@ def convert_display_filename(real_filename) :
 
 
 def display_line(filename, message, filename_color=None, message_color=None) :
+    filename += ' '
     filename = convert_display_filename(filename)
     len_fname = len(filename)
     len_msg   = len(message)
@@ -321,21 +429,12 @@ def display_line(filename, message, filename_color=None, message_color=None) :
         fname = '%s ... %s' % (fname1, fname2)
         msg   = '%s' % message
 
-    if os.name == 'nt' :
-        default_colors = get_text_attr()
-        default_bg = default_colors & 0x0070
-        set_text_attr(FOREGROUND_GREY | default_bg)
+    cprint (fname + ' ', FOREGROUND_GREY)
+    cprint (message + '\n', message_color)
 
-    print fname,
-
-    if os.name == 'nt' :
-        set_text_attr(message_color | default_bg)
-
-    print message
-
-    if os.name == 'nt' :
-        set_text_attr(default_colors)
-
+def listvirus_callback(ret_virus, ret_getinfo) :
+    for name in ret_virus :
+        print '%-50s [%s.kmd]' % (name, ret_getinfo['kmd_name'])
 
 #---------------------------------------------------------------------
 # scan 콜백 함수
@@ -351,40 +450,35 @@ def scan_callback(ret_value) :
 
     message_color = None
 
+    import kernel
     if ret_value['result'] == True :
+        if ret_value['scan_state'] == kernel.INFECTED :
+            s = 'infected'
+        elif ret_value['scan_state'] == kernel.SUSPECT :
+            s = 'Suspect'
+        elif ret_value['scan_state'] == kernel.WARNING :
+            s = 'Warning'
+        else :
+            s = 'Unknown'
+
         vname = ret_value['virus_name']
-        message = 'infected : %s' % vname
-        if os.name == 'nt' :
-            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+        message = '%s : %s' % (s, vname)
+        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else :
         message = 'ok'
-        if os.name == 'nt' :
-            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
+        message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color = message_color)
 
-def scan_callback1(ret_value) :
-    real_name = ret_value['real_filename']
-    disp_name = ret_value['display_filename']
-
-    message_color = None
-
-    if ret_value['result'] == True :
-        vname = ret_value['virus_name']
-        message = 'infected : %s' % vname
-        if os.name == 'nt' :
-            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
-    else :
-        message = 'ok'
-        if os.name == 'nt' :
-            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
-
-    display_line(disp_name, message, message_color = message_color)
 
 #---------------------------------------------------------------------
 # MAIN
 #---------------------------------------------------------------------
 def main() :
+    global NOCOLOR
+
+    kav1 = None
+
     try :
         # 로고 출력
         PrintLogo()
@@ -394,10 +488,19 @@ def main() :
         if options == None :
             return 0
 
+        # 출력 색깔 없애기
+        if os.name == 'nt' and options.opt_nocolor == True :
+            NOCOLOR = True
+
         # Help 옵션 셋팅?
         if options.opt_help == True :
             PrintUsage()
             PrintOptions()
+            return 0
+
+        # 업데이트?
+        if options.opt_update == True :
+            Update()
             return 0
 
         # 키콤백신 엔진 구동
@@ -426,26 +529,33 @@ def main() :
             print 'Loaded Engine : %s' % i['title']
         print
 
-        kav1.set_result()
+        
+        if options.opt_vlist == True : # 악성코드 리스트 출력?
+            kav1.listvirus(listvirus_callback)
+        else :                         # 악성코드 검사
+            kav1.set_result()
 
-        # 검사용 Path
-        scan_path = sys.argv[1]
-        scan_path = os.path.abspath(scan_path)
+            # 검사용 Path
+            scan_path = sys.argv[1]
+            scan_path = os.path.abspath(scan_path)
 
-        kav1.scan(scan_path, scan_callback)
+            kav1.scan(scan_path, scan_callback)
 
-        # 결과 출력
-        ret = kav1.get_result()
-        print_result(ret)
+            # 결과 출력
+            ret = kav1.get_result()
+            print_result(ret)
         
         kav1.uninit()
     except :
+        import traceback
         print traceback.format_exc()
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
+
         if kav1 != None :
             kav1.uninit()
         pass
-
-    
 
 if __name__ == '__main__' :
     main()

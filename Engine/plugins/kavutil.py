@@ -1,10 +1,9 @@
-# -*- coding:utf-8 -*-
+﻿# -*- coding:utf-8 -*-
 # Made by Kei Choi(hanul93@naver.com)
 
 import struct
 import string
 
-        
 class Structure(object):
     """Prepare structure object to extract members from data.
     
@@ -227,7 +226,7 @@ class Structure(object):
             self.__warnings.append(
                     'Corrupt header "%s" at file offset %d. Exception' % (
                             self.name, self.__file_offset__ ))
-            print self.__warnings
+            #print self.__warnings
             return 0 # Error
         
         return 1 # Success
@@ -263,4 +262,5 @@ class KavMain :
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
         info['title'] = 'KicomAV Util' # 엔진 설명
+        info['kmd_name'] = 'kavutil' # 엔진 파일명
         return info

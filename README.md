@@ -1,7 +1,7 @@
 <img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
 
 
-# KicomAV v0.21 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+# KicomAV v0.22 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
 
@@ -33,7 +33,7 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -42,6 +42,9 @@ Options:
         -f,  --files           scan files *
         -r,  --arc             scan archives
         -I,  --list            display all files
+        -V,  --vlist           display virus list
+             --update          update
+             --no-color        not print color
         -?,  --help            this help
                                * = default option
 
@@ -53,12 +56,14 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Loaded Engine : KicomAV Util
 Loaded Engine : Zip Engine
+Loaded Engine : OLE Engine
+Loaded Engine : HWP Exploit Engine
 Loaded Engine : Dummy Scan Engine
 Loaded Engine : EICAR Test Engine
 
@@ -84,12 +89,14 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.21 (June 11 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Loaded Engine : KicomAV Util
 Loaded Engine : Zip Engine
+Loaded Engine : OLE Engine
+Loaded Engine : HWP Exploit Engine
 Loaded Engine : Dummy Scan Engine
 Loaded Engine : EICAR Test Engine
 
@@ -139,6 +146,29 @@ I/O errors        :0
 C:\kicomav\Release> _
 ```
 
+**Example 4 :** Display Virus list
+
+```
+C:\kicomav\Release> python k2.py c:\temp -V
+------------------------------------------------------------
+KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
+Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+------------------------------------------------------------
+
+Loaded Engine : KicomAV Util
+Loaded Engine : Zip Engine
+Loaded Engine : OLE Engine
+Loaded Engine : HWP Exploit Engine
+Loaded Engine : Dummy Scan Engine
+Loaded Engine : EICAR Test Engine
+
+Exploit.HWP.Gen.43                                 [hwp.kmd]
+Exploit.HWP.Gen.5A                                 [hwp.kmd]
+Dummy-Test-File (not a virus)                      [dummy.kmd]
+EICAR Test                                         [eicar.kmd]
+
+C:\kicomav\Release> _
+```
 
 ## Author
 

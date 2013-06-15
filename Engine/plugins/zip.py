@@ -34,6 +34,7 @@ class KavMain :
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
         info['title'] = 'Zip Engine' # 엔진 설명
+        info['kmd_name'] = 'zip' # 엔진 파일명
         return info
 
     #-----------------------------------------------------------------
