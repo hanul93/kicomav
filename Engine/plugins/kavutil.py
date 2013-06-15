@@ -262,4 +262,5 @@ class KavMain :
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
         info['title'] = 'KicomAV Util' # 엔진 설명
+        info['kmd_name'] = 'kavutil' # 엔진 파일명
         return info

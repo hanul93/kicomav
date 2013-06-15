@@ -432,6 +432,9 @@ def display_line(filename, message, filename_color=None, message_color=None) :
     cprint (fname + ' ', FOREGROUND_GREY)
     cprint (message + '\n', message_color)
 
+def listvirus_callback(ret_virus, ret_getinfo) :
+    for name in ret_virus :
+        print '%-50s [%s.kmd]' % (name, ret_getinfo['kmd_name'])
 
 #---------------------------------------------------------------------
 # scan 콜백 함수
@@ -467,21 +470,6 @@ def scan_callback(ret_value) :
 
     display_line(disp_name, message, message_color = message_color)
 
-def scan_callback1(ret_value) :
-    real_name = ret_value['real_filename']
-    disp_name = ret_value['display_filename']
-
-    message_color = None
-
-    if ret_value['result'] == True :
-        vname = ret_value['virus_name']
-        message = 'infected : %s' % vname
-        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
-    else :
-        message = 'ok'
-        message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
-
-    display_line(disp_name, message, message_color = message_color)
 
 #---------------------------------------------------------------------
 # MAIN
@@ -541,17 +529,21 @@ def main() :
             print 'Loaded Engine : %s' % i['title']
         print
 
-        kav1.set_result()
+        
+        if options.opt_vlist == True : # 악성코드 리스트 출력?
+            kav1.listvirus(listvirus_callback)
+        else :                         # 악성코드 검사
+            kav1.set_result()
 
-        # 검사용 Path
-        scan_path = sys.argv[1]
-        scan_path = os.path.abspath(scan_path)
+            # 검사용 Path
+            scan_path = sys.argv[1]
+            scan_path = os.path.abspath(scan_path)
 
-        kav1.scan(scan_path, scan_callback)
+            kav1.scan(scan_path, scan_callback)
 
-        # 결과 출력
-        ret = kav1.get_result()
-        print_result(ret)
+            # 결과 출력
+            ret = kav1.get_result()
+            print_result(ret)
         
         kav1.uninit()
     except :

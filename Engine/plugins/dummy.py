@@ -108,6 +108,7 @@ class KavMain :
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
         info['title'] = 'Dummy Scan Engine' # 엔진 설명
+        info['kmd_name'] = 'dummy' # 엔진 파일명
         return info
 
     #-----------------------------------------------------------------

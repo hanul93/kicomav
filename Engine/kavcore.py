@@ -537,7 +537,11 @@ class EngineInstance :
                 # callback 함수가 있다면 
                 # callback 함수 호출
                 if type(cb) is types.FunctionType :
-                    cb(ret_listvirus)
+                    # 해당 kmd의 정보도 함께 제공
+                    ret_getinfo = None
+                    if dir(mod).count('getinfo') != 0 :
+                        ret_getinfo = mod.getinfo() 
+                    cb(ret_listvirus, ret_getinfo)
                 # callback 함수가 없다면 
                 # 악성코드 이름을 리스트에 누적
                 else :
