@@ -15,8 +15,8 @@ import hashlib
 import urllib
 from optparse import OptionParser
 
-KAV_VERSION   = '0.21'
-KAV_BUILDDATE = 'June 11 2013'
+KAV_VERSION   = '0.22'
+KAV_BUILDDATE = 'June 16 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 #---------------------------------------------------------------------

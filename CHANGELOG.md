@@ -1,3 +1,13 @@
+## v0.22 (June 16, 2013)
+* **File Formats :**
+  * OLE
+* **Engine :**
+  * Hangul Word Processor(HWP) Exploirt
+* **Option :**
+  * -V, --vlist : display virus list
+  * --update : update
+  * --no-color : not print color
+
 ## v0.21 (June 11, 2013)
 - Add Command line Option : -r (scan archives)
 - Support for ZIP
