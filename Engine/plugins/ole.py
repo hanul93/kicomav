@@ -70,7 +70,7 @@ class OLE :
                 'L,e_reserved10',
                 'L,e_reserved11',
                 'L,e_reserved12',
-                'L,e_num_of_bbd_blocks',
+                'L,e_num_of_bbd_blocks', # 0x2C
                 'L,e_root_startblock',
                 'L,e_reserved13',
                 'L,e_reserved14',
@@ -291,11 +291,16 @@ class OLE :
         bd_list = []
         bd_list.append(sb);
 
+        # PPS 덤프를 위해 몇 블럭으로 이루어졌는지 계산
+        tmp_size = (size/pps_size) * pps_size
+        if size % pps_size :
+            tmp_size += pps_size
+        
         i = sb
-        while True :
+        for count in range(tmp_size/pps_size) :
             val = GetDword(block_depot, i*4)
-            if val == 0xFFFFFFFEL :
-                break
+            if val == 0xFFFFFFFEL or val == 0 :
+                val = i+1
             bd_list.append(val)
             i = val
 
