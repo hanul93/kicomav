@@ -209,8 +209,8 @@ class KavMain :
     #-----------------------------------------------------------------
     def listvirus(self) : # 진단 가능한 악성코드 목록
         vlist = [] # 리스트형 변수 선언
-        vlist.append('Exploit.HWP.Gen.43') 
-        vlist.append('Exploit.HWP.Gen.5A')
+        vlist.append('Exploit.HWP.Generic.43') 
+        vlist.append('Exploit.HWP.Generic.5A')
         return vlist
 
     #-----------------------------------------------------------------
