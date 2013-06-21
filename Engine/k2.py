@@ -105,18 +105,20 @@ if os.name == 'nt' :
 # 키콤백신의 로고를 출력한다
 #---------------------------------------------------------------------
 def PrintLogo() :
-    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.' 
+    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n' 
 
     print '------------------------------------------------------------'
-    print logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
+    s = logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
+    cprint(s, FOREGROUND_CYAN | FOREGROUND_INTENSITY)
     print '------------------------------------------------------------'
-    print
 
 #---------------------------------------------------------------------
 # Update()
 # 키콤백신 최신 버전을 업데이트 한다
 #---------------------------------------------------------------------
 def Update() :
+    print
+
     try :
         url = 'https://dl.dropboxusercontent.com/u/5806441/k2/'
 
@@ -212,7 +214,7 @@ def ChekNeedUpdate(file, hash) :
 # 키콤백신의 사용법을 출력한다
 #---------------------------------------------------------------------
 def PrintUsage() :
-    print 'Usage: k2.py path[s] [options]'
+    print '\nUsage: k2.py path[s] [options]'
 
 #---------------------------------------------------------------------
 # PrintOptions()
@@ -367,16 +369,11 @@ def ParserOptions() :
     parser = DefineOptions()
 
     if parser == None or len( sys.argv ) < 2 :
-        # parser.print_help()
-        PrintUsage()
-        PrintOptions()
         return None
     else :
         try :
             (options, args) = parser.parse_args()
         except :
-            print
-            PrintOptions()
             return None
 
         return options                
@@ -480,17 +477,22 @@ def main() :
     kav1 = None
 
     try :
+        # 옵션 분석
+        options = ParserOptions()
+
+        # 출력 색깔 없애기
+        if options != None :
+            if os.name == 'nt' and options.opt_nocolor == True :
+                NOCOLOR = True
+
         # 로고 출력
         PrintLogo()
 
-        # 옵션 분석
-        options = ParserOptions()
+        # 잘못된 옵션?
         if options == None :
+            PrintUsage()
+            PrintOptions()
             return 0
-
-        # 출력 색깔 없애기
-        if os.name == 'nt' and options.opt_nocolor == True :
-            NOCOLOR = True
 
         # Help 옵션 셋팅?
         if options.opt_help == True :
@@ -512,6 +514,11 @@ def main() :
         if kav1 == None :
             print 'Error : KICOM Anti-Virus Engine CreateInstance'
             return 0
+
+        # 엔진 버전을 출력
+        c = kav1.getversion()
+        print 'Last updated', c.ctime()
+        print 
 
         # 엔진 초기화
         if kav1.init() == False :
@@ -536,14 +543,18 @@ def main() :
             kav1.set_result()
 
             # 검사용 Path
-            scan_path = sys.argv[1]
-            scan_path = os.path.abspath(scan_path)
+            try :
+                os.stat(sys.argv[1]) # 폴더 혹은 파일인가?
+                scan_path = sys.argv[1]
+                scan_path = os.path.abspath(scan_path)
 
-            kav1.scan(scan_path, scan_callback)
+                kav1.scan(scan_path, scan_callback)
 
-            # 결과 출력
-            ret = kav1.get_result()
-            print_result(ret)
+                # 결과 출력
+                ret = kav1.get_result()
+                print_result(ret)
+            except:
+                print 'Error: Invalid path: \'%s\'' % os.path.abspath(sys.argv[1])
         
         kav1.uninit()
     except :

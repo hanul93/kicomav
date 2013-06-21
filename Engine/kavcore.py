@@ -12,6 +12,9 @@ import os
 import types
 import mmap
 import glob
+import datetime
+import time
+import struct
 
 #---------------------------------------------------------------------
 # Engine 클래스
@@ -65,6 +68,7 @@ class EngineInstance :
         self.KMD_AntiVirus  = []
         self.KMD_Decompress = []
         self.KMD_FileFormat = []
+        self.last_update = None
 
     def SetModuleList(self, ckmd, mod_list) :
         try :
@@ -77,7 +81,12 @@ class EngineInstance :
             # 로딩된 모듈이 하나도 없으면 종료
             if len(self.modules) == 0 : 
                 raise SystemError 
+            
+            self.last_update = ckmd.GetLastUpdate()
         except :
+            import traceback
+            print traceback.format_exc()
+
             return 1
             
         return 0
@@ -447,10 +456,6 @@ class EngineInstance :
                 ret_value['engine_id'] = self.modules.index(mod) # 발견된 엔진 ID
                 return ret_value
         except :
-            '''
-            import traceback
-            print traceback.format_exc()
-            '''
             self.result['IO_errors'] += 1 # 오류 발생 수 증가
             pass
 
@@ -551,11 +556,45 @@ class EngineInstance :
         if argc == 0 :
             return ret
 
+    def getversion(self) :
+        return self.last_update
+
+class CTIME :
+    def GetDate(self, t) :
+        t_y = 0xFE00
+        t_m = 0x01E0
+        t_d = 0x001F
+
+        y = (t & t_y) >> 9
+        y += 1980
+        m = (t & t_m) >> 5
+        d = (t & t_d)  
+
+        # return '%04d-%02d-%02d' % (y, m, d)
+        return (y, m, d)
+
+    def GetTime(self, t) :
+        t_h = 0xF800
+        t_m = 0x07E0
+        t_s = 0x001F
+
+        h = (t & t_h) >> 11
+        m = (t & t_m) >> 5
+        s = (t & t_s) * 2 	
+
+        # return '%02d:%02d:%02d' % (h, m, s)
+        return (h, m, s)
 
 #---------------------------------------------------------------------
 # KMD 클래스
 #---------------------------------------------------------------------
-class KMD :     
+class KMD :  
+    def __init__(self) :
+        self.max_datetime = datetime.datetime(1980, 1, 1, 0, 0, 0, 0)
+
+    def GetLastUpdate(self) :
+        return self.max_datetime
+
     def GetList(self, plugins) :
         kmd_list = []
 
@@ -575,28 +614,32 @@ class KMD :
                         break
         except :
             pass
-        
+
         return kmd_list # kmd 순서 리스트 리턴  
 
     def Decrypt(self, fname) :
+        t = CTIME()
+        header_length = 8
+        hash_length = 0x40
+
         try : # 예외가 발생할 가능성에 대해 처리
             fp = open(fname, 'rb') # kmd 파일 읽기
             buf = fp.read()
             fp.close()
 
-            f_md5hash = buf[len(buf)-32:] # 파일 뒤쪽에서 MD5 해시 값 분리
+            f_hash = buf[len(buf)-hash_length:] # 파일 뒤쪽에서 MD5 해시 값 분리
 
-            md5 = hashlib.md5()
+            hash = hashlib.sha256()
 
-            md5hash = buf[0:len(buf)-32] # 파일 뒤쪽 32Byte를 제외한 나머지 영역
+            val_5hash = buf[0:len(buf)-hash_length] # 파일 뒤쪽 hash_lengthByte를 제외한 나머지 영역
             for i in range(3): # MD5 해시 값을 3번 연속으로 구하기
-                md5.update(md5hash)
-                md5hash = md5.hexdigest()
+                hash.update(val_5hash)
+                val_5hash = hash.hexdigest()
 
-            if f_md5hash != md5hash:
+            if f_hash != val_5hash:
                 return False, '' # 에러
 
-            buf2 = buf[4:len(buf)-32] # KAVM 헤더 제거
+            buf2 = buf[header_length:len(buf)-hash_length] # KAVM 헤더 제거
 
             buf3 =""
             for i in range(len(buf2)):  # buf2 크기만큼...
@@ -605,6 +648,17 @@ class KMD :
 
             buf4 = zlib.decompress(buf3) # 압축 해제
             
+            # 최근 날짜 구하기
+            kmd_date = buf[4:6]
+            kmd_time = buf[6:8]
+
+            d_y, d_m, d_d = t.GetDate(struct.unpack('<H', kmd_date)[0])
+            t_h, t_m, t_s = t.GetTime(struct.unpack('<H', kmd_time)[0])
+            t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+
+            if self.max_datetime < t_datetime :
+                self.max_datetime = t_datetime
+
             return True, buf4 # kmd 복호화 성공 그리고 복호화된 내용 리턴
         except : # 예외 발생
             return False, '' # 에러     
