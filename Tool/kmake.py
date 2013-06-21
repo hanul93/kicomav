@@ -7,6 +7,27 @@ import zlib
 import hashlib
 import os
 import shutil
+import time
+import struct
+
+def GetDateValue(now) :
+    t_y = now.tm_year - 1980
+    t_y = (t_y << 9) & 0xFE00
+    t_m = (now.tm_mon << 5) & 0x01E0
+    t_d = (now.tm_mday) & 0x001F
+
+    return (t_y | t_m | t_d) & 0xFFFF
+
+
+def GetTimeValue(now) :
+    t_h = (now.tm_hour << 11) & 0xF800
+    t_m = (now.tm_min << 5) & 0x07E0
+    t_s = (now.tm_sec / 2) & 0x001F
+
+    return (t_h | t_m | t_s) & 0xFFFF
+
+# [HEADER          ][CODE Image][TAILER  ]
+# [KAVM][DATE][TIME][Image     ][Sha256x3]
 
 # Check arguments
 if len(sys.argv) != 2 :
@@ -32,18 +53,26 @@ for i in range(len(buf2)):
     c = ord(buf2[i]) ^ 0xFF
     buf3 += chr(c)
 
+# Add Date and Time
+now = time.gmtime()
+ret_date = GetDateValue(now)
+ret_time = GetTimeValue(now)
+
+d = struct.pack('<H', ret_date)
+t = struct.pack('<H', ret_time)
+
 # Add MagicID('KAVM')
-buf3 = 'KAVM' + buf3
+buf3 = 'KAVM' + d + t + buf3
 
-md5 = hashlib.md5()
+sha256 = hashlib.sha256()
 
-# MD5 hash value is calculated 3 times
-md5hash = buf3
+# sha256 hash value is calculated 3 times
+sha256hash = buf3
 for i in range(3): 
-    md5.update(md5hash)
-    md5hash = md5.hexdigest()   
+    sha256.update(sha256hash)
+    sha256hash = sha256.hexdigest()   
     
-buf3 += md5hash # Add MD5x3 to tail
+buf3 += sha256hash # Add sha256x3 to tail
 
 # Change the name of the extension to KMD
 ext = fname.find('.')
