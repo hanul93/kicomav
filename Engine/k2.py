@@ -550,19 +550,19 @@ def main() :
         else :                         # 악성코드 검사
             kav1.set_result()
 
-            # 검사용 Path
-            scan_path = args[0] # 옵션을 제외한 첫번째가 검사 대상
-            scan_path = os.path.abspath(scan_path)
+            # 검사용 Path (다중 경로 지원)
+            for scan_path in args : # 옵션을 제외한 첫번째가 검사 대상
+                scan_path = os.path.abspath(scan_path)
 
-            if os.path.exists(scan_path) : # 폴더 혹은 파일가 존재하는가?
-                kav1.scan(scan_path, scan_callback)
+                if os.path.exists(scan_path) : # 폴더 혹은 파일가 존재하는가?
+                    kav1.scan(scan_path, scan_callback)
+                else :
+                    PrintError('Invalid path: \'%s\'' % scan_path)
+                    # print 'Error: Invalid path: \'%s\'' % scan_path
 
-                # 결과 출력
-                ret = kav1.get_result()
-                print_result(ret)
-            else :
-                PrintError('Invalid path: \'%s\'' % scan_path)
-                # print 'Error: Invalid path: \'%s\'' % scan_path
+            # 결과 출력
+            ret = kav1.get_result()
+            print_result(ret)
 
         kav1.uninit()
     except :
