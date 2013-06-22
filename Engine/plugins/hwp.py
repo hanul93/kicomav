@@ -173,7 +173,7 @@ class KavMain :
                     s = 'Exploit.HWP.Generic.%2X' % tagid
             elif section_name.find(r'BodyText/') != -1 : # BodyText 폴더인데.. SectionXXX은 아니라는 의미
                 ret = 1 # 악성코드 발견
-                s = 'Exploit.HWP.Generic.PE'
+                s = 'Exploit.HWP.Generic.EX'
                 scan_state = kernel.SUSPECT
 
             if ret != 0 :
@@ -217,7 +217,7 @@ class KavMain :
         vlist = [] # 리스트형 변수 선언
         vlist.append('Exploit.HWP.Generic.43') 
         vlist.append('Exploit.HWP.Generic.5A')
-        vlist.append('Exploit.HWP.Generic.PE')
+        vlist.append('Exploit.HWP.Generic.EX')
         return vlist
 
     #-----------------------------------------------------------------

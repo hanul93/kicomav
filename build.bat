@@ -13,6 +13,8 @@
 @python.exe kmake.py kicom.lst
 @python.exe kmake.py kernel.py
 @python.exe kmake.py kavutil.py
+@python.exe kmake.py pefile.py
+@python.exe kmake.py emalware.py
 @python.exe kmake.py zip.py
 @python.exe kmake.py ole.py
 @python.exe kmake.py hwp.py

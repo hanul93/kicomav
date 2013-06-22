@@ -523,7 +523,7 @@ def main() :
 
         # 엔진 버전을 출력
         c = kav1.getversion()
-        print 'Last updated', c.ctime()
+        print 'Last updated', c.ctime(), 'UTC'
         print
 
         # 엔진 초기화
