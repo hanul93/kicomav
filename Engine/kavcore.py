@@ -84,7 +84,7 @@ class EngineInstance :
 
             self.last_update = ckmd.GetLastUpdate()
         except :
-            return 1s
+            return 1
 
         return 0
 

@@ -100,12 +100,16 @@ if os.name == 'nt' :
         else :
             sys.stdout.write(msg)
 
+def PrintError(msg) :
+    cprint('Error: ', FOREGROUND_RED | FOREGROUND_INTENSITY)
+    print (msg)
+
 #---------------------------------------------------------------------
 # PrintLogo()
 # 키콤백신의 로고를 출력한다
 #---------------------------------------------------------------------
 def PrintLogo() :
-    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n' 
+    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n'
 
     print '------------------------------------------------------------'
     s = logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
@@ -152,13 +156,13 @@ def Download_file(url, file, fnhook=None) :
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
     rurl += file.replace('\\', '/')
-    
+
     # 저장해야 할 파일의 전체 경로를 구한다
     pwd = os.path.abspath('') + os.sep + file
 
     if fnhook != None :
         cprint(file + ' ', FOREGROUND_GREY)
-    
+
     # 파일을 다운로드 한다
     urllib.urlretrieve(rurl, pwd, fnhook)
 
@@ -168,7 +172,7 @@ def Download_file(url, file, fnhook=None) :
 # 업데이트 해야 할 파일의 목록을 구한다
 def GetDownloadList(url) :
     down_list = []
-    
+
     pwd = os.path.abspath('')
 
     # 업데이트 설정 파일을 다운로드 한다
@@ -181,12 +185,12 @@ def GetDownloadList(url) :
         if not line :
             break
         t = line.split(' ') # 업데이트 목록 한개를 구한다
-        
+
         # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
         if ChekNeedUpdate(pwd + os.sep + t[1], t[0]) == 1:
             # 다르면 업데이트 목록에 추가
             down_list.append(t[1])
-        
+
     fp.close()
 
     return down_list
@@ -238,7 +242,7 @@ def PrintOptions() :
 # DefineOptions()
 # 키콤백신의 옵션을 정의한다
 #---------------------------------------------------------------------
-def DefineOptions() :  
+def DefineOptions() :
     try :
         # fmt = IndentedHelpFormatter(indent_increment=8, max_help_position=40, width=77, short_first=1)
         # usage = "usage: %prog path[s] [options]"
@@ -246,12 +250,12 @@ def DefineOptions() :
 
         usage = "Usage: %prog path[s] [options]"
         parser = OptionParser(add_help_option=False, usage=usage)
-        
+
         parser.add_option("-f", "--files",
                       action="store_true", dest="opt_files",
                       default=True)
         parser.add_option("-b", "--boot",
-                      action="store_true", dest="opt_boot", 
+                      action="store_true", dest="opt_boot",
                       default=False)
         parser.add_option("-r", "--arc",
                       action="store_true", dest="opt_arc",
@@ -282,7 +286,7 @@ def DefineOptions() :
                       default=False)
         parser.add_option("-I", "--list",
                       action="store_true", dest="opt_list",
-                      default=False)              
+                      default=False)
         parser.add_option("-g", "--prog",
                       action="store_true", dest="opt_prog",
                       default=False)
@@ -374,9 +378,9 @@ def ParserOptions() :
         try :
             (options, args) = parser.parse_args()
         except :
-            return None
+            return None, None
 
-        return options                
+        return options, args
 
 def print_result(result) :
     print
@@ -391,7 +395,7 @@ def print_result(result) :
     cprint ('Warnings          :%d\n' % result['Warnings'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     cprint ('Identified viruses:%d\n' % result['Identified_viruses'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     cprint ('I/O errors        :%d\n' % result['IO_errors'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
-    
+
     print
 
 #---------------------------------------------------------------------
@@ -478,7 +482,7 @@ def main() :
 
     try :
         # 옵션 분석
-        options = ParserOptions()
+        options, args = ParserOptions()
 
         # 출력 색깔 없애기
         if options != None :
@@ -512,22 +516,26 @@ def main() :
         # 엔진 인스턴스 생성1
         kav1 = kav.CreateInstance()
         if kav1 == None :
-            print 'Error : KICOM Anti-Virus Engine CreateInstance'
+            print
+            PrintError('KICOM Anti-Virus Engine CreateInstance')
+            # print 'Error : KICOM Anti-Virus Engine CreateInstance'
             return 0
 
         # 엔진 버전을 출력
         c = kav1.getversion()
         print 'Last updated', c.ctime()
-        print 
+        print
 
         # 엔진 초기화
         if kav1.init() == False :
-            print 'Error : KICOM Anti-Virus Engine Init'
+            PrintError('KICOM Anti-Virus Engine Init')
+            # print 'Error : KICOM Anti-Virus Engine Init'
             raise SystemError
 
         # 옵션을 설정한다
         if kav1.set_options(options) == False :
-            print 'Error : KICOM Anti-Virus Engine Options'
+            PrintError('KICOM Anti-Virus Engine Options')
+            # print 'Error : KICOM Anti-Virus Engine Options'
             raise SystemError
 
         # 로딩된 엔진 출력
@@ -536,26 +544,26 @@ def main() :
             print 'Loaded Engine : %s' % i['title']
         print
 
-        
+
         if options.opt_vlist == True : # 악성코드 리스트 출력?
             kav1.listvirus(listvirus_callback)
         else :                         # 악성코드 검사
             kav1.set_result()
 
             # 검사용 Path
-            try :
-                os.stat(sys.argv[1]) # 폴더 혹은 파일인가?
-                scan_path = sys.argv[1]
-                scan_path = os.path.abspath(scan_path)
+            scan_path = args[0] # 옵션을 제외한 첫번째가 검사 대상
+            scan_path = os.path.abspath(scan_path)
 
+            if os.path.exists(scan_path) : # 폴더 혹은 파일가 존재하는가?
                 kav1.scan(scan_path, scan_callback)
 
                 # 결과 출력
                 ret = kav1.get_result()
                 print_result(ret)
-            except:
-                print 'Error: Invalid path: \'%s\'' % os.path.abspath(sys.argv[1])
-        
+            else :
+                PrintError('Invalid path: \'%s\'' % scan_path)
+                # print 'Error: Invalid path: \'%s\'' % scan_path
+
         kav1.uninit()
     except :
         import traceback
