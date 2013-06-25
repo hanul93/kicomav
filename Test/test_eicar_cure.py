@@ -9,7 +9,7 @@ import kavcore
 class Test_Dummy_Cure(unittest.TestCase):
     def test_kav_dummy(self):
         self.kav = kavcore.Engine() # 엔진 클래스
-        self.kav.SetPlugings('plugins') # 플러그인 폴더 설정
+        self.kav.SetPlugins('plugins') # 플러그인 폴더 설정
 
         # 엔진 인스턴스 생성1
         self.kav1 = self.kav.CreateInstance()
