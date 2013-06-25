@@ -13,15 +13,39 @@ import string
 import kavcore
 import hashlib
 import urllib
+import thread
+import time
 from optparse import OptionParser
 
 KAV_VERSION   = '0.22'
 KAV_BUILDDATE = 'June 16 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
+g_EngineInit = 0
+
 #---------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
 #---------------------------------------------------------------------
+FOREGROUND_BLACK     = 0x0000
+FOREGROUND_BLUE      = 0x0001
+FOREGROUND_GREEN     = 0x0002
+FOREGROUND_CYAN      = 0x0003
+FOREGROUND_RED       = 0x0004
+FOREGROUND_MAGENTA   = 0x0005
+FOREGROUND_YELLOW    = 0x0006
+FOREGROUND_GREY      = 0x0007
+FOREGROUND_INTENSITY = 0x0008 # foreground color is intensified.
+
+BACKGROUND_BLACK     = 0x0000
+BACKGROUND_BLUE      = 0x0010
+BACKGROUND_GREEN     = 0x0020
+BACKGROUND_CYAN      = 0x0030
+BACKGROUND_RED       = 0x0040
+BACKGROUND_MAGENTA   = 0x0050
+BACKGROUND_YELLOW    = 0x0060
+BACKGROUND_GREY      = 0x0070
+BACKGROUND_INTENSITY = 0x0080 # background color is intensified.
+
 if os.name == 'nt' :
     from ctypes import windll, Structure, c_short, c_ushort, byref
 
@@ -56,27 +80,6 @@ if os.name == 'nt' :
     STD_OUTPUT_HANDLE = -11
     STD_ERROR_HANDLE = -12
 
-    # wincon.h
-    FOREGROUND_BLACK     = 0x0000
-    FOREGROUND_BLUE      = 0x0001
-    FOREGROUND_GREEN     = 0x0002
-    FOREGROUND_CYAN      = 0x0003
-    FOREGROUND_RED       = 0x0004
-    FOREGROUND_MAGENTA   = 0x0005
-    FOREGROUND_YELLOW    = 0x0006
-    FOREGROUND_GREY      = 0x0007
-    FOREGROUND_INTENSITY = 0x0008 # foreground color is intensified.
-
-    BACKGROUND_BLACK     = 0x0000
-    BACKGROUND_BLUE      = 0x0010
-    BACKGROUND_GREEN     = 0x0020
-    BACKGROUND_CYAN      = 0x0030
-    BACKGROUND_RED       = 0x0040
-    BACKGROUND_MAGENTA   = 0x0050
-    BACKGROUND_YELLOW    = 0x0060
-    BACKGROUND_GREY      = 0x0070
-    BACKGROUND_INTENSITY = 0x0080 # background color is intensified.
-
     stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
     SetConsoleTextAttribute = windll.kernel32.SetConsoleTextAttribute
     GetConsoleScreenBufferInfo = windll.kernel32.GetConsoleScreenBufferInfo
@@ -90,7 +93,7 @@ if os.name == 'nt' :
         SetConsoleTextAttribute(stdout_handle, color)
 
     def cprint(msg, color) :
-        if os.name == 'nt' and NOCOLOR == False :
+        if NOCOLOR == False :
             default_colors = get_text_attr()
             default_bg = default_colors & 0x00F0
 
@@ -99,6 +102,11 @@ if os.name == 'nt' :
             set_text_attr(default_colors)
         else :
             sys.stdout.write(msg)
+        sys.stdout.flush()
+else :
+    def cprint(msg, color) :
+        sys.stdout.write(msg)
+        sys.stdout.flush()
 
 def PrintError(msg) :
     cprint('Error: ', FOREGROUND_RED | FOREGROUND_INTENSITY)
@@ -373,7 +381,7 @@ def ParserOptions() :
     parser = DefineOptions()
 
     if parser == None or len( sys.argv ) < 2 :
-        return None
+        return None, None
     else :
         try :
             (options, args) = parser.parse_args()
@@ -472,11 +480,37 @@ def scan_callback(ret_value) :
     display_line(disp_name, message, message_color = message_color)
 
 
+def Start_Thread() :
+    global g_EngineInit
+    g_EngineInit = 0
+
+def End_Thread() :
+    global g_EngineInit
+
+    g_EngineInit = 1
+    time.sleep(0.1)
+
+def PringLoding(id, msg) :
+    global g_EngineInit
+
+    progress = ['\\', '|', '/', '-']
+
+    i = 0
+    cprint(msg, FOREGROUND_GREY)
+
+    while g_EngineInit == 0 :
+        cprint(progress[i] + '\b', FOREGROUND_GREY)
+        i += 1
+        i %= 4
+        time.sleep(0.1)
+    cprint('\r', FOREGROUND_GREY)
+
 #---------------------------------------------------------------------
 # MAIN
 #---------------------------------------------------------------------
 def main() :
     global NOCOLOR
+    global g_EngineInit
 
     kav1 = None
 
@@ -511,7 +545,7 @@ def main() :
 
         # 키콤백신 엔진 구동
         kav = kavcore.Engine() # 엔진 클래스
-        kav.SetPlugings('plugins') # 플러그인 폴더 설정
+        kav.SetPlugins('plugins') # 플러그인 폴더 설정
 
         # 엔진 인스턴스 생성1
         kav1 = kav.CreateInstance()
@@ -521,16 +555,28 @@ def main() :
             # print 'Error : KICOM Anti-Virus Engine CreateInstance'
             return 0
 
-        # 엔진 버전을 출력
-        c = kav1.getversion()
-        print 'Last updated', c.ctime(), 'UTC'
-        print
+        # 쓰레드 생성
+        Start_Thread()
+        thread.start_new_thread(PringLoding, (0, 'Loading Engine... '))
 
         # 엔진 초기화
         if kav1.init() == False :
+            print
             PrintError('KICOM Anti-Virus Engine Init')
             # print 'Error : KICOM Anti-Virus Engine Init'
             raise SystemError
+
+        End_Thread()
+
+        # 엔진 버전을 출력
+        c = kav1.getversion()
+        msg = '\rLast updated %s UTC\n' % c.ctime()
+        cprint(msg, FOREGROUND_GREY)
+
+        # 로딩된 시그너쳐 개수 출력
+        sig_num = kav1.getsignum()
+        print 'Signature number:', sig_num
+        print
 
         # 옵션을 설정한다
         if kav1.set_options(options) == False :
@@ -538,11 +584,13 @@ def main() :
             # print 'Error : KICOM Anti-Virus Engine Options'
             raise SystemError
 
+        '''
         # 로딩된 엔진 출력
         s = kav1.getinfo()
         for i in s :
             print 'Loaded Engine : %s' % i['title']
         print
+        '''
 
 
         if options.opt_vlist == True : # 악성코드 리스트 출력?
@@ -566,8 +614,10 @@ def main() :
 
         kav1.uninit()
     except :
+        '''
         import traceback
         print traceback.format_exc()
+        '''
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)

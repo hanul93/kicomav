@@ -88,4 +88,9 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'EICAR Test Engine' # 엔진 설명
         info['kmd_name'] = 'eicar' # 엔진 파일명
+
+        # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
+        info['date']    = 0   # 패턴 생성 날짜 
+        info['time']    = 0   # 패턴 생성 시간 
+        info['sig_num'] = 1 # 패턴 수
         return info

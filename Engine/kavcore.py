@@ -23,10 +23,13 @@ class Engine :
     def __init__(self) :
         self.kmd_list = []
         self.mod_list = []
+        self.plugins  = None # 플러그인 폴더 위치
 
     # plugins 폴더에 kmd 모듈을 로딩한다.
-    def SetPlugings(self, plugins) :
+    def SetPlugins(self, plugins) :
         ret = False
+
+        self.plugins = plugins
         self.ckmd = KMD()
 
         try :
@@ -49,7 +52,7 @@ class Engine :
     def CreateInstance(self) :
         try :
             sys.modules['kernel'] # kernel.kmd는 무조건 있어야 함
-            ei = EngineInstance()
+            ei = EngineInstance(self.plugins)
             ret = ei.SetModuleList(self.ckmd, self.mod_list)
 
             if ret == 0 :
@@ -63,12 +66,13 @@ class Engine :
 # EngineInstance 클래스
 #---------------------------------------------------------------------
 class EngineInstance :
-    def __init__(self) :
+    def __init__(self, plugins) :
         self.modules        = []
         self.KMD_AntiVirus  = []
         self.KMD_Decompress = []
         self.KMD_FileFormat = []
-        self.last_update = None
+        self.plugins        = plugins
+        self.last_update    = None
 
     def SetModuleList(self, ckmd, mod_list) :
         try :
@@ -82,7 +86,8 @@ class EngineInstance :
             if len(self.modules) == 0 :
                 raise SystemError
 
-            self.last_update = ckmd.GetLastUpdate()
+            # 엔진 최신 빌드 날짜와 시간을 알아옴
+            self.last_update = ckmd.GetLastUpdate() 
         except :
             return 1
 
@@ -98,7 +103,7 @@ class EngineInstance :
             # 모든 백신 엔진 모듈의 init 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('init') != 0 : # API 존재
-                    ret_init = mod.init() # 호출
+                    ret_init = mod.init(self.plugins) # 호출
                     if ret_init != 0 :
                         raise SystemError
         except :
@@ -501,7 +506,7 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # 키콤백신 엔진이 진단하는 악성코드 이름을 리턴한다.
+    # 키콤백신 엔진의 각 엔진 모듈의 정보를 리턴한다.
     #-----------------------------------------------------------------
     def getinfo(self) :
         ret = []
@@ -554,7 +559,52 @@ class EngineInstance :
             return ret
 
     def getversion(self) :
-        return self.last_update
+        t = CTIME()
+
+        # self.last_update에는 엔진 빌드 날짜와 시간 정보만 존재
+        update_date = self.last_update 
+
+        # 각 백신 엔진 모듈이 가진 패턴의 날짜와 시간 정보를 비교해서
+        # 최신 엔진의 날짜와 시간정보를 출력해야 함
+
+        # 백신 엔진 모듈의 getinfo 멤버 함수 호출
+        for mod in self.modules :
+            if dir(mod).count('getinfo') != 0 : # API 존재
+                ret_getinfo = mod.getinfo()
+
+                try :
+                    pattern_date = ret_getinfo['date']
+                    pattern_time = ret_getinfo['time']
+
+                    d_y, d_m, d_d = t.GetDate(pattern_date)
+                    t_h, t_m, t_s = t.GetTime(pattern_time)
+
+                    t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+
+                    # 최신 날짜를 구함
+
+                    if update_date < t_datetime :
+                        update_date = t_datetime
+                except :
+                    pass
+
+        return update_date
+
+    def getsignum(self) :
+        sig_num = 0
+
+        # 백신 엔진 모듈의 getinfo 멤버 함수 호출
+        for mod in self.modules :
+            if dir(mod).count('getinfo') != 0 : # API 존재
+                ret_getinfo = mod.getinfo()
+
+                try :
+                    pattern_signum = ret_getinfo['sig_num']
+                    sig_num += pattern_signum
+                except :
+                    pass
+
+        return sig_num
 
 class CTIME :
     def GetDate(self, t) :
@@ -709,7 +759,7 @@ def cb(list_vir) :
 
 # 엔진 클래스
 kav = Engine()
-kav.SetPlugings('plugins') # 플러그인 폴더 설정
+kav.SetPlugins('plugins') # 플러그인 폴더 설정
 
 print '----------------------------'
 # 엔진 인스턴스 생성1

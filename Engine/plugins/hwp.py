@@ -123,10 +123,10 @@ class HWPTag :
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
-    # init(self)
+    # init(self, plugins)
     # 백신 엔진 모듈의 초기화 작업을 수행한다.
     #-----------------------------------------------------------------
-    def init(self) : # 백신 모듈 초기화
+    def init(self, plugins) : # 백신 모듈 초기화
         return 0
 
     #-----------------------------------------------------------------
@@ -164,7 +164,7 @@ class KavMain :
                 # HWP의 잘못된 태그를 체크한다.
                 h = HWPTag()
                 ret, tagid = h.Check(data, len(data), 1)
-                if tagid == 0x5A : # Tagid가 0x5A인것은 악성코드 확실
+                if tagid == 0x5A or tagid == 0x42: # Tagid가 0x5A, 0x42인것은 악성코드 확실
                     scan_state = kernel.INFECTED # 감염
                 else :
                     scan_state = kernel.SUSPECT  # 의심
@@ -215,6 +215,7 @@ class KavMain :
     #-----------------------------------------------------------------
     def listvirus(self) : # 진단 가능한 악성코드 목록
         vlist = [] # 리스트형 변수 선언
+        vlist.append('Exploit.HWP.Generic.42') 
         vlist.append('Exploit.HWP.Generic.43') 
         vlist.append('Exploit.HWP.Generic.5A')
         vlist.append('Exploit.HWP.Generic.EX')
@@ -230,5 +231,10 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'HWP Exploit Engine' # 엔진 설명
         info['kmd_name'] = 'hwp' # 엔진 파일명
+
+        # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
+        info['date']    = 0   # 패턴 생성 날짜 
+        info['time']    = 0   # 패턴 생성 시간 
+        info['sig_num'] = 4 # 패턴 수
         return info
 
