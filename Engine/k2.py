@@ -17,8 +17,8 @@ import thread
 import time
 from optparse import OptionParser
 
-KAV_VERSION   = '0.22'
-KAV_BUILDDATE = 'June 16 2013'
+KAV_VERSION   = '0.23'
+KAV_BUILDDATE = 'June 27 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_EngineInit = 0
@@ -574,8 +574,8 @@ def main() :
         cprint(msg, FOREGROUND_GREY)
 
         # 로딩된 시그너쳐 개수 출력
-        sig_num = kav1.getsignum()
-        print 'Signature number:', sig_num
+        msg = 'Signature number: %d' % kav1.getsignum()
+        print msg
         print
 
         # 옵션을 설정한다
