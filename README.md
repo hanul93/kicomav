@@ -1,7 +1,7 @@
 <img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
 
 
-# KicomAV v0.22 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+# KicomAV v0.23 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
 
@@ -33,7 +33,7 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
+KKICOM Anti-Virus II (for WIN32) Ver 0.23 (June 27 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -56,16 +56,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.23 (June 27 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-
-Loaded Engine : KicomAV Util
-Loaded Engine : Zip Engine
-Loaded Engine : OLE Engine
-Loaded Engine : HWP Exploit Engine
-Loaded Engine : Dummy Scan Engine
-Loaded Engine : EICAR Test Engine
+Last updated Wed Jun 26 23:41:32 2013 UTC
+Signature number: 6
 
 Z:\Dropbox\?? ?? ... \org\k2\dummy.txt infected : Dummy-Test-File (not a virus)
 Z:\Dropbox\?? ?? ... \org\k2\eicar.txt infected : EICAR-Test-File (not a virus)
@@ -89,16 +84,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.23 (June 27 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-
-Loaded Engine : KicomAV Util
-Loaded Engine : Zip Engine
-Loaded Engine : OLE Engine
-Loaded Engine : HWP Exploit Engine
-Loaded Engine : Dummy Scan Engine
-Loaded Engine : EICAR Test Engine
+Last updated Wed Jun 26 23:41:32 2013 UTC
+Signature number: 6
 
 c:\temp ok
 c:\temp\1.zip ok
@@ -151,19 +141,16 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.22 (June 16 2013)
+KICOM Anti-Virus II (for WIN32) Ver 0.23 (June 27 2013)
 Copyright (C) 1995-2013 Kei Choi. All rights reserved.
 ------------------------------------------------------------
+Last updated Wed Jun 26 23:41:32 2013 UTC
+Signature number: 6
 
-Loaded Engine : KicomAV Util
-Loaded Engine : Zip Engine
-Loaded Engine : OLE Engine
-Loaded Engine : HWP Exploit Engine
-Loaded Engine : Dummy Scan Engine
-Loaded Engine : EICAR Test Engine
-
-Exploit.HWP.Gen.43                                 [hwp.kmd]
-Exploit.HWP.Gen.5A                                 [hwp.kmd]
+Exploit.HWP.Generic.42                             [hwp.kmd]
+Exploit.HWP.Generic.43                             [hwp.kmd]
+Exploit.HWP.Generic.5A                             [hwp.kmd]
+Exploit.HWP.Generic.EX                             [hwp.kmd]
 Dummy-Test-File (not a virus)                      [dummy.kmd]
 EICAR Test                                         [eicar.kmd]
 

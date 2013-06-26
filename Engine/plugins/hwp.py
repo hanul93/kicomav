@@ -123,10 +123,10 @@ class HWPTag :
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
-    # init(self)
+    # init(self, plugins)
     # 백신 엔진 모듈의 초기화 작업을 수행한다.
     #-----------------------------------------------------------------
-    def init(self) : # 백신 모듈 초기화
+    def init(self, plugins) : # 백신 모듈 초기화
         return 0
 
     #-----------------------------------------------------------------
@@ -145,6 +145,8 @@ class KavMain :
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
+        ret = 0
+        scan_state = kernel.NOT_FOUND
         ret_value = {}
         ret_value['result']     = False # 바이러스 발견 여부
         ret_value['virus_name'] = ''    # 바이러스 이름
@@ -156,27 +158,31 @@ class KavMain :
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
             section_name = scan_file_struct['deep_filename']
 
-            if section_name.find(r'BodyText/Section') == -1 :
-                raise SystemError
+            if section_name.find(r'BodyText/Section') != -1 :
+                data = mmhandle[:] # 파일 전체 내용
 
-            data = mmhandle[:] # 파일 전체 내용
+                # HWP의 잘못된 태그를 체크한다.
+                h = HWPTag()
+                ret, tagid = h.Check(data, len(data), 1)
+                if tagid == 0x5A or tagid == 0x42: # Tagid가 0x5A, 0x42인것은 악성코드 확실
+                    scan_state = kernel.INFECTED # 감염
+                else :
+                    scan_state = kernel.SUSPECT  # 의심
 
-            # HWP의 잘못된 태그를 체크한다.
-            h = HWPTag()
-            ret, tagid = h.Check(data, len(data), 1)
-            if tagid == 0x5A : # Tagid가 0x5A인것은 악성코드 확실
-                scan_state = kernel.INFECTED # 감염
-            else :
-                scan_state = kernel.SUSPECT  # 의심
+                if ret != 0 : # 악성코드 발견
+                    s = 'Exploit.HWP.Generic.%2X' % tagid
+            elif section_name.find(r'BodyText/') != -1 : # BodyText 폴더인데.. SectionXXX은 아니라는 의미
+                ret = 1 # 악성코드 발견
+                s = 'Exploit.HWP.Generic.EX'
+                scan_state = kernel.SUSPECT
 
             if ret != 0 :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                s = 'Exploit.HWP.Generic.%2X' % tagid
                 ret_value['result']     = True # 바이러스 발견 여부
                 ret_value['virus_name'] = s    # 바이러스 이름
                 ret_value['scan_state'] = scan_state # 0:없음, 1:감염, 2:의심, 3:경고
                 ret_value['virus_id']   = 0    # 바이러스 ID
-                return ret_value
+                return ret_value            
         except :
             pass
 
@@ -209,8 +215,10 @@ class KavMain :
     #-----------------------------------------------------------------
     def listvirus(self) : # 진단 가능한 악성코드 목록
         vlist = [] # 리스트형 변수 선언
-        vlist.append('Exploit.HWP.Gen.43') 
-        vlist.append('Exploit.HWP.Gen.5A')
+        vlist.append('Exploit.HWP.Generic.42') 
+        vlist.append('Exploit.HWP.Generic.43') 
+        vlist.append('Exploit.HWP.Generic.5A')
+        vlist.append('Exploit.HWP.Generic.EX')
         return vlist
 
     #-----------------------------------------------------------------
@@ -223,5 +231,10 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'HWP Exploit Engine' # 엔진 설명
         info['kmd_name'] = 'hwp' # 엔진 파일명
+
+        # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
+        info['date']    = 0   # 패턴 생성 날짜 
+        info['time']    = 0   # 패턴 생성 시간 
+        info['sig_num'] = 4 # 패턴 수
         return info
 

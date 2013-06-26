@@ -1,7 +1,9 @@
 kernel.kmd
 kavutil.kmd
-zip.kmd
 ole.kmd
+pefile.kmd
+emalware.kmd
 hwp.kmd
 dummy.kmd
 eicar.kmd
+zip.kmd

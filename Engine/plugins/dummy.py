@@ -11,10 +11,10 @@ import kernel
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
-    # init(self)
+    # init(self, plugins)
     # 백신 엔진 모듈의 초기화 작업을 수행한다.
     #-----------------------------------------------------------------
-    def init(self) : # 백신 모듈 초기화
+    def init(self, plugins) : # 백신 모듈 초기화
         self.virus_name = 'Dummy-Test-File (not a virus)' # 진단하는 악성코드 이름
         # 악성코드 패턴 등록
         self.dummy_pattern = 'Dummy Engine test file - KICOM Anti-Virus Project, 2012, Kei Choi'
@@ -25,8 +25,12 @@ class KavMain :
     # 백신 엔진 모듈의 종료화 작업을 수행한다.
     #-----------------------------------------------------------------
     def uninit(self) : # 백신 모듈 종료화
-        del self.virus_name
-        del self.dummy_pattern
+        try :
+            del self.virus_name
+            del self.dummy_pattern
+        except :
+            pass
+
         return 0
     
     #-----------------------------------------------------------------
@@ -109,6 +113,12 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'Dummy Scan Engine' # 엔진 설명
         info['kmd_name'] = 'dummy' # 엔진 파일명
+
+        # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
+        info['date']    = 0   # 패턴 생성 날짜 
+        info['time']    = 0   # 패턴 생성 시간 
+        info['sig_num'] = 1 # 패턴 수
+
         return info
 
     #-----------------------------------------------------------------

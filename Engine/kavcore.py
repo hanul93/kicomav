@@ -12,6 +12,9 @@ import os
 import types
 import mmap
 import glob
+import datetime
+import time
+import struct
 
 #---------------------------------------------------------------------
 # Engine 클래스
@@ -20,10 +23,13 @@ class Engine :
     def __init__(self) :
         self.kmd_list = []
         self.mod_list = []
-    
+        self.plugins  = None # 플러그인 폴더 위치
+
     # plugins 폴더에 kmd 모듈을 로딩한다.
-    def SetPlugings(self, plugins) :
+    def SetPlugins(self, plugins) :
         ret = False
+
+        self.plugins = plugins
         self.ckmd = KMD()
 
         try :
@@ -31,12 +37,12 @@ class Engine :
                 # kmd 로딩 우선순위 리스트를 가진 kmd 파일에서 리스트 확보
                 self.kmd_list = self.ckmd.GetList(plugins) # kicom.kmd 파일 로딩
                 if len(self.kmd_list) == 0 :      # 결과 값이 없으면 종료
-                    raise SystemError 
+                    raise SystemError
 
             # kmd 로딩 우선순위 리스트 순으로 동적 로딩
             if len(self.mod_list) == 0 :
                 self.mod_list = self.ckmd.Import(plugins, self.kmd_list)
-            
+
             ret = True
         except :
             pass
@@ -46,7 +52,7 @@ class Engine :
     def CreateInstance(self) :
         try :
             sys.modules['kernel'] # kernel.kmd는 무조건 있어야 함
-            ei = EngineInstance()
+            ei = EngineInstance(self.plugins)
             ret = ei.SetModuleList(self.ckmd, self.mod_list)
 
             if ret == 0 :
@@ -55,16 +61,18 @@ class Engine :
             pass
 
         return None
-        
+
 #---------------------------------------------------------------------
 # EngineInstance 클래스
 #---------------------------------------------------------------------
 class EngineInstance :
-    def __init__(self) :
+    def __init__(self, plugins) :
         self.modules        = []
         self.KMD_AntiVirus  = []
         self.KMD_Decompress = []
         self.KMD_FileFormat = []
+        self.plugins        = plugins
+        self.last_update    = None
 
     def SetModuleList(self, ckmd, mod_list) :
         try :
@@ -75,11 +83,14 @@ class EngineInstance :
                     self.modules.append(mod)
 
             # 로딩된 모듈이 하나도 없으면 종료
-            if len(self.modules) == 0 : 
-                raise SystemError 
+            if len(self.modules) == 0 :
+                raise SystemError
+
+            # 엔진 최신 빌드 날짜와 시간을 알아옴
+            self.last_update = ckmd.GetLastUpdate() 
         except :
             return 1
-            
+
         return 0
 
     #-----------------------------------------------------------------
@@ -92,17 +103,17 @@ class EngineInstance :
             # 모든 백신 엔진 모듈의 init 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('init') != 0 : # API 존재
-                    ret_init = mod.init() # 호출
+                    ret_init = mod.init(self.plugins) # 호출
                     if ret_init != 0 :
                         raise SystemError
         except :
             return False
-        
+
         self.options = {}
-        self.set_options() # 옵션 초기화  
-        
+        self.set_options() # 옵션 초기화
+
         self.set_result() # 결과 초기화
-        return True        
+        return True
 
     #-----------------------------------------------------------------
     # uninit(self)
@@ -232,7 +243,7 @@ class EngineInstance :
         del_master_file = ''
         del_temp_list = [] # 검사를 위해 임시로 생성된 파일들
         ret_value = {
-            'result':False, 'engine_id':-1, 'virus_name':'', 
+            'result':False, 'engine_id':-1, 'virus_name':'',
             'virus_id':-1, 'scan_state':None, 'scan_info':None
         }
 
@@ -278,7 +289,7 @@ class EngineInstance :
 
             # 폴더면 내부 파일리스트만 검사 대상 리스트에 등록
             if os.path.isdir(real_name) == True :
-                self.result['Folders'] += 1 # 폴더 수 증가 
+                self.result['Folders'] += 1 # 폴더 수 증가
                 ret_value['result'] = False # 폴더이므로 바이러스 없음
                 ret_value['scan_info']  = scan_file
 
@@ -289,7 +300,7 @@ class EngineInstance :
                 # 폴더 등을 처리할 때를 위해 뒤에 붇는 os.sep는 우선 제거
                 if real_name[len(real_name)-1] == os.sep :
                     real_name = real_name[:len(real_name)-1]
-                
+
                 # 폴더 안의 파일들을 검사대상 리스트에 추가
                 flist = glob.glob(real_name + os.sep + '*')
                 for rfname in flist :
@@ -322,7 +333,7 @@ class EngineInstance :
                 '''
                 print '-' * 79
                 for k in scan_file.keys() :
-                    print '%-16s : %s' % (k, scan_file[k]) 
+                    print '%-16s : %s' % (k, scan_file[k])
                 print '-' * 79
                 '''
 
@@ -403,7 +414,7 @@ class EngineInstance :
 
     def __scan_file__(self, scan_file_struct, format) :
         ret_value = {
-            'result':False, 'engine_id':-1, 'virus_name':'', 
+            'result':False, 'engine_id':-1, 'virus_name':'',
             'virus_id':-1, 'scan_state':None, 'scan_info':None
         }
 
@@ -416,14 +427,14 @@ class EngineInstance :
 
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
-            
+
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('scan') != 0 : # API 존재
                     ret_value = mod.scan(mm, scan_file_struct, format)
                     ret   = ret_value['result']     # 바이러스 발견 여부
                     vname = ret_value['virus_name'] # 바이러스 이름
-        
+
                     if ret == True : # 악성코드 발견이면 검사 중단
                         break
 
@@ -447,10 +458,6 @@ class EngineInstance :
                 ret_value['engine_id'] = self.modules.index(mod) # 발견된 엔진 ID
                 return ret_value
         except :
-            '''
-            import traceback
-            print traceback.format_exc()
-            '''
             self.result['IO_errors'] += 1 # 오류 발생 수 증가
             pass
 
@@ -465,7 +472,7 @@ class EngineInstance :
         try :
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
-            
+
             # 백신 엔진 모듈의 scan 멤버 함수 호출
             for mod in self.modules :
                 if dir(mod).count('format') != 0 : # API 존재
@@ -499,7 +506,7 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # 키콤백신 엔진이 진단하는 악성코드 이름을 리턴한다.
+    # 키콤백신 엔진의 각 엔진 모듈의 정보를 리턴한다.
     #-----------------------------------------------------------------
     def getinfo(self) :
         ret = []
@@ -534,15 +541,15 @@ class EngineInstance :
             if dir(mod).count('listvirus') != 0 : # API 존재
                 ret_listvirus = mod.listvirus()
 
-                # callback 함수가 있다면 
+                # callback 함수가 있다면
                 # callback 함수 호출
                 if type(cb) is types.FunctionType :
                     # 해당 kmd의 정보도 함께 제공
                     ret_getinfo = None
                     if dir(mod).count('getinfo') != 0 :
-                        ret_getinfo = mod.getinfo() 
+                        ret_getinfo = mod.getinfo()
                     cb(ret_listvirus, ret_getinfo)
-                # callback 함수가 없다면 
+                # callback 함수가 없다면
                 # 악성코드 이름을 리스트에 누적
                 else :
                     ret += ret_listvirus
@@ -551,11 +558,90 @@ class EngineInstance :
         if argc == 0 :
             return ret
 
+    def getversion(self) :
+        t = CTIME()
+
+        # self.last_update에는 엔진 빌드 날짜와 시간 정보만 존재
+        update_date = self.last_update 
+
+        # 각 백신 엔진 모듈이 가진 패턴의 날짜와 시간 정보를 비교해서
+        # 최신 엔진의 날짜와 시간정보를 출력해야 함
+
+        # 백신 엔진 모듈의 getinfo 멤버 함수 호출
+        for mod in self.modules :
+            if dir(mod).count('getinfo') != 0 : # API 존재
+                ret_getinfo = mod.getinfo()
+
+                try :
+                    pattern_date = ret_getinfo['date']
+                    pattern_time = ret_getinfo['time']
+
+                    d_y, d_m, d_d = t.GetDate(pattern_date)
+                    t_h, t_m, t_s = t.GetTime(pattern_time)
+
+                    t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+
+                    # 최신 날짜를 구함
+
+                    if update_date < t_datetime :
+                        update_date = t_datetime
+                except :
+                    pass
+
+        return update_date
+
+    def getsignum(self) :
+        sig_num = 0
+
+        # 백신 엔진 모듈의 getinfo 멤버 함수 호출
+        for mod in self.modules :
+            if dir(mod).count('getinfo') != 0 : # API 존재
+                ret_getinfo = mod.getinfo()
+
+                try :
+                    pattern_signum = ret_getinfo['sig_num']
+                    sig_num += pattern_signum
+                except :
+                    pass
+
+        return sig_num
+
+class CTIME :
+    def GetDate(self, t) :
+        t_y = 0xFE00
+        t_m = 0x01E0
+        t_d = 0x001F
+
+        y = (t & t_y) >> 9
+        y += 1980
+        m = (t & t_m) >> 5
+        d = (t & t_d)
+
+        # return '%04d-%02d-%02d' % (y, m, d)
+        return (y, m, d)
+
+    def GetTime(self, t) :
+        t_h = 0xF800
+        t_m = 0x07E0
+        t_s = 0x001F
+
+        h = (t & t_h) >> 11
+        m = (t & t_m) >> 5
+        s = (t & t_s) * 2
+
+        # return '%02d:%02d:%02d' % (h, m, s)
+        return (h, m, s)
 
 #---------------------------------------------------------------------
 # KMD 클래스
 #---------------------------------------------------------------------
-class KMD :     
+class KMD :
+    def __init__(self) :
+        self.max_datetime = datetime.datetime(1980, 1, 1, 0, 0, 0, 0)
+
+    def GetLastUpdate(self) :
+        return self.max_datetime
+
     def GetList(self, plugins) :
         kmd_list = []
 
@@ -575,28 +661,32 @@ class KMD :
                         break
         except :
             pass
-        
-        return kmd_list # kmd 순서 리스트 리턴  
+
+        return kmd_list # kmd 순서 리스트 리턴
 
     def Decrypt(self, fname) :
+        t = CTIME()
+        header_length = 8
+        hash_length = 0x40
+
         try : # 예외가 발생할 가능성에 대해 처리
             fp = open(fname, 'rb') # kmd 파일 읽기
             buf = fp.read()
             fp.close()
 
-            f_md5hash = buf[len(buf)-32:] # 파일 뒤쪽에서 MD5 해시 값 분리
+            f_hash = buf[len(buf)-hash_length:] # 파일 뒤쪽에서 MD5 해시 값 분리
 
-            md5 = hashlib.md5()
+            hash = hashlib.sha256()
 
-            md5hash = buf[0:len(buf)-32] # 파일 뒤쪽 32Byte를 제외한 나머지 영역
+            val_5hash = buf[0:len(buf)-hash_length] # 파일 뒤쪽 hash_lengthByte를 제외한 나머지 영역
             for i in range(3): # MD5 해시 값을 3번 연속으로 구하기
-                md5.update(md5hash)
-                md5hash = md5.hexdigest()
+                hash.update(val_5hash)
+                val_5hash = hash.hexdigest()
 
-            if f_md5hash != md5hash:
+            if f_hash != val_5hash:
                 return False, '' # 에러
 
-            buf2 = buf[4:len(buf)-32] # KAVM 헤더 제거
+            buf2 = buf[header_length:len(buf)-hash_length] # KAVM 헤더 제거
 
             buf3 =""
             for i in range(len(buf2)):  # buf2 크기만큼...
@@ -604,11 +694,22 @@ class KMD :
                 buf3 += chr(c)
 
             buf4 = zlib.decompress(buf3) # 압축 해제
-            
+
+            # 최근 날짜 구하기
+            kmd_date = buf[4:6]
+            kmd_time = buf[6:8]
+
+            d_y, d_m, d_d = t.GetDate(struct.unpack('<H', kmd_date)[0])
+            t_h, t_m, t_s = t.GetTime(struct.unpack('<H', kmd_time)[0])
+            t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+
+            if self.max_datetime < t_datetime :
+                self.max_datetime = t_datetime
+
             return True, buf4 # kmd 복호화 성공 그리고 복호화된 내용 리턴
         except : # 예외 발생
-            return False, '' # 에러     
-    
+            return False, '' # 에러
+
     def Import(self, plugins, kmd_list) :
         mod_list = []
 
@@ -621,7 +722,7 @@ class KMD :
                     mod_list.append(mod)
 
         return mod_list
-        
+
     def LoadModule(self, kmd_name, buf) :
         try :
             code = marshal.loads(buf[8:]) # 버퍼를 컴파일 가능한 직렬화 된 문자열로 변환
@@ -643,11 +744,11 @@ class KMD :
         # 생성된 인스턴스가 없다면 지금 로딩한 모듈은 취소
         if obj == None :
             # 로딩 취소
-            del sys.modules[kmd_name] 
+            del sys.modules[kmd_name]
             del module
 
-        return obj # 생성된 인스턴스 리턴           
-            
+        return obj # 생성된 인스턴스 리턴
+
 #---------------------------------------------------------------------
 # TEST
 #---------------------------------------------------------------------
@@ -657,8 +758,8 @@ def cb(list_vir) :
         print vir
 
 # 엔진 클래스
-kav = Engine() 
-kav.SetPlugings('plugins') # 플러그인 폴더 설정
+kav = Engine()
+kav.SetPlugins('plugins') # 플러그인 폴더 설정
 
 print '----------------------------'
 # 엔진 인스턴스 생성1

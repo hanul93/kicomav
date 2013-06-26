@@ -13,15 +13,39 @@ import string
 import kavcore
 import hashlib
 import urllib
+import thread
+import time
 from optparse import OptionParser
 
-KAV_VERSION   = '0.22'
-KAV_BUILDDATE = 'June 16 2013'
+KAV_VERSION   = '0.23'
+KAV_BUILDDATE = 'June 27 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
+
+g_EngineInit = 0
 
 #---------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
 #---------------------------------------------------------------------
+FOREGROUND_BLACK     = 0x0000
+FOREGROUND_BLUE      = 0x0001
+FOREGROUND_GREEN     = 0x0002
+FOREGROUND_CYAN      = 0x0003
+FOREGROUND_RED       = 0x0004
+FOREGROUND_MAGENTA   = 0x0005
+FOREGROUND_YELLOW    = 0x0006
+FOREGROUND_GREY      = 0x0007
+FOREGROUND_INTENSITY = 0x0008 # foreground color is intensified.
+
+BACKGROUND_BLACK     = 0x0000
+BACKGROUND_BLUE      = 0x0010
+BACKGROUND_GREEN     = 0x0020
+BACKGROUND_CYAN      = 0x0030
+BACKGROUND_RED       = 0x0040
+BACKGROUND_MAGENTA   = 0x0050
+BACKGROUND_YELLOW    = 0x0060
+BACKGROUND_GREY      = 0x0070
+BACKGROUND_INTENSITY = 0x0080 # background color is intensified.
+
 if os.name == 'nt' :
     from ctypes import windll, Structure, c_short, c_ushort, byref
 
@@ -56,27 +80,6 @@ if os.name == 'nt' :
     STD_OUTPUT_HANDLE = -11
     STD_ERROR_HANDLE = -12
 
-    # wincon.h
-    FOREGROUND_BLACK     = 0x0000
-    FOREGROUND_BLUE      = 0x0001
-    FOREGROUND_GREEN     = 0x0002
-    FOREGROUND_CYAN      = 0x0003
-    FOREGROUND_RED       = 0x0004
-    FOREGROUND_MAGENTA   = 0x0005
-    FOREGROUND_YELLOW    = 0x0006
-    FOREGROUND_GREY      = 0x0007
-    FOREGROUND_INTENSITY = 0x0008 # foreground color is intensified.
-
-    BACKGROUND_BLACK     = 0x0000
-    BACKGROUND_BLUE      = 0x0010
-    BACKGROUND_GREEN     = 0x0020
-    BACKGROUND_CYAN      = 0x0030
-    BACKGROUND_RED       = 0x0040
-    BACKGROUND_MAGENTA   = 0x0050
-    BACKGROUND_YELLOW    = 0x0060
-    BACKGROUND_GREY      = 0x0070
-    BACKGROUND_INTENSITY = 0x0080 # background color is intensified.
-
     stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
     SetConsoleTextAttribute = windll.kernel32.SetConsoleTextAttribute
     GetConsoleScreenBufferInfo = windll.kernel32.GetConsoleScreenBufferInfo
@@ -90,7 +93,7 @@ if os.name == 'nt' :
         SetConsoleTextAttribute(stdout_handle, color)
 
     def cprint(msg, color) :
-        if os.name == 'nt' and NOCOLOR == False :
+        if NOCOLOR == False :
             default_colors = get_text_attr()
             default_bg = default_colors & 0x00F0
 
@@ -99,24 +102,35 @@ if os.name == 'nt' :
             set_text_attr(default_colors)
         else :
             sys.stdout.write(msg)
+        sys.stdout.flush()
+else :
+    def cprint(msg, color) :
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+def PrintError(msg) :
+    cprint('Error: ', FOREGROUND_RED | FOREGROUND_INTENSITY)
+    print (msg)
 
 #---------------------------------------------------------------------
 # PrintLogo()
 # 키콤백신의 로고를 출력한다
 #---------------------------------------------------------------------
 def PrintLogo() :
-    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.' 
+    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n'
 
     print '------------------------------------------------------------'
-    print logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
+    s = logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
+    cprint(s, FOREGROUND_CYAN | FOREGROUND_INTENSITY)
     print '------------------------------------------------------------'
-    print
 
 #---------------------------------------------------------------------
 # Update()
 # 키콤백신 최신 버전을 업데이트 한다
 #---------------------------------------------------------------------
 def Update() :
+    print
+
     try :
         url = 'https://dl.dropboxusercontent.com/u/5806441/k2/'
 
@@ -150,13 +164,13 @@ def Download_file(url, file, fnhook=None) :
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
     rurl += file.replace('\\', '/')
-    
+
     # 저장해야 할 파일의 전체 경로를 구한다
     pwd = os.path.abspath('') + os.sep + file
 
     if fnhook != None :
         cprint(file + ' ', FOREGROUND_GREY)
-    
+
     # 파일을 다운로드 한다
     urllib.urlretrieve(rurl, pwd, fnhook)
 
@@ -166,7 +180,7 @@ def Download_file(url, file, fnhook=None) :
 # 업데이트 해야 할 파일의 목록을 구한다
 def GetDownloadList(url) :
     down_list = []
-    
+
     pwd = os.path.abspath('')
 
     # 업데이트 설정 파일을 다운로드 한다
@@ -179,12 +193,12 @@ def GetDownloadList(url) :
         if not line :
             break
         t = line.split(' ') # 업데이트 목록 한개를 구한다
-        
+
         # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
         if ChekNeedUpdate(pwd + os.sep + t[1], t[0]) == 1:
             # 다르면 업데이트 목록에 추가
             down_list.append(t[1])
-        
+
     fp.close()
 
     return down_list
@@ -212,7 +226,7 @@ def ChekNeedUpdate(file, hash) :
 # 키콤백신의 사용법을 출력한다
 #---------------------------------------------------------------------
 def PrintUsage() :
-    print 'Usage: k2.py path[s] [options]'
+    print '\nUsage: k2.py path[s] [options]'
 
 #---------------------------------------------------------------------
 # PrintOptions()
@@ -236,7 +250,7 @@ def PrintOptions() :
 # DefineOptions()
 # 키콤백신의 옵션을 정의한다
 #---------------------------------------------------------------------
-def DefineOptions() :  
+def DefineOptions() :
     try :
         # fmt = IndentedHelpFormatter(indent_increment=8, max_help_position=40, width=77, short_first=1)
         # usage = "usage: %prog path[s] [options]"
@@ -244,12 +258,12 @@ def DefineOptions() :
 
         usage = "Usage: %prog path[s] [options]"
         parser = OptionParser(add_help_option=False, usage=usage)
-        
+
         parser.add_option("-f", "--files",
                       action="store_true", dest="opt_files",
                       default=True)
         parser.add_option("-b", "--boot",
-                      action="store_true", dest="opt_boot", 
+                      action="store_true", dest="opt_boot",
                       default=False)
         parser.add_option("-r", "--arc",
                       action="store_true", dest="opt_arc",
@@ -280,7 +294,7 @@ def DefineOptions() :
                       default=False)
         parser.add_option("-I", "--list",
                       action="store_true", dest="opt_list",
-                      default=False)              
+                      default=False)
         parser.add_option("-g", "--prog",
                       action="store_true", dest="opt_prog",
                       default=False)
@@ -367,19 +381,14 @@ def ParserOptions() :
     parser = DefineOptions()
 
     if parser == None or len( sys.argv ) < 2 :
-        # parser.print_help()
-        PrintUsage()
-        PrintOptions()
-        return None
+        return None, None
     else :
         try :
             (options, args) = parser.parse_args()
         except :
-            print
-            PrintOptions()
-            return None
+            return None, None
 
-        return options                
+        return options, args
 
 def print_result(result) :
     print
@@ -394,7 +403,7 @@ def print_result(result) :
     cprint ('Warnings          :%d\n' % result['Warnings'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     cprint ('Identified viruses:%d\n' % result['Identified_viruses'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
     cprint ('I/O errors        :%d\n' % result['IO_errors'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
-    
+
     print
 
 #---------------------------------------------------------------------
@@ -471,26 +480,57 @@ def scan_callback(ret_value) :
     display_line(disp_name, message, message_color = message_color)
 
 
+def Start_Thread() :
+    global g_EngineInit
+    g_EngineInit = 0
+
+def End_Thread() :
+    global g_EngineInit
+
+    g_EngineInit = 1
+    time.sleep(0.1)
+
+def PringLoding(id, msg) :
+    global g_EngineInit
+
+    progress = ['\\', '|', '/', '-']
+
+    i = 0
+    cprint(msg, FOREGROUND_GREY)
+
+    while g_EngineInit == 0 :
+        cprint(progress[i] + '\b', FOREGROUND_GREY)
+        i += 1
+        i %= 4
+        time.sleep(0.1)
+    cprint('\r', FOREGROUND_GREY)
+
 #---------------------------------------------------------------------
 # MAIN
 #---------------------------------------------------------------------
 def main() :
     global NOCOLOR
+    global g_EngineInit
 
     kav1 = None
 
     try :
+        # 옵션 분석
+        options, args = ParserOptions()
+
+        # 출력 색깔 없애기
+        if options != None :
+            if os.name == 'nt' and options.opt_nocolor == True :
+                NOCOLOR = True
+
         # 로고 출력
         PrintLogo()
 
-        # 옵션 분석
-        options = ParserOptions()
+        # 잘못된 옵션?
         if options == None :
+            PrintUsage()
+            PrintOptions()
             return 0
-
-        # 출력 색깔 없애기
-        if os.name == 'nt' and options.opt_nocolor == True :
-            NOCOLOR = True
 
         # Help 옵션 셋팅?
         if options.opt_help == True :
@@ -505,50 +545,79 @@ def main() :
 
         # 키콤백신 엔진 구동
         kav = kavcore.Engine() # 엔진 클래스
-        kav.SetPlugings('plugins') # 플러그인 폴더 설정
+        kav.SetPlugins('plugins') # 플러그인 폴더 설정
 
         # 엔진 인스턴스 생성1
         kav1 = kav.CreateInstance()
         if kav1 == None :
-            print 'Error : KICOM Anti-Virus Engine CreateInstance'
+            print
+            PrintError('KICOM Anti-Virus Engine CreateInstance')
+            # print 'Error : KICOM Anti-Virus Engine CreateInstance'
             return 0
+
+        # 쓰레드 생성
+        Start_Thread()
+        thread.start_new_thread(PringLoding, (0, 'Loading Engine... '))
 
         # 엔진 초기화
         if kav1.init() == False :
-            print 'Error : KICOM Anti-Virus Engine Init'
+            print
+            PrintError('KICOM Anti-Virus Engine Init')
+            # print 'Error : KICOM Anti-Virus Engine Init'
             raise SystemError
+
+        End_Thread()
+
+        # 엔진 버전을 출력
+        c = kav1.getversion()
+        msg = '\rLast updated %s UTC\n' % c.ctime()
+        cprint(msg, FOREGROUND_GREY)
+
+        # 로딩된 시그너쳐 개수 출력
+        msg = 'Signature number: %d' % kav1.getsignum()
+        print msg
+        print
 
         # 옵션을 설정한다
         if kav1.set_options(options) == False :
-            print 'Error : KICOM Anti-Virus Engine Options'
+            PrintError('KICOM Anti-Virus Engine Options')
+            # print 'Error : KICOM Anti-Virus Engine Options'
             raise SystemError
 
+        '''
         # 로딩된 엔진 출력
         s = kav1.getinfo()
         for i in s :
             print 'Loaded Engine : %s' % i['title']
         print
+        '''
 
-        
+
         if options.opt_vlist == True : # 악성코드 리스트 출력?
             kav1.listvirus(listvirus_callback)
         else :                         # 악성코드 검사
             kav1.set_result()
 
-            # 검사용 Path
-            scan_path = sys.argv[1]
-            scan_path = os.path.abspath(scan_path)
+            # 검사용 Path (다중 경로 지원)
+            for scan_path in args : # 옵션을 제외한 첫번째가 검사 대상
+                scan_path = os.path.abspath(scan_path)
 
-            kav1.scan(scan_path, scan_callback)
+                if os.path.exists(scan_path) : # 폴더 혹은 파일가 존재하는가?
+                    kav1.scan(scan_path, scan_callback)
+                else :
+                    PrintError('Invalid path: \'%s\'' % scan_path)
+                    # print 'Error: Invalid path: \'%s\'' % scan_path
 
             # 결과 출력
             ret = kav1.get_result()
             print_result(ret)
-        
+
         kav1.uninit()
     except :
+        '''
         import traceback
         print traceback.format_exc()
+        '''
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)

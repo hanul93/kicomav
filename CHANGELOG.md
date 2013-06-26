@@ -1,8 +1,20 @@
+## v0.23 (June 27, 2013)
+* **File Formats :**
+  * PE
+* **Engine :**
+  * MD5 Scan for PE 
+* **Tool :**
+  * Display **Signature number & Last update** Information
+  * Support Multi scan paths
+  * Signature Tool (**sigtool**) ver 0.1
+* **BugFix :**
+  * OLE PPS Dump
+  
 ## v0.22 (June 16, 2013)
 * **File Formats :**
   * OLE
 * **Engine :**
-  * Hangul Word Processor(HWP) Exploirt
+  * Hangul Word Processor(HWP) Exploit
 * **Option :**
   * -V, --vlist : display virus list
   * --update : update
