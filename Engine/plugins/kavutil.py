@@ -3,6 +3,62 @@
 
 import struct
 import string
+import hashlib
+import zlib
+import marshal
+
+class VDB :
+    def __init__(self) :
+        self.SigNum = 0
+        self.Date   = 0
+        self.Time   = 0
+
+    def GetSigNum(self) :
+        return self.SigNum
+
+    def GetDate(self) :
+        return self.Date
+
+    def GetTime(self) :
+        return self.Time
+
+    def Load(self, fname) :
+        data = None
+
+        try :
+            fp = open(fname, 'rb')
+            buf = fp.read()
+            fp.close()
+
+            # 파일에 기록된 Sha256 해시값 추출
+            f_sha256 = buf[len(buf)-0x40:]
+            
+            # 실제 해시 값 계산
+            sha256 = hashlib.sha256()
+
+            sha256hash = buf[:len(buf)-0x40]
+
+            for i in range(3): 
+                sha256.update(sha256hash)
+                sha256hash = sha256.hexdigest()   
+                
+            if sha256hash != f_sha256 : # 해시가 다름
+                raise SystemError
+            
+            # 주요 값 추출
+            self.Date   = struct.unpack('<H', buf[4:6])[0]
+            self.Time   = struct.unpack('<H', buf[6:8])[0]
+            self.SigNum = struct.unpack('<L', buf[8:12])[0]
+
+            # 압축 해제
+            cimg = zlib.decompress(buf[12:len(buf)-0x40])
+            data = marshal.loads(cimg)
+        except :
+            import traceback
+            print traceback.format_exc()
+            pass
+
+        return data
 
 class Structure(object):
     """Prepare structure object to extract members from data.
