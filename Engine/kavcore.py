@@ -190,6 +190,7 @@ class EngineInstance :
             self.options['opt_alev']    = False
             self.options['opt_flev']    = False
             self.options['opt_update']  = False
+            self.options['opt_sigtool'] = False
             # self.options['opt_help']  = False
         else :
             self.options['opt_files']   = options.opt_files
@@ -225,6 +226,7 @@ class EngineInstance :
             self.options['opt_alev']    = options.opt_alev
             self.options['opt_flev']    = options.opt_flev
             self.options['opt_update']  = options.opt_update
+            self.options['opt_sigtool'] = options.opt_sigtool
             # self.options['opt_help']  = # options.opt_help
         return True
 
@@ -269,6 +271,7 @@ class EngineInstance :
         file_info['real_filename'] = filename # 검사 대상 파일
         file_info['deep_filename'] = ''  # 압축 파일의 내부를 표현하기 위한 파일명
         file_info['display_filename'] = filename # 출력용
+        file_info['signature'] = self.options['opt_sigtool'] # 시그너쳐 생성을 요청 여부
         file_scan_list.append(file_info)
 
         # 검사 대상 리스트에 파일이 있으면...
@@ -313,7 +316,7 @@ class EngineInstance :
                     tmp_info['real_filename'] = rfname # 검사 대상 파일
                     tmp_info['deep_filename'] = ''  # 압축 파일의 내부를 표현하기 위한 파일명
                     tmp_info['display_filename'] = rfname # 출력용
-
+                    tmp_info['signature'] = self.options['opt_sigtool'] # 시그너쳐 생성을 요청 여부
                     file_scan_list.append(tmp_info)
 
             else : # 파일이면 검사
@@ -322,6 +325,7 @@ class EngineInstance :
                 # 압축된 파일이면 해제하기
                 ret = self.__unarc_file__(scan_file)
                 if ret != None :
+                    ret['signature'] = self.options['opt_sigtool']
                     if ret['is_arc'] == True : # 압축이 풀렸을때에만 삭제 대상 등록
                         del_master_file = ret['display_filename']
                         del_temp_list.append(ret['real_filename'])
@@ -360,7 +364,6 @@ class EngineInstance :
                 # 그 파일을 압축해제해서 내부를 볼 필요는 없다.
                 if ret_value['result'] == False : # 따라서 바이러스가 아닌경우만 검사
                     # 4. 압축 파일이면 검사대상 리스트에 추가
-                    # if self.options['opt_arc'] == True : # 압축 검사해야 하나?
                     try :
                         scan_file['real_filename'] = scan_file['temp_filename']
                     except :
@@ -398,6 +401,7 @@ class EngineInstance :
                             file_scan_list = mod.arclist(scan_file_struct, format)
 
                 if len(file_scan_list) != 0 : # 압축이 풀렸으면 종료
+                    self.result['Packed'] += 1
                     break
 
         return file_scan_list

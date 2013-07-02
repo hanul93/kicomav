@@ -13,6 +13,8 @@ import glob
 X95M = 1
 X97M = 2
 
+SIGTOOL = False
+
 def IsPrint(char) :
     c = ord(char)
     if c > 0x20 and c < 0x80 :
@@ -113,6 +115,8 @@ def ExtractMacroData_X97M(data) :
 
 
 def GetMD5_X95M(data) :
+    global SIGTOOL
+
     ret = None
 
     try :
@@ -125,7 +129,8 @@ def GetMD5_X95M(data) :
                 max += 1
             else :
                 if max > 3 :
-                    # print data[i-max:i] # 패턴 생성시 참조 (sigtool)
+                    if SIGTOOL == True :
+                        print data[i-max:i] # 패턴 생성시 참조 (sigtool)
                     buf += data[i-max:i]
                 max = 0
 
@@ -133,7 +138,8 @@ def GetMD5_X95M(data) :
         md5.update(buf)
         fmd5 = md5.hexdigest().decode('hex')
 
-        print '%s:%s:%s:' % (len(buf), md5.hexdigest(), len(data)) # 패턴 추출 (sigtool)
+        if SIGTOOL == True :
+            print '[macro] %s:%s:%s:' % (len(buf), md5.hexdigest(), len(data)) # 패턴 추출 (sigtool)
         ret = (len(buf), fmd5, len(data))
     except :
         import traceback
@@ -229,6 +235,8 @@ class KavMain :
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
+        global SIGTOOL
+
         ret = None
         scan_state = kernel.NOT_FOUND
         ret_value = {}
@@ -240,6 +248,9 @@ class KavMain :
         try :
             section_name = scan_file_struct['deep_filename']
             data = mmhandle[:] # 파일 전체 내용
+
+            if scan_file_struct['signature'] == True : # 시그너처 생성
+                SIGTOOL = True
 
             # _VBA_PROJECT/xxxx 에 존재하는 스트림은 엑셀95 매크로가 존재한다.
             if section_name.find(r'_VBA_PROJECT/') != -1 :
@@ -264,6 +275,8 @@ class KavMain :
                 ret_value['virus_id']   = 0    # 바이러스 ID
                 return ret_value            
         except :
+            import traceback
+            print traceback.format_exc()
             pass
 
         # 악성코드를 발견하지 못했음을 리턴한다.
