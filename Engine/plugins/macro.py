@@ -9,6 +9,9 @@ import kernel
 import kavutil
 import glob
 
+# 매크로 타입
+X95M = 1
+X97M = 2
 
 def IsPrint(char) :
     c = ord(char)
@@ -62,6 +65,53 @@ def ExtractMacroData_X95M(data) :
 
     return mac_data
 
+def ExtractMacroData_X97M(data) :
+    mac_data = None
+    data_size = len(data)
+
+    try :
+        if data_size < 0x200 : raise SystemError
+        if ord(data[0]) != 0x01 : raise SystemError # 매크로 아님
+
+        if ord(data[9]) == 0x01 and ord(data[10]) == 0x01 :
+            # 엑셀 97
+            pass
+        else :
+            # 엑셀 2000 이상
+            mac_pos = struct.unpack('<L', data[25:25+4])[0]
+            mac_pos = (mac_pos - 1) + 0x3D
+
+        if data_size < mac_pos : raise SystemError
+
+
+        if ord(data[mac_pos]) != 0xFE or ord(data[mac_pos+1]) != 0xCA :
+            raise SystemError
+
+        mac_lines = struct.unpack('<H', data[mac_pos+4:mac_pos+6])[0]
+        if mac_lines == 0 : raise SystemError 
+
+        mac_pos = mac_pos + 6L + (mac_lines * 12L);
+        if data_size < mac_pos : raise SystemError
+
+        Len = struct.unpack('<L', data[mac_pos+6:mac_pos+10])[0]
+        Off = mac_pos + 10
+
+        '''
+        print 'Macro off :', hex(Off)
+        print 'Macro len :', Len
+
+        fp = open('x97m.dmp', 'wb')
+        fp.write(data[Off:Off+Len])
+        fp.close()
+        '''
+
+        mac_data = data[Off:Off+Len]
+    except :
+        pass
+
+    return mac_data
+
+
 def GetMD5_X95M(data) :
     ret = None
 
@@ -83,7 +133,7 @@ def GetMD5_X95M(data) :
         md5.update(buf)
         fmd5 = md5.hexdigest().decode('hex')
 
-        # print '%s:%s:%s:' % (len(buf), md5.hexdigest(), len(data)) # 패턴 추출 (sigtool)
+        print '%s:%s:%s:' % (len(buf), md5.hexdigest(), len(data)) # 패턴 추출 (sigtool)
         ret = (len(buf), fmd5, len(data))
     except :
         import traceback
@@ -108,24 +158,42 @@ class KavMain :
         try :
             self.plugins = plugins
             self.x95m_ptn   = []
-            self.x95m_iptn       = {}
+            self.x95m_iptn  = {}
+            self.x97m_ptn   = []
+            self.x97m_iptn  = {}
             self.__signum__ = 0
             self.__date__   = 0
             self.__time__   = 0
+            self.max_date   = 0
 
-            max_date = 0
+            if self.__LoadDB__(X95M) == 1 : raise SystemError
+            if self.__LoadDB__(X97M) == 1 : raise SystemError
+
+            return 0
+        except :
+            pass
+
+            return 1
+
+    def __LoadDB__(self, target_macro) : # 백신 모듈 초기화
+        try :
             vdb = kavutil.VDB()
 
-            flist = glob.glob(plugins + os.sep +'x95m.c*')
+            if target_macro   == X95M : ptn_name = 'x95m'
+            elif target_macro == X97M : ptn_name = 'x97m'
+
+            flist = glob.glob(self.plugins + os.sep + ptn_name + '.c*')
             for i in range(len(flist)) :
                 fname = flist[i]
                 
                 # 패턴 로딩
-                self.x95m_ptn.append(vdb.Load(fname))
+                ptn_data = vdb.Load(fname)
+                if ptn_data == None : # 패턴 로딩 실패
+                    return 1
 
-                if self.x95m_ptn[i] == None :
-                    return 1 # 패턴 로딩 실패
-
+                if target_macro   == X95M : self.x95m_ptn.append(ptn_data)
+                elif target_macro == X97M : self.x97m_ptn.append(ptn_data)
+            
                 self.__signum__ += vdb.GetSigNum()
 
                 # 최신 날짜 구하기
@@ -133,10 +201,10 @@ class KavMain :
                 t_t = vdb.GetTime()
 
                 t_date = (t_d << 16) + t_t
-                if max_date < t_date :
+                if self.max_date < t_date :
                     self.__date__ = t_d
                     self.__time__ = t_t
-                    max_date = t_date
+                    self.max_date = t_date
 
             return 0
         except :
@@ -171,11 +239,14 @@ class KavMain :
 
         try :
             section_name = scan_file_struct['deep_filename']
+            data = mmhandle[:] # 파일 전체 내용
 
             # _VBA_PROJECT/xxxx 에 존재하는 스트림은 엑셀95 매크로가 존재한다.
             if section_name.find(r'_VBA_PROJECT/') != -1 :
-                data = mmhandle[:] # 파일 전체 내용
                 ret = self.__ScanVirus_X95M__(data)
+            # _VBA_PROJECT_CUR/xxxx 에 존재하는 스트림은 엑셀97 매크로가 존재한다.
+            elif section_name.find(r'_VBA_PROJECT_CUR/') != -1 :
+                ret = self.__ScanVirus_X97M__(data)
 
             if ret != None :
                 scan_state, s, i_num, i_list = ret
@@ -206,7 +277,31 @@ class KavMain :
             if mac_data == None : raise SystemError
 
             hash_data = GetMD5_X95M(mac_data)
+            ret = self.__ScanVirus_XM_ExpendDB__(hash_data, X95M)
+        except :
+            pass
 
+        return ret
+
+
+    def __ScanVirus_X97M__(self, data) :
+        ret = None
+
+        try :
+            mac_data = ExtractMacroData_X97M(data)
+            if mac_data == None : raise SystemError
+
+            hash_data = GetMD5_X95M(mac_data)
+            ret = self.__ScanVirus_XM_ExpendDB__(hash_data, X97M)
+        except :
+            pass
+
+        return ret
+
+    def __ScanVirus_XM_ExpendDB__(self, hash_data, target_macro) :
+        ret = None
+
+        try :
             fsize    = hash_data[0] # md5를 생성한 버퍼의 크기
             fmd5     = hash_data[1] # md5
             mac_size = hash_data[2] # 실제 매크로 크기
@@ -214,8 +309,11 @@ class KavMain :
             # 패턴 비교
             i_num = -1
 
-            for i in range(len(self.x95m_ptn)) :
-                vpattern = self.x95m_ptn[i]
+            if   target_macro == X95M : xm_ptn = self.x95m_ptn
+            elif target_macro == X97M : xm_ptn = self.x97m_ptn
+
+            for i in range(len(xm_ptn)) :
+                vpattern = xm_ptn[i]
 
                 try :
                     t = vpattern[fsize] # 패턴 중에 파일 크기로 된 MD5가 존재하나?
@@ -231,14 +329,20 @@ class KavMain :
 
                 if i_num != -1 : # MD5 6자리와 일치하는 것을 발견 되었다면
                     try :
-                        e_vlist = self.x95m_iptn[i_num]
+                        if target_macro == X95M :
+                            e_vlist = self.x95m_iptn[i_num]
+                        elif target_macro == X97M :
+                            e_vlist = self.x97m_iptn[i_num]
                     except :
-                        fname = '%s%sx95m.i%02d' % (self.plugins, os.sep, i_num)
+                        if target_macro == X95M :   ptn_name = 'x95m'
+                        elif target_macro == X97M : ptn_name = 'x97m'
+                        fname = '%s%s%s.i%02d' % (self.plugins, os.sep,ptn_name,  i_num)
                         vdb = kavutil.VDB() # 패턴 로딩
                         e_vlist = vdb.Load(fname)
 
                     if e_vlist != None :
-                        self.x95m_iptn[i_num] = e_vlist
+                        if target_macro == X95M   : self.x95m_iptn[i_num] = e_vlist
+                        elif target_macro == X97M : self.x97m_iptn[i_num] = e_vlist
 
                         p_md5_10 = e_vlist[i_list][0] # MD5 10자리
                         p_mac_size = int(e_vlist[i_list][1]) # 매크로 크기 
@@ -253,7 +357,6 @@ class KavMain :
             pass
 
         return ret
-
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
     # 악성코드를 치료한다.
