@@ -2,110 +2,14 @@
 # Made by Kei Choi(hanul93@gmail.com)
 
 import sys
-import os
-import hashlib
 import marshal
-import shutil
 import zlib
+import shutil
 import time
 import struct
-from optparse import OptionParser
+import hashlib
 
-SIGDB_FILENAME = 'sigtool.mdb'
-
-#---------------------------------------------------------------------
-# PrintLogo()
-# 키콤백신의 로고를 출력한다
-#---------------------------------------------------------------------
-def PrintLogo() :
-    logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n'
-
-    print '------------------------------------------------------------'
-    print 'KICOM Anti-Virus II : Signature Tool (sigtool) ver 0.1      '
-    print 'Copyright (C) 1995-2013 Kei Choi. All rights reserved.        '
-    print '------------------------------------------------------------'
-
-#---------------------------------------------------------------------
-# PrintUsage()
-# sigtool의 사용법을 보여준다.
-#---------------------------------------------------------------------
-def PrintUsage() :
-    print '\nUsage: sigtool.py [options]'
-
-#---------------------------------------------------------------------
-# PrintOptions()
-# sigtool의 옵션을 출력한다
-#---------------------------------------------------------------------
-def PrintOptions() :
-    options_string = \
-'''Options:
-        --md5 [FILE]                generate MD5 sigs for FILES
-        --pack [DB FILE Prefix]     pack a MDB file (default ID : 1)
-        --id [NUM]                  pattern ID (with --pack option)
-        -?,  --help                 this help'''
-
-    print options_string
-
-#---------------------------------------------------------------------
-# DefineOptions()
-# sigtool의 옵션을 정의한다
-#---------------------------------------------------------------------
-def DefineOptions() :
-    try :
-        usage = "Usage: %prog [options]"
-        parser = OptionParser(add_help_option=False, usage=usage)
-
-        parser.add_option("", "--md5",
-                      action="store", type="string", dest="md5_fname")
-        parser.add_option("", "--pack",
-                      action="store", type="string", dest="pack_fname")
-        parser.add_option("", "--id",
-                      action="store", type="int", dest="id_num", default = 1)
-
-        return parser
-    except :
-        pass
-
-    return None
-
-#---------------------------------------------------------------------
-# ParserOptions()
-# sigtool의 옵션을 분석한다
-#---------------------------------------------------------------------
-def ParserOptions() :
-    parser = DefineOptions()
-
-    if parser == None or len( sys.argv ) < 2 :
-        return None, None
-    else :
-        try :
-            (options, args) = parser.parse_args()
-        except :
-            return None, None
-
-        return options, args
-
-def Func_MD5(filename) :
-    try :
-        fp = open(filename, 'rb')
-        data = fp.read()
-        fp.close()
-
-        md5 = hashlib.md5()
-        md5.update(data)
-        f_md5 = md5.hexdigest()
-
-        fp = open(SIGDB_FILENAME, 'a+t')
-        fname = os.path.basename(filename) # 파일 이름만 추출
-        msg = '%d:%s:%s\n' % (len(data), f_md5, fname)
-        print msg
-        fp.write(msg)
-        fp.close()
-    except :
-        import traceback
-        print traceback.format_exc()
-        pass
-
+SIGDB_FILENAME = 'x95m.mdb'
 
 def GetDateValue(now) :
     t_y = now.tm_year - 1980
@@ -123,79 +27,6 @@ def GetTimeValue(now) :
 
     return (t_h | t_m | t_s) & 0xFFFF
 
-# [HEADER                   ][CODE Image][TAILER  ]
-# [KAVM][DATE][TIME][Sig Num][Image     ][Sha256x3]
-
-def Func_Pack(filename, id) :
-    global line_num
-
-    try :
-        Paser_SigMDB(filename, id)
-
-        fname = '%s.c%02d' % (filename, id)
-        SigDB2PatBin(fname, line_num)
-
-        fname = '%s.i%02d' % (filename, id)
-        SigDB2PatBin(fname, 0)
-    except :
-        import traceback
-        print traceback.format_exc()
-        pass
-
-def Paser_SigMDB(file, num) :
-    fp = open(SIGDB_FILENAME)
-
-    while 1: 
-        lines = fp.readlines(100000) #메모리가 허용하는 적당한 양 
-        if not lines: 
-            break 
-        for line in lines: 
-            convert(line, num)
-
-    fp.close()
-
-    fname = '%s.c%02d' % (file, num)
-    output = open(fname, 'wb')
-    #s = pickle.dumps(db_size_pattern, -1)
-    s = marshal.dumps(db_size_pattern)
-    output.write(s)
-    output.close()
-
-    fname = '%s.i%02d' % (file, num)
-    output = open(fname, 'wb')
-    # s = pickle.dumps(db_vname, -1)
-    s = marshal.dumps(db_vname)
-    output.write(s)
-    output.close()
-
-db_size_pattern = {}
-db_vname = []
-line_num = 0
-
-def convert(line, num) :
-    global db_size_pattern
-    global db_vname
-    global line_num
-
-    line    = line.strip()
-    pattern = line.split(':')
-
-    fsize   = int(pattern[0])
-    md5     = pattern[1].decode('hex')
-    virname = pattern[2]
-
-    try :
-        id_pattern = db_size_pattern[fsize]
-    except :
-        id_pattern = {}
-
-    id_pattern[md5[0:6]] = [num, line_num] # 파일번호, 바이러스명 ID
-
-    db_size_pattern[fsize] = id_pattern
-    line_num += 1
-
-    t = [md5[6:], virname]
-    db_vname.append(t)
 
 def SigDB2PatBin(fname, sig_num) :
     shutil.copy (fname, fname+'.bak') # bak 파일로 복사
@@ -240,36 +71,90 @@ def SigDB2PatBin(fname, sig_num) :
 
     print 'Success : %s' % (fname)  
 
-#---------------------------------------------------------------------
-# MAIN
-#---------------------------------------------------------------------
-def main() :
+
+def Func_Pack(filename, id) :
+    global line_num
+
     try :
-        # 옵션 분석
-        options, args = ParserOptions()
+        Paser_SigMDB(filename, id)
 
-        PrintLogo()
+        fname = '%s.c%02d' % (filename, id)
+        SigDB2PatBin(fname, line_num)
 
-        # 잘못된 옵션?
-        if options == None :
-            PrintUsage()
-            PrintOptions()
-            return 0
-
-        print 
-
-        # MD5 출력 옵션
-        if options.md5_fname != None : Func_MD5(options.md5_fname)
-        elif options.pack_fname != None : Func_Pack(options.pack_fname, options.id_num)
-        else :
-            PrintUsage()
-            PrintOptions()
-            return 0
-
+        fname = '%s.i%02d' % (filename, id)
+        SigDB2PatBin(fname, 0)
     except :
+        import traceback
+        print traceback.format_exc()
         pass
-    
-    return 1
+
+def Paser_SigMDB(file, num) :
+    global SIGDB_FILENAME
+    fp = open(SIGDB_FILENAME)
+
+    while 1: 
+        lines = fp.readlines(100000) #메모리가 허용하는 적당한 양 
+        if not lines: 
+            break 
+        for line in lines: 
+            convert(line, num)
+
+    fp.close()
+
+    fname = '%s.c%02d' % (file, num)
+    output = open(fname, 'wb')
+    #s = pickle.dumps(db_size_pattern, -1)
+    s = marshal.dumps(db_size_pattern)
+    output.write(s)
+    output.close()
+
+    fname = '%s.i%02d' % (file, num)
+    output = open(fname, 'wb')
+    # s = pickle.dumps(db_vname, -1)
+    s = marshal.dumps(db_vname)
+    output.write(s)
+    output.close()
+
+db_size_pattern = {}
+db_vname = []
+line_num = 0
+
+def convert(line, num) :
+    global db_size_pattern
+    global db_vname
+    global line_num
+
+    line    = line.strip()
+    pattern = line.split(':')
+
+    fsize   = int(pattern[0])
+    md5     = pattern[1].decode('hex')
+    #macro_data_size = pattern[2]
+    #virname = pattern[3]
+
+    try :
+        id_pattern = db_size_pattern[fsize]
+    except :
+        id_pattern = {}
+
+    id_pattern[md5[0:6]] = [num, line_num] # 파일번호, 바이러스명 ID
+
+    db_size_pattern[fsize] = id_pattern
+    line_num += 1
+
+    # t = [md5[6:], macro_data_size, virname]
+    t = []
+    t.append(md5[6:])
+    for i in range(len(pattern)-2) :
+        t.append(pattern[i+2])
+    db_vname.append(t)
+
+
+def main() :
+    global SIGDB_FILENAME
+
+    SIGDB_FILENAME = sys.argv[1]
+    Func_Pack(sys.argv[2], int(sys.argv[3]))
 
 if __name__ == '__main__' :
     main()
