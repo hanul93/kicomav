@@ -24,6 +24,71 @@ def IsPrint(char) :
     else :
         return False
 
+def ExtractMacroData_W95M(data) :
+    mac_data = None
+    data_size = len(data)
+
+    try :
+        if data_size < 0x200 : raise SystemError
+        
+        version = struct.unpack('<H', data[2:2+2])[0]
+        if version > 0xc0 : raise SystemError
+
+        exist_macro = struct.unpack('<L', data[0x11C:0x11C+4])[0]
+        if exist_macro <= 2 : raise SystemError
+
+        mac_pos = struct.unpack('<L', data[0x118:0x118+4])[0]
+        if ord(data[mac_pos]) != 0xFF : raise SystemError
+
+        while ord(data[mac_pos + 1]) != 0x01 : # chHplmcd
+            ch = ord(data[mac_pos + 1])
+
+            val = struct.unpack('<H', data[mac_pos+2:mac_pos+4])[0]
+            if   ch == 0x02 : mac_pos += val * 0x4 # chHplacd
+            elif ch == 0x03 : mac_pos += val * 0xE # chHplkme
+            elif ch == 0x04 : mac_pos += val * 0xE # chHplkmeBad
+            elif ch == 0x05 : mac_pos += val * 0xC # chHplmud
+            elif ch == 0x12 : mac_pos += 2         # chUnnamedToolbar
+            elif ch == 0x40 : raise SystemError    # chTcgEnd
+            else            : raise SystemError
+
+            mac_pos += 3
+
+        mac_num = struct.unpack('<H', data[mac_pos+2:mac_pos+4])[0]
+        mac_pos += 4
+
+        # print mac_num # 매크로 개수
+
+        mac_info = 0 # 매크로 주요 정보 개수
+
+        all_code = []
+
+        for i in range(mac_num) :
+            if ord(data[mac_pos + (mac_info * 0x18)]) == 0x55 :
+                pos = mac_pos + (mac_info * 0x18)
+                w95m_key   = ord(data[pos + 1])
+                w95m_len   = struct.unpack('<L', data[pos+0x0C:pos+0x0C+4])[0]
+                w95m_pos   = struct.unpack('<L', data[pos+0x14:pos+0x14+4])[0]
+
+                # print hex(w95m_key), hex(w95m_len), hex(w95m_pos)
+
+                if w95m_key != 0 :
+                    w95m_code = ''
+                    for j in range(w95m_len) :
+                        ch = ord(data[w95m_pos + j]) ^ w95m_key
+                        w95m_code += chr(ch)
+                else :
+                    w95m_code = data[w95m_pos:w95m_pos + w95m_len]
+
+                all_code.append(w95m_code)
+                mac_info += 1
+
+        mac_data = all_code
+    except :
+        pass
+
+    return mac_data
+
 def ExtractMacroData_X95M(data) :
     mac_data = None
     data_size = len(data)
@@ -172,6 +237,8 @@ class KavMain :
             self.x95m_iptn  = {}
             self.x97m_ptn   = []
             self.x97m_iptn  = {}
+            self.w95m_ptn   = []
+            self.w95m_iptn  = {}
             self.w97m_ptn   = []
             self.w97m_iptn  = {}
             self.__signum__ = 0
@@ -181,6 +248,7 @@ class KavMain :
 
             if self.__LoadDB__(X95M) == 1 : raise SystemError
             if self.__LoadDB__(X97M) == 1 : raise SystemError
+            if self.__LoadDB__(W95M) == 1 : raise SystemError
             if self.__LoadDB__(W97M) == 1 : raise SystemError
 
             return 0
@@ -195,6 +263,7 @@ class KavMain :
 
             if target_macro   == X95M : ptn_name = 'x95m'
             elif target_macro == X97M : ptn_name = 'x97m'
+            elif target_macro == W95M : ptn_name = 'w95m'
             elif target_macro == W97M : ptn_name = 'w97m'
 
             flist = glob.glob(self.plugins + os.sep + ptn_name + '.c*')
@@ -208,6 +277,7 @@ class KavMain :
 
                 if target_macro   == X95M : self.x95m_ptn.append(ptn_data)
                 elif target_macro == X97M : self.x97m_ptn.append(ptn_data)
+                elif target_macro == W95M : self.w95m_ptn.append(ptn_data)
                 elif target_macro == W97M : self.w97m_ptn.append(ptn_data)
 
                 self.__signum__ += vdb.GetSigNum()
@@ -270,6 +340,10 @@ class KavMain :
             elif section_name.find(r'_VBA_PROJECT_CUR/') != -1 :
                 ret = self.__ScanVirus_Macro97__(data, X97M)
                 target = 'MSExcel'
+            # WordDocument 스트림에 워드95 매크로가 존재한다.
+            elif section_name.find('WordDocument') != -1 :
+                ret = self.__ScanVirus_W95M__(data)
+                target = 'MSWord'
             # Macros/xxxx 에 존재하는 스트림은 워드97 매크로가 존재한다.
             elif section_name.find('Macros/') != -1 :
                 ret = self.__ScanVirus_Macro97__(data, W97M)
@@ -297,6 +371,22 @@ class KavMain :
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return ret_value
+
+    def __ScanVirus_W95M__(self, data) :
+        ret = None
+
+        try :
+            mac_data = ExtractMacroData_W95M(data)
+            if mac_data == None : raise SystemError
+
+            for data in mac_data :
+                hash_data = GetMD5_Macro(data, W95M)
+                ret = self.__ScanVirus_Macro_ExpendDB__(hash_data, W95M)
+                if ret != None : return ret
+        except :
+            pass
+
+        return ret
 
     def __ScanVirus_X95M__(self, data) :
         ret = None
@@ -341,6 +431,7 @@ class KavMain :
 
             if   target_macro == X95M : macro_ptn = self.x95m_ptn
             elif target_macro == X97M : macro_ptn = self.x97m_ptn
+            elif target_macro == W95M : macro_ptn = self.w95m_ptn
             elif target_macro == W97M : macro_ptn = self.w97m_ptn
 
             for i in range(len(macro_ptn)) :
@@ -364,11 +455,14 @@ class KavMain :
                             e_vlist = self.x95m_iptn[i_num]
                         elif target_macro == X97M :
                             e_vlist = self.x97m_iptn[i_num]
+                        elif target_macro == W95M :
+                            e_vlist = self.w95m_iptn[i_num]
                         elif target_macro == W97M :
                             e_vlist = self.w97m_iptn[i_num]
                     except :
                         if   target_macro == X95M : ptn_name = 'x95m'
                         elif target_macro == X97M : ptn_name = 'x97m'
+                        elif target_macro == W95M : ptn_name = 'w95m'
                         elif target_macro == W97M : ptn_name = 'w97m'
 
                         fname = '%s%s%s.i%02d' % (self.plugins, os.sep,ptn_name,  i_num)
@@ -378,6 +472,7 @@ class KavMain :
                     if e_vlist != None :
                         if   target_macro == X95M : self.x95m_iptn[i_num] = e_vlist
                         elif target_macro == X97M : self.x97m_iptn[i_num] = e_vlist
+                        elif target_macro == W95M : self.w95m_iptn[i_num] = e_vlist
                         elif target_macro == W97M : self.w97m_iptn[i_num] = e_vlist
 
                         p_md5_10 = e_vlist[i_list][0] # MD5 10자리
