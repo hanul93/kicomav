@@ -479,8 +479,6 @@ class KavMain :
 
             return scan_file_struct
         except :
-            import traceback
-            print traceback.format_exc()
             pass
 
         return None

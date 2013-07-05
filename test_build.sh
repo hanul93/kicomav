@@ -15,6 +15,7 @@ python kmake.py pefile.py
 python kmake.py emalware.py
 python kmake.py zip.py
 python kmake.py egg.py
+python kmake.py alz.py
 python kmake.py ole.py
 python kmake.py macro.py
 python kmake.py hwp.py
