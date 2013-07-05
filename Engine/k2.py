@@ -619,6 +619,8 @@ def main() :
 
         kav1.uninit()
     except :
+        import traceback
+        print traceback.format_exc()
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)

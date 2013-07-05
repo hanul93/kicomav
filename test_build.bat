@@ -17,6 +17,7 @@
 @python.exe kmake.py pefile.py
 @python.exe kmake.py emalware.py
 @python.exe kmake.py zip.py
+@python.exe kmake.py egg.py
 @python.exe kmake.py ole.py
 @python.exe kmake.py macro.py
 @python.exe kmake.py hwp.py
