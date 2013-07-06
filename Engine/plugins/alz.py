@@ -1,7 +1,30 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
 
-# 2013.07.05 First Coding (Kei Choi)
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 1 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
 
 import struct
 import mmap
@@ -383,8 +406,8 @@ class KavMain :
     #-----------------------------------------------------------------
     def getinfo(self) :
         info = {} # 사전형 변수 선언
-        info['author'] = 'Kei Choi' # 제작자
-        info['version'] = '1.0'     # 버전
+        info['author'] = __author__ # 제작자
+        info['version'] = __version__     # 버전
         info['title'] = 'Alz Engine' # 엔진 설명
         info['kmd_name'] = 'alz' # 엔진 파일명
         info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
