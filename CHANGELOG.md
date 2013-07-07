@@ -1,3 +1,10 @@
+## v0.24 (July 7, 2013)
+* **File Formats :**
+  * ALZ
+  * EGG
+* **Engine :**
+  * Macro Virus for MSWord & MSExcel
+
 ## v0.23 (June 27, 2013)
 * **File Formats :**
   * PE
