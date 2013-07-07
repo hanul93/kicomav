@@ -17,8 +17,8 @@ import thread
 import time
 from optparse import OptionParser
 
-KAV_VERSION   = '0.23'
-KAV_BUILDDATE = 'June 27 2013'
+KAV_VERSION   = '0.24'
+KAV_BUILDDATE = 'July 7 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_EngineInit = 0
@@ -240,6 +240,7 @@ def PrintOptions() :
         -I,  --list            display all files
         -V,  --vlist           display virus list
              --update          update
+             --sigtool         create a malware signature
              --no-color        not print color
         -?,  --help            this help
                                * = default option'''
@@ -335,6 +336,9 @@ def DefineOptions() :
                       action="store_true", dest="opt_del",
                       default=False)
 
+        parser.add_option("", "--sigtool",
+                      action="store_true", dest="opt_sigtool",
+                      default=False)
         parser.add_option("", "--no-color",
                       action="store_true", dest="opt_nocolor",
                       default=False)
@@ -510,6 +514,7 @@ def PringLoding(id, msg) :
 #---------------------------------------------------------------------
 def main() :
     global NOCOLOR
+    global SIGTOOL
     global g_EngineInit
 
     kav1 = None
@@ -614,10 +619,8 @@ def main() :
 
         kav1.uninit()
     except :
-        '''
         import traceback
         print traceback.format_exc()
-        '''
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)

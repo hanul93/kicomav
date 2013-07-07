@@ -3,7 +3,10 @@ kavutil.kmd
 ole.kmd
 pefile.kmd
 emalware.kmd
+macro.kmd
 hwp.kmd
 dummy.kmd
 eicar.kmd
 zip.kmd
+egg.kmd
+alz.kmd

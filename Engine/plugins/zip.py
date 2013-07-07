@@ -4,6 +4,7 @@
 import os # 파일 삭제를 위해 import
 import zipfile
 import tempfile
+import kernel
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -35,6 +36,7 @@ class KavMain :
         info['version'] = '1.0'     # 버전
         info['title'] = 'Zip Engine' # 엔진 설명
         info['kmd_name'] = 'zip' # 엔진 파일명
+        info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
         return info
 
     #-----------------------------------------------------------------
