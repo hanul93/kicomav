@@ -20,13 +20,92 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 MA 02110-1301, USA.
 """
 
-__revision__ = '$LastChangedRevision: 2 $'
+__revision__ = '$LastChangedRevision: 4 $'
 __author__   = 'Kei Choi'
 __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
 
 import struct
+
+#---------------------------------------------------------------------
+# PEparse(mm)
+# PE 파일을 파싱하여 주요 정보를 리턴한다.
+#---------------------------------------------------------------------
+def PEparse(mm) :
+    pe_format = {'PE_Position':0, 'EntryPoint':0, 'SectionNumber':0,
+        'DirectoryNumber':0, 'Sections':None, 'EntryPointRaw':0}
+
+    try :
+        if mm[0:2] != 'MZ' : # MZ로 시작하나?
+            raise SystemError
+
+        pe_pos = struct.unpack('<L', mm[0x3C:0x3C+4])[0]
+
+        # PE 인가?
+        if mm[pe_pos:pe_pos+4] != 'PE\x00\x00' : 
+            raise SystemError
+
+        pe_format['PE_Position'] = pe_pos
+
+        # Optional Header의 Magic ID?
+        if mm[pe_pos+0x18:pe_pos+0x18+2] != '\x0B\x01' : 
+            raise SystemError
+        
+        # Entry Point 구하기
+        pe_ep = struct.unpack('<L', mm[pe_pos+0x28:pe_pos+0x28+4])[0]
+        pe_format['EntryPoint'] = pe_ep
+
+        # Image Base 구하기
+        pe_img = struct.unpack('<L', mm[pe_pos+0x34:pe_pos+0x34+4])[0]
+        pe_format['ImageBase'] = pe_img
+
+        # Section 개수 구하기
+        section_num = struct.unpack('<H', mm[pe_pos+0x6:pe_pos+0x6+2])[0]
+        pe_format['SectionNumber'] = section_num
+
+        # Data Directory 개수 구하기
+        directory_num = struct.unpack('<L', mm[pe_pos+0x74:pe_pos+0x74+4])[0]
+        pe_format['DirectoryNumber'] = directory_num
+
+        section_pos = pe_pos+0x78 + (directory_num * 8)
+
+        # 모든 섹션 정보 추출
+        sections = [] # 모든 섹션 정보 담을 리스트
+
+        for i in range(section_num) :
+            section = {}
+            s = section_pos + (0x28 * i) 
+
+            section['Name'] = ''
+            for ch in mm[s:s+8] :
+                if ch == '\x00' : break
+                section['Name'] += ch
+            section['VirtualSize']     = struct.unpack('<L', mm[s+ 8:s+12])[0]
+            section['RVA']             = struct.unpack('<L', mm[s+12:s+16])[0]
+            section['SizeRawData']     = struct.unpack('<L', mm[s+16:s+20])[0]
+            section['PointerRawData']  = struct.unpack('<L', mm[s+20:s+24])[0]
+            section['Characteristics'] = struct.unpack('<L', mm[s+36:s+40])[0]
+            sections.append(section)
+
+        pe_format['Sections'] = sections
+
+        # EntryPoint의 파일에서의 위치 구하기
+        for section in sections :
+            size = section['VirtualSize']
+            rva = section['RVA']
+            if rva <= pe_ep and rva+size > pe_ep :
+                foff  = section['PointerRawData']
+                ep_raw = pe_ep - rva + foff
+                
+                pe_format['EntryPointRaw'] = ep_raw # EP의 Raw 위치
+                pe_format['EntryPoint_in_Section'] = sections.index(section) # EP가 포함된 섹션
+                break
+    except :
+        pass 
+
+    return pe_format
+
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -48,74 +127,26 @@ class KavMain :
     def format(self, mmhandle, filename) :
         try :
             fformat = {} # 포맷 정보를 담을 공간
-            pe_format = {'PE_Position':0, 'EntryPoint':0, 'SectionNumber':0,
-                'DirectoryNumber':0, 'Sections':None, 'EntryPointRaw':0}
             mm = mmhandle
 
-            if mm[0:2] != 'MZ' : # MZ로 시작하나?
-                raise SystemError
-
-            pe_pos = struct.unpack('<L', mm[0x3C:0x3C+4])[0]
-
-            # PE 인가?
-            if mm[pe_pos:pe_pos+4] != 'PE\x00\x00' : 
-                raise SystemError
-
-            pe_format['PE_Position'] = pe_pos
-
-            # Optional Header의 Magic ID?
-            if mm[pe_pos+0x18:pe_pos+0x18+2] != '\x0B\x01' : 
-                raise SystemError
-            
-            # Entry Point 구하기
-            pe_ep = struct.unpack('<L', mm[pe_pos+0x28:pe_pos+0x28+4])[0]
-            pe_format['EntryPoint'] = pe_ep
-
-            # Section 개수 구하기
-            section_num = struct.unpack('<H', mm[pe_pos+0x6:pe_pos+0x6+2])[0]
-            pe_format['SectionNumber'] = section_num
-
-            # Data Directory 개수 구하기
-            directory_num = struct.unpack('<L', mm[pe_pos+0x74:pe_pos+0x74+4])[0]
-            pe_format['DirectoryNumber'] = directory_num
-
-            section_pos = pe_pos+0x78 + (directory_num * 8)
-
-            # 모든 섹션 정보 추출
-            sections = [] # 모든 섹션 정보 담을 리스트
-
-            for i in range(section_num) :
-                section = {}
-                s = section_pos + (0x28 * i) 
-
-                section['Name'] = ''
-                for ch in mm[s:s+8] :
-                    if ch == '\x00' : break
-                    section['Name'] += ch
-                section['VirtualSize']     = struct.unpack('<L', mm[s+ 8:s+12])[0]
-                section['RVA']             = struct.unpack('<L', mm[s+12:s+16])[0]
-                section['SizeRawData']     = struct.unpack('<L', mm[s+16:s+20])[0]
-                section['PointerRawData']  = struct.unpack('<L', mm[s+20:s+24])[0]
-                section['Characteristics'] = struct.unpack('<L', mm[s+36:s+40])[0]
-                sections.append(section)
-
-            pe_format['Sections'] = sections
-
-            # EntryPoint의 파일에서의 위치 구하기
-            for section in sections :
-                size = section['VirtualSize']
-                rva = section['RVA']
-                if rva <= pe_ep and rva+size > pe_ep :
-                    foff  = section['PointerRawData']
-                    ep_raw = pe_ep - rva + foff
-                    pe_format['EntryPointRaw'] = ep_raw
-                    break
-
+            pe_format = PEparse(mm)
 
             fformat['pe'] = pe_format
                
             ret = {}
             ret['ff_pe'] = fformat
+
+            # PE 파일 뒤쪽에 추가 정보가 있는지 검사한다.
+            num = pe_format['SectionNumber']
+            last_sec = pe_format['Sections'][num - 1]
+
+            pe_size = last_sec['PointerRawData'] + last_sec['SizeRawData']
+            file_size = len(mm)
+
+            if pe_size < file_size :
+                fformat = {} # 포맷 정보를 담을 공간
+                fformat['Attached_Pos'] = pe_size
+                ret['ff_attach'] = fformat
 
             return ret
         except :

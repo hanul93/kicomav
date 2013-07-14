@@ -24,6 +24,7 @@
 @python.exe kmake.py zip.py
 @python.exe kmake.py egg.py
 @python.exe kmake.py alz.py
+@python.exe kmake.py attach.py
 
 @del *.py
 @del *.pyc
