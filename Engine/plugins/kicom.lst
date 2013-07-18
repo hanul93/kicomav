@@ -3,6 +3,7 @@ kavutil.kmd
 ole.kmd
 pefile.kmd
 emalware.kmd
+coff.kmd
 macro.kmd
 hwp.kmd
 dummy.kmd

@@ -13,6 +13,7 @@ python kmake.py kernel.py
 python kmake.py kavutil.py
 python kmake.py pefile.py
 python kmake.py emalware.py
+python kmake.py coff.py
 python kmake.py macro.py
 python kmake.py hwp.py
 python kmake.py dummy.py

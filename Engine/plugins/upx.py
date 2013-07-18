@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 MA 02110-1301, USA.
 """
 
-__revision__ = '$LastChangedRevision: 1 $'
+__revision__ = '$LastChangedRevision: 2 $'
 __author__   = 'Kei Choi'
 __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
@@ -61,6 +61,14 @@ def PESALIGN(o,a) :
 
     return ret
 
+def ROR(x, n, bits = 32):
+    mask = (2L**n) - 1
+    mask_bits = x & mask
+    return (x >> n) | (mask_bits << (bits - n))
+
+def ROL(x, n, bits = 32):
+    return ROR(x, bits - n, bits)
+
 def checkpe(dst, dsize, pehdr) :
     try :
         if struct.unpack('<L', dst[pehdr:pehdr+4])[0] != 0x4550 :
@@ -84,6 +92,75 @@ def checkpe(dst, dsize, pehdr) :
 
     return sections_pos, valign, sectcnt
 
+def ModifyCallAddr(src, dest, ep, upx0, upx1, baseaddr) :
+    try :
+        # Call 개수 확인    
+        ssize = len(src)
+        pos = ep - upx1
+        call_count = -1
+
+        while True :
+            if (pos > ssize - 13) :
+                break
+
+            if ord(src[pos  ]) == 0xE9 and \
+               ord(src[pos+3]) == 0xFF and \
+               ord(src[pos+4]) == 0xFF and \
+               ord(src[pos+5]) == 0x5E and \
+               ord(src[pos+6]) == 0x89 and \
+               ord(src[pos+7]) == 0xF7 and \
+               ord(src[pos+8]) == 0xB9 :
+                call_count = struct.unpack('<L', src[pos+9:pos+13])[0]
+                break
+            else :
+                pos += 1
+
+        if call_count == -1 : raise SystemError
+
+        # Call Address 수정
+        dst = ''
+        pos = 0
+        dcur = 0
+        dsize = len(dest)
+
+        while call_count :
+            if (pos > dsize - 5) :
+                break
+
+            if (ord(dest[pos]) == 0xE9 or ord(dest[pos]) == 0xE8) and \
+               ord(dest[pos+1]) == 0x01 :
+                eax = struct.unpack('<L', dest[pos+1:pos+5])[0]
+                ax = eax & 0xFFFF
+                ax >>= 8
+                eax &= 0xFFFF0000
+                eax |= ax
+                eax = ROL(eax, 0x10)
+                ah = (eax & 0xFF00) >> 8
+                al = (eax & 0x00FF) << 8
+                ax = ah | al
+                eax &= 0xFFFF0000
+                eax |= ax
+                eax = uint32(eax - (baseaddr+upx0+pos+1))
+                eax = uint32(eax + (baseaddr+upx0))
+                dst += dest[dcur:pos+1]
+                dst += struct.pack('<L', eax)
+                
+                pos += 5
+                dcur = pos
+                call_count -= 1
+            else :
+                pos += 1
+
+        dst += dest[dcur:]
+        '''
+        fp = open('call.dmp', 'wb')
+        fp.write(dst)
+        fp.close()
+        '''
+    except :
+        return None
+
+    return dst
 
 def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend) :
     try :
@@ -252,7 +329,7 @@ def doubleebx(src, myebx, scur, ssize) :
         return -1, myebx, scur
 
 
-def upx_inflate2b(src, dsize, ep, upx0, upx1) :
+def upx_inflate2b(src, dsize, ep, upx0, upx1, baseaddr) :
     ret   = -1
     dest  = ''    
     myebx = 0
@@ -352,16 +429,31 @@ def upx_inflate2b(src, dsize, ep, upx0, upx1) :
             dcur += backsize
 
         # 압축 해제 이미지 
+        dest = ''
         for ch in dst :
             dest += ch
+
+        # Call 주소 조정
+        dest = ModifyCallAddr(src, dest, ep, upx0, upx1, baseaddr)
+
+        '''
+        fp = open('upx_img.dmp', 'wb')
+        fp.write(dest)
+        fp.close()
+        '''
 
         # PE 파일로 조립하기  
         magic=[0x108,0x110,0xd5,0]
         dest = RebuildPE(src, ssize, dest, dsize, ep, upx0, upx1, magic, dcur)
+
+        '''
+        fp = open('upx_build.dmp', 'wb')
+        fp.write(dest)
+        fp.close()
+        '''
+
         ret = 0
     except :
-        import traceback
-        print traceback.format_exc()
         pass
 
     return ret, dest
@@ -516,8 +608,7 @@ class KavMain :
             unpack_data = '' # UPX 해제된 이미지
 
             if arc_id[8:] == 'nrv2b' : # UPX 알고리즘 중 nrv2b 압축인가?
-                ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1)
-
+                ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1, pe_img)
 
             mm.close()
             fp.close()
@@ -538,9 +629,6 @@ class KavMain :
 
             return scan_file_struct
         except :
-            import traceback
-            print traceback.format_exc()
-
             pass
 
         if mm != None : mm.close()
