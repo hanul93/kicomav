@@ -1,7 +1,111 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
+
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 4 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
 
 import struct
+
+#---------------------------------------------------------------------
+# PEparse(mm)
+# PE 파일을 파싱하여 주요 정보를 리턴한다.
+#---------------------------------------------------------------------
+def PEparse(mm) :
+    pe_format = {'PE_Position':0, 'EntryPoint':0, 'SectionNumber':0,
+        'DirectoryNumber':0, 'Sections':None, 'EntryPointRaw':0}
+
+    try :
+        if mm[0:2] != 'MZ' : # MZ로 시작하나?
+            raise SystemError
+
+        pe_pos = struct.unpack('<L', mm[0x3C:0x3C+4])[0]
+
+        # PE 인가?
+        if mm[pe_pos:pe_pos+4] != 'PE\x00\x00' : 
+            raise SystemError
+
+        pe_format['PE_Position'] = pe_pos
+
+        # Optional Header의 Magic ID?
+        if mm[pe_pos+0x18:pe_pos+0x18+2] != '\x0B\x01' : 
+            raise SystemError
+        
+        # Entry Point 구하기
+        pe_ep = struct.unpack('<L', mm[pe_pos+0x28:pe_pos+0x28+4])[0]
+        pe_format['EntryPoint'] = pe_ep
+
+        # Image Base 구하기
+        pe_img = struct.unpack('<L', mm[pe_pos+0x34:pe_pos+0x34+4])[0]
+        pe_format['ImageBase'] = pe_img
+
+        # Section 개수 구하기
+        section_num = struct.unpack('<H', mm[pe_pos+0x6:pe_pos+0x6+2])[0]
+        pe_format['SectionNumber'] = section_num
+
+        # Data Directory 개수 구하기
+        directory_num = struct.unpack('<L', mm[pe_pos+0x74:pe_pos+0x74+4])[0]
+        pe_format['DirectoryNumber'] = directory_num
+
+        section_pos = pe_pos+0x78 + (directory_num * 8)
+
+        # 모든 섹션 정보 추출
+        sections = [] # 모든 섹션 정보 담을 리스트
+
+        for i in range(section_num) :
+            section = {}
+            s = section_pos + (0x28 * i) 
+
+            section['Name'] = ''
+            for ch in mm[s:s+8] :
+                if ch == '\x00' : break
+                section['Name'] += ch
+            section['VirtualSize']     = struct.unpack('<L', mm[s+ 8:s+12])[0]
+            section['RVA']             = struct.unpack('<L', mm[s+12:s+16])[0]
+            section['SizeRawData']     = struct.unpack('<L', mm[s+16:s+20])[0]
+            section['PointerRawData']  = struct.unpack('<L', mm[s+20:s+24])[0]
+            section['Characteristics'] = struct.unpack('<L', mm[s+36:s+40])[0]
+            sections.append(section)
+
+        pe_format['Sections'] = sections
+
+        # EntryPoint의 파일에서의 위치 구하기
+        for section in sections :
+            size = section['VirtualSize']
+            rva = section['RVA']
+            if rva <= pe_ep and rva+size > pe_ep :
+                foff  = section['PointerRawData']
+                ep_raw = pe_ep - rva + foff
+                
+                pe_format['EntryPointRaw'] = ep_raw # EP의 Raw 위치
+                pe_format['EntryPoint_in_Section'] = sections.index(section) # EP가 포함된 섹션
+                break
+    except :
+        pass 
+
+    return pe_format
+
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -23,21 +127,26 @@ class KavMain :
     def format(self, mmhandle, filename) :
         try :
             fformat = {} # 포맷 정보를 담을 공간
-
             mm = mmhandle
 
-            if mm[0:2] != 'MZ' : # MZ로 시작하나?
-                raise SystemError
+            pe_format = PEparse(mm)
 
-            pe_pos = struct.unpack('<L', mm[0x3C:0x3C+4])[0]
-
-            if mm[pe_pos:pe_pos+4] != 'PE\x00\x00' : # PE 인가?
-                raise SystemError
-
-            fformat['pe'] = pe_pos
+            fformat['pe'] = pe_format
                
             ret = {}
             ret['ff_pe'] = fformat
+
+            # PE 파일 뒤쪽에 추가 정보가 있는지 검사한다.
+            num = pe_format['SectionNumber']
+            last_sec = pe_format['Sections'][num - 1]
+
+            pe_size = last_sec['PointerRawData'] + last_sec['SizeRawData']
+            file_size = len(mm)
+
+            if pe_size < file_size :
+                fformat = {} # 포맷 정보를 담을 공간
+                fformat['Attached_Pos'] = pe_size
+                ret['ff_attach'] = fformat
 
             return ret
         except :
@@ -51,8 +160,8 @@ class KavMain :
     #-----------------------------------------------------------------
     def getinfo(self) :
         info = {} # 사전형 변수 선언
-        info['author'] = 'Kei Choi' # 제작자
-        info['version'] = '1.0'     # 버전
-        info['title'] = 'PE Engine' # 엔진 설명
-        info['kmd_name'] = 'pefile' # 엔진 파일명
+        info['author'] = __author__    # 제작자
+        info['version'] = __version__  # 버전
+        info['title'] = 'PE Engine'    # 엔진 설명
+        info['kmd_name'] = 'pefile'    # 엔진 파일명
         return info

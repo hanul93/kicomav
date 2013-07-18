@@ -1,5 +1,30 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
+
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 2 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
 
 import os # 파일 삭제를 위해 import
 import zlib
@@ -212,8 +237,6 @@ def GetMD5_Macro(data, target_macro) :
 
         ret = (len(buf), fmd5, len(data))
     except :
-        import traceback
-        print traceback.format_exc()
         pass
 
     return ret
@@ -294,9 +317,6 @@ class KavMain :
 
             return 0
         except :
-            import traceback
-            print traceback.format_exc()
-
             return 1
 
     #-----------------------------------------------------------------
@@ -365,8 +385,6 @@ class KavMain :
                 ret_value['virus_id']   = 0    # 바이러스 ID
                 return ret_value            
         except :
-            import traceback
-            print traceback.format_exc()
             pass
 
         # 악성코드를 발견하지 못했음을 리턴한다.
@@ -523,10 +541,10 @@ class KavMain :
     #-----------------------------------------------------------------
     def getinfo(self) :
         info = {} # 사전형 변수 선언
-        info['author'] = 'Kei Choi' # 제작자
-        info['version'] = '1.0'     # 버전
+        info['author'] = __author__    # 제작자
+        info['version'] = __version__  # 버전
         info['title'] = 'Macro Engine' # 엔진 설명
-        info['kmd_name'] = 'macro' # 엔진 파일명
+        info['kmd_name'] = 'macro'     # 엔진 파일명
 
         # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
         info['date']    = self.__date__   # 패턴 생성 날짜 

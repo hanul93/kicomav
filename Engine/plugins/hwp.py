@@ -1,5 +1,30 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
+
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 2 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
 
 import os # 파일 삭제를 위해 import
 import zlib
@@ -103,10 +128,6 @@ class HWPTag :
                 if ret_tag == -1 :
                     return -1, tagid
             except :
-                '''
-                #print traceback.format_exc ()
-                print 'pos : %X (NONE)' % (pos)
-                '''
                 pass
 
             pos += (size + extra_size)
@@ -227,10 +248,10 @@ class KavMain :
     #-----------------------------------------------------------------
     def getinfo(self) :
         info = {} # 사전형 변수 선언
-        info['author'] = 'Kei Choi' # 제작자
-        info['version'] = '1.0'     # 버전
+        info['author'] = __author__          # 제작자
+        info['version'] = __version__        # 버전
         info['title'] = 'HWP Exploit Engine' # 엔진 설명
-        info['kmd_name'] = 'hwp' # 엔진 파일명
+        info['kmd_name'] = 'hwp'             # 엔진 파일명
 
         # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
         info['date']    = 0   # 패턴 생성 날짜 
