@@ -1,5 +1,25 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
+
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
 '''
 +-----------------------------------------------------------------------------+
 |                                              KICOM Anti-Virus (Disinfector) |
@@ -17,8 +37,8 @@ import thread
 import time
 from optparse import OptionParser
 
-KAV_VERSION   = '0.24'
-KAV_BUILDDATE = 'July 7 2013'
+KAV_VERSION   = '0.25'
+KAV_BUILDDATE = 'July 18 2013'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_EngineInit = 0
@@ -619,8 +639,6 @@ def main() :
 
         kav1.uninit()
     except :
-        import traceback
-        print traceback.format_exc()
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
