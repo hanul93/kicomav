@@ -1,3 +1,10 @@
+## v0.25 (July 18, 2013)
+* **File Formats :**
+  * UPX
+  * Attached File
+* **Engine :**
+  * COFF Engine
+
 ## v0.24 (July 7, 2013)
 * **File Formats :**
   * ALZ
