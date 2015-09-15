@@ -1,0 +1,91 @@
+#
+# This file contains configuration flags to customize your site
+#
+
+# Name of your site (displayed in the header)
+name: Kei Choi
+
+# Short bio or description (displayed in the header)
+description: 프로그래밍은 열정이다.
+
+# URL of your avatar or profile pic (you could use your GitHub profile pic)
+avatar: /images/0-P7RVJK9yotObcYbc.jpg
+
+#
+# Flags below are optional
+#
+
+timezone: Asia/Seoul
+
+# Includes an icon in the footer for each username you enter
+footer-links:
+  dribbble: 
+  email: hanul93@gmail.com
+  facebook: hanul93
+  flickr: 
+  github: hanul93
+  instagram: 
+  linkedin: 
+  pinterest: 
+  rss: hanul93 
+  twitter: hanul93
+  stackoverflow: # your stackoverflow profile, e.g. "users/50476/bart-kiers"
+
+# Your disqus shortname, entering this will enable commenting on posts
+disqus: 
+
+# Enter your Google Analytics web tracking code (e.g. UA-2110908-2) to activate tracking
+google_analytics: UA-5277794-5
+
+# Your website URL (e.g. http://barryclark.github.io or http://www.barryclark.co)
+# Used for Sitemap.xml and your RSS feed
+url: http://hanul93.com
+
+# If you're hosting your site at a Project repository on GitHub pages 
+# (http://yourusername.github.io/repository-name)
+# and NOT your User repository (http://yourusername.github.io)
+# then add in the baseurl here, like this: "/repository-name"
+baseurl: ""
+
+#
+# !! You don't need to change any of the configuration flags below !!
+#
+
+markdown: redcarpet
+encoding: utf-8
+highlighter: pygments
+permalink: /:title/
+
+redcarpet:
+    extensions: 
+      - no_intra_emphasis
+      - fenced_code_blocks
+      - tables
+      - strikethrough
+      - superscript
+      - autolink
+      - hard_wrap
+      - footnotes
+
+# The release of Jekyll Now that you're using
+version: v1.0.0
+
+# Set the Sass partials directory, as we're using @imports
+sass:
+  sass_dir: _scss
+  style: :compressed # You might prefer to minify using :compressed
+
+# Use the following plug-ins
+gems:
+  - jemoji # Emoji please!
+  - jekyll-sitemap # Create a sitemap using the official Jekyll sitemap gem
+  - jekyll-redirect-from
+
+# Exclude these files from your production _site
+exclude:
+    - Gemfile
+    - Gemfile.lock
+    - LICENSE
+    - README.md
+
+paginate: 4
