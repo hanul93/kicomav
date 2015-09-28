@@ -1,0 +1,50 @@
+---
+layout: default
+---
+
+<!-- TOC Generator -->
+<script src="/js/jquery.toc-1.1.4.min.js"></script>
+
+<script>
+  // $('#toc').toc();
+$('#toc').toc({exclude: 'h1, h6', autoId: true, numerate: true});
+</script>
+
+<article class="post">
+  <h1>{{ page.title }}</h1>
+
+  <div class="entry">
+    {{ content }}
+  </div>
+
+  
+  <hr>
+
+  <div>
+    <ul class="tags post-tags cf">
+      <li>Tagged:</li>
+      {% for tag in page.tags %}
+      <li><a href="/search/?tags={{ tag }}">{{ tag }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <br>
+</article>
+
+<fieldset style="margin:20px 0px 20px 0px;padding:5px;"><legend><span><strong>크리에이티브 커먼즈 라이선스</strong></span></legend><!--Creative Commons License--><div style="float: left; width: 88px; margin-top: 3px;"><a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width: 0" src="/images/88x31.png"/></a></div><div style="margin-left: 92px; margin-top: 3px; text-align: justify;">이 저작물은 <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">크리에이티브 커먼즈 저작자표시-비영리-변경금지 4.0 국제 라이선스</a>에 따라 이용할 수 있습니다.</div></fieldset>
+
+<br><br>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'keichoi';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>

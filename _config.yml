@@ -6,7 +6,7 @@
 name: Kei Choi
 
 # Short bio or description (displayed in the header)
-description: 프로그래밍은 열정이다.
+description: Kicom Anti-Virus
 
 # URL of your avatar or profile pic (you could use your GitHub profile pic)
 avatar: /images/0-P7RVJK9yotObcYbc.jpg
@@ -21,25 +21,25 @@ timezone: Asia/Seoul
 footer-links:
   dribbble: 
   email: hanul93@gmail.com
-  facebook: hanul93
+  facebook: Kicomav
   flickr: 
-  github: hanul93
+  github: hanul93/kicomav
   instagram: 
   linkedin: 
   pinterest: 
-  rss: hanul93 
-  twitter: hanul93
+  rss: kicomav 
+  twitter: nurilab
   stackoverflow: # your stackoverflow profile, e.g. "users/50476/bart-kiers"
 
 # Your disqus shortname, entering this will enable commenting on posts
 disqus: 
 
 # Enter your Google Analytics web tracking code (e.g. UA-2110908-2) to activate tracking
-google_analytics: UA-5277794-5
+google_analytics: UA-5277794-6
 
 # Your website URL (e.g. http://barryclark.github.io or http://www.barryclark.co)
 # Used for Sitemap.xml and your RSS feed
-url: http://hanul93.com
+url: http://www.kicomav.com
 
 # If you're hosting your site at a Project repository on GitHub pages 
 # (http://yourusername.github.io/repository-name)

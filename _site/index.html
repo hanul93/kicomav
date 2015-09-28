@@ -1,376 +1,420 @@
-﻿
 <!DOCTYPE html>
-<html lang="en-US">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>KICOM Anti-Virus</title>
-<link rel="profile" href="http://gmpg.org/xfn/11">
-<link rel="pingback" href="http://www.kicomav.com/xmlrpc.php">
-<script type="text/javascript">var templateDir = "http://www.kicomav.com/wp-content/themes/decode";</script>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
 
-<link rel="alternate" type="application/rss+xml" title="KICOM Anti-Virus &raquo; Feed" href="http://www.kicomav.com/feed/" />
-<link rel="alternate" type="application/rss+xml" title="KICOM Anti-Virus &raquo; Comments Feed" href="http://www.kicomav.com/comments/feed/" />
+    <title>KICOM Anti-Virus</title>
 
-            <script type="text/javascript">//<![CDATA[
-            // Google Analytics for WordPress by Yoast v4.3.3 | http://yoast.com/wordpress/google-analytics/
-            var _gaq = _gaq || [];
-            _gaq.push(['_setAccount', 'UA-47470892-1']);
-				            _gaq.push(['_setCustomVar',1,'post_type','page',3],['_setCustomVar',3,'year','2014',3],['_trackPageview']);
-            (function () {
-                var ga = document.createElement('script');
-                ga.type = 'text/javascript';
-                ga.async = true;
-                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    <meta name="author" content="Kei Choi" />
 
-                var s = document.getElementsByTagName('script')[0];
-                s.parentNode.insertBefore(ga, s);
-            })();
-            //]]></script>
-			<link rel="alternate" type="application/rss+xml" title="KICOM Anti-Virus &raquo;  Comments Feed" href="http://www.kicomav.com/5-2/feed/" />
-<link rel='stylesheet' id='decode-style-css'  href='http://www.kicomav.com/wp-content/themes/decode/style.css?ver=2.9' type='text/css' media='all' />
-<link rel='stylesheet' id='decode-font-stylesheet-css'  href='//fonts.googleapis.com/css?family=Oxygen&#038;subset=latin-ext&#038;ver=3.8.1' type='text/css' media='all' />
-<script type='text/javascript' src='http://www.kicomav.com/wp-includes/js/jquery/jquery.js?ver=1.10.2'></script>
-<script type='text/javascript' src='http://www.kicomav.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.2.1'></script>
-<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://www.kicomav.com/xmlrpc.php?rsd" />
-<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://www.kicomav.com/wp-includes/wlwmanifest.xml" /> 
-<link rel='prev' title='샘플 페이지' href='http://www.kicomav.com/sample-page/' />
-<meta name="generator" content="WordPress 3.8.1" />
-<link rel='canonical' href='http://www.kicomav.com/' />
-<link rel='shortlink' href='http://www.kicomav.com/?p=5' />
+    <link href="/images/shields1.ico" rel="shortcut icon" type="image/x-icon" />
 
-<!-- Jetpack Open Graph Tags -->
-<meta property="og:type" content="blog" />
-<meta property="og:title" content="KICOM Anti-Virus" />
-<meta property="og:url" content="http://www.kicomav.com/" />
-<meta property="og:site_name" content="KICOM Anti-Virus" />
-<meta property="og:image" content="http://wordpress.com/i/blank.jpg" />
-<meta name="twitter:site" content="@jetpack" />
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:description" content="New post." />
-         <style type="text/css">
-        body, .sidebar, .SidebarTop, .menu ul ul {
-			background: #E3E5E7;
-		}
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
 
-		body, button, select, textarea, .site-title a, .no-touch .site-title a:hover, .no-touch .site-title a:active, 
-		.menu a,
-		
-		.entry-title, .search-entry, .search-entry .entry-title, .entry-title a, .format-link .entry-title h2 a, .read-more, .author-name a, .explore-page .widget h1, .search .page-header input[type="search"]:focus, .decode-reply-tool-plugin .replylink, .decode-reply-tool-plugin .replytrigger {
-			color: #444444;
-		}
-		
-		.menu .menu-item-has-children > a::after, .menu .page_item_has_children > a::after {
-			border-top-color: #444444;
-		}
-		
-			.SidebarMenuTrigger, .SidebarMenuClose, .SocialIconFill {
-			fill: #444444;
-		}
-	
-		a, .no-touch a:hover, button, input[type="button"], input[type="reset"], input[type="submit"], .no-touch .menu a:hover, .menu ul li.open > a, .sidebar-menu a, .no-touch .search-entry:hover, .no-touch .search-entry:hover .entry-title, .no-touch .entry-meta .date a:hover, .no-touch .format-link .entry-title a:hover, .no-touch .comment-metadata a:hover, .no-touch .decode-reply-tool-plugin .replylink:hover {
-			color: #009BCD;
-		}
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="alternate" type="application/rss+xml" title="Kei Choi - Kicom Anti-Virus" href="/feed.xml" />
 
-		.no-touch button:hover, .no-touch input[type="button"]:hover, .no-touch input[type="reset"]:hover, .no-touch input[type="submit"]:hover, .no-touch .entry-content a:hover, .no-touch .entry-meta a:hover, .no-touch .author-site a:hover, .site-header, .menu ul ul, .menu a:focus, .page-title, .post blockquote, .page blockquote, .post .entry-meta, .search footer, .no-touch .theme-info a:hover, .SidebarTop, .sidebar.constant.left, .sidebar.constant.right, .no-touch .site-description a:hover, .explore-page .widget h1, button:focus, .no-touch input[type='text']:focus, .touch input[type='text']:focus, .no-touch input[type='email']:focus, .touch input[type='email']:focus, .no-touch input[type='password']:focus, .touch input[type='password']:focus, .no-touch input[type='search']:focus, .touch input[type='search']:focus, .no-touch input[type="tel"]:focus, .touch input[type="tel"]:focus, .no-touch input[type="url"]:focus, .touch input[type="url"]:focus, .no-touch textarea:focus, .touch textarea:focus, .search .page-header input[type="search"]:focus {
-			border-color: #009BCD;
-		}
-		
-		.no-touch .menu > ul > .menu-item-has-children > a:hover::after, .no-touch .menu > ul > .page_item_has_children > a:hover::after, .menu ul li.open > a::after, .sidebar-menu ul .menu-item-has-children > a::after, .sidebar-menu ul .page_item_has_children > a::after {
-			border-top-color: #009BCD;
-		}
-		
-		.horizontal-menu ul ul .menu-item-has-children > a:hover::after, .horizontal-menu ul ul .page_item_has_children > a:hover::after, .horizontal-menu ul ul li.open > a::after {
-			border-left-color: #009BCD;
-		}
-		
-		.footer-menu > ul > .menu-item-has-children > a:hover::after, .footer-menu > ul > .page_item_has_children > a:hover::after, .footer-menu > ul > li.open > a::after {
-			border-bottom-color: #009BCD;
-		}
+    <!-- Created with Jekyll Now - http://github.com/barryclark/jekyll-now -->
+  <script type="text/javascript" src="/js/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="/js/bigfoot.min.js"></script>
+  <script type="text/javascript">
+    var bigfoot = $.bigfoot(
+      {
+      actionOriginalFN: "ignore",
+      positionContent: "true",
+      anchorPattern: /(fn|footnote|note)[\-_\d]/gi
+      }
+      );
+  </script>
+  <!-- tag, category search -->
+  <script defer src="/js/alexpearce.js"></script>
+  <!-- Open external links in new tab -->
+  <script type="text/javascript" src="/js/com.alybadawy.external_links.js"></script>
 
-		.no-touch a:active, .no-touch button:focus, .no-touch input[type="button"]:focus, .no-touch input[type="reset"]:focus, .no-touch input[type="submit"]:focus, .no-touch button:active, .no-touch input[type="button"]:active, .no-touch input[type="reset"]:active, .no-touch input[type="submit"]:active, .no-touch .menu a:active, .no-touch .sidebar-menu a:hover, .sidebar-menu ul li.open > a, .no-touch .SidebarContent a:hover, .no-touch .search-entry:active, .no-touch .search-entry:active .entry-title, .no-touch .entry-meta .date a:active, .no-touch .format-link .entry-title a:active, .no-touch .comment-metadata a:active, .no-touch .site-description a:active, .decode-reply-tool-plugin .replylink:active, .no-touch .decode-reply-tool-plugin .replylink:active {
-			color: #007EA6;
-		}
+  </head>
 
-		.no-touch button:focus, .no-touch input[type="button"]:focus, .no-touch input[type="reset"]:focus, .no-touch input[type="submit"]:focus, .no-touch button:active, .no-touch input[type="button"]:active, .no-touch input[type="reset"]:active, .no-touch input[type="submit"]:active, .no-touch .entry-content a:active, .no-touch .entry-meta a:active, .no-touch .author-site a:active, .no-touch .theme-info a:active, .no-touch .site-description a:active {
-			border-color: #007EA6;
-		}
-		
-		.no-touch .menu > ul > .menu-item-has-children > a:active::after, .no-touch .menu > ul > .page_item_has_children > a:active::after, .no-touch .sidebar-menu ul .menu-item-has-children > a:hover::after, .no-touch .sidebar-menu ul .page_item_has_children > a:hover::after, .sidebar-menu ul li.open > a::after {
-			border-top-color: #007EA6;
-		}
-		
-		.horizontal-menu ul ul .menu-item-has-children > a:active::after, .horizontal-menu ul ul .page_item_has_children > a:active::after {
-			border-left-color: #007EA6;
-		}
-		
-		.footer-menu > ul > .menu-item-has-children > a:active::after, .footer-menu > ul > .page_item_has_children > a:active::after {
-			border-bottom-color: #009BCD;
-		}
+  <body>  
+    <div class="wrapper-footer">
+      <div class="container">
+        <footer class="footer">
+        <font size=15>KICOM Anti-Virus</font><p>
+                    
+          <a href="mailto:hanul93@gmail.com"><svg version="1.1" id="Capa_email" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="44" height="44"
+	 viewBox="0 0 612 612" style="enable-background:new 0 0 612 612;" xml:space="preserve">
+<g>
+	<g>
+		<path style="fill:#010002;" d="M306,612c-28.152,0-55.284-3.672-81.396-11.016c-26.112-7.347-50.49-17.646-73.134-30.906
+			s-43.248-29.172-61.812-47.736c-18.564-18.562-34.476-39.168-47.736-61.812c-13.26-22.646-23.562-47.022-30.906-73.135
+			C3.672,361.284,0,334.152,0,306s3.672-55.284,11.016-81.396s17.646-50.49,30.906-73.134s29.172-43.248,47.736-61.812
+			s39.168-34.476,61.812-47.736s47.022-23.562,73.134-30.906S277.848,0,306,0c42.024,0,81.702,8.058,119.034,24.174
+			s69.768,37.944,97.308,65.484s49.368,59.976,65.484,97.308S612,263.976,612,306c0,28.152-3.672,55.284-11.016,81.396
+			c-7.347,26.109-17.646,50.487-30.906,73.134c-13.26,22.644-29.172,43.248-47.736,61.812
+			c-18.562,18.564-39.168,34.479-61.812,47.736c-22.646,13.26-47.022,23.562-73.136,30.906C361.284,608.328,334.152,612,306,612z
+			 M453.492,179.928H163.404c-2.856,0-5.304,0.918-7.344,2.754s-3.06,4.386-3.06,7.65v32.436c0,1.632,0.612,2.448,1.836,2.448
+			l152.388,86.904l1.227,0.612c0.813,0,1.428-0.204,1.836-0.612l147.492-86.904c0.813-0.408,1.428-0.612,1.836-0.612
+			c0.405,0,1.02-0.204,1.836-0.612c1.632,0,2.448-0.816,2.448-2.448v-31.212c0-3.264-1.021-5.814-3.063-7.65
+			S456.348,179.928,453.492,179.928z M245.412,310.284c0.408-0.408,0.612-1.021,0.612-1.836c0-1.227-0.408-1.836-1.224-1.836
+			l-87.516-50.185c-1.224-0.408-2.244-0.408-3.06,0c-0.816,0-1.224,0.612-1.224,1.836v131.58c0,1.227,0.612,2.04,1.836,2.448h1.224
+			c0.816,0,1.224-0.204,1.224-0.612L245.412,310.284z M351.9,320.076c-0.408-1.227-1.431-1.428-3.063-0.612l-33.66,19.584
+			c-4.08,2.448-8.361,2.448-12.852,0l-29.376-16.521c-1.224-0.816-2.244-0.816-3.06,0l-111.996,104.04
+			c-0.408,0.405-0.612,1.224-0.612,2.445c0,0.408,0.408,1.021,1.224,1.836c2.448,0.816,4.08,1.227,4.896,1.227H450.43
+			c0.816,0,1.635-0.408,2.448-1.227c0-1.632-0.204-2.649-0.612-3.06L351.9,320.076z M462.06,253.98h-2.445l-83.232,49.572
+			c-0.813,0-1.224,0.612-1.224,1.836c-0.408,0.408-0.204,1.02,0.609,1.833L459,397.188c0.816,0.816,1.428,1.227,1.836,1.227h1.224
+			c1.227-1.227,1.839-2.04,1.839-2.448V256.429C463.896,255.612,463.284,254.796,462.06,253.98z"/>
+	</g>
+</g>
+</svg></a>
+          <a href="http://facebook.com/Kicomav"><svg version="1.1" id="Capa_facebook" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="44" height="44"
+	 viewBox="0 0 167.657 167.657" style="enable-background:new 0 0 167.657 167.657;" xml:space="preserve">
+<g>
+	<path style="fill:#010002;" d="M83.829,0.349C37.532,0.349,0,37.881,0,84.178c0,41.523,30.222,75.911,69.848,82.57v-65.081H49.626
+		v-23.42h20.222V60.978c0-20.037,12.238-30.956,30.115-30.956c8.562,0,15.92,0.638,18.056,0.919v20.944l-12.399,0.006
+		c-9.72,0-11.594,4.618-11.594,11.397v14.947h23.193l-3.025,23.42H94.026v65.653c41.476-5.048,73.631-40.312,73.631-83.154
+		C167.657,37.881,130.125,0.349,83.829,0.349z"/>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
+</a>
+          
+          <a href="http://github.com/hanul93/kicomav"><svg version="1.1" id="Capa_github" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="44" height="44"
+	 viewBox="0 0 438.549 438.549" style="enable-background:new 0 0 438.549 438.549;"
+	 xml:space="preserve">
+<g>
+	<path d="M409.132,114.573c-19.608-33.596-46.205-60.194-79.798-79.8C295.736,15.166,259.057,5.365,219.271,5.365
+		c-39.781,0-76.472,9.804-110.063,29.408c-33.596,19.605-60.192,46.204-79.8,79.8C9.803,148.168,0,184.854,0,224.63
+		c0,47.78,13.94,90.745,41.827,128.906c27.884,38.164,63.906,64.572,108.063,79.227c5.14,0.954,8.945,0.283,11.419-1.996
+		c2.475-2.282,3.711-5.14,3.711-8.562c0-0.571-0.049-5.708-0.144-15.417c-0.098-9.709-0.144-18.179-0.144-25.406l-6.567,1.136
+		c-4.187,0.767-9.469,1.092-15.846,1c-6.374-0.089-12.991-0.757-19.842-1.999c-6.854-1.231-13.229-4.086-19.13-8.559
+		c-5.898-4.473-10.085-10.328-12.56-17.556l-2.855-6.57c-1.903-4.374-4.899-9.233-8.992-14.559
+		c-4.093-5.331-8.232-8.945-12.419-10.848l-1.999-1.431c-1.332-0.951-2.568-2.098-3.711-3.429c-1.142-1.331-1.997-2.663-2.568-3.997
+		c-0.572-1.335-0.098-2.43,1.427-3.289c1.525-0.859,4.281-1.276,8.28-1.276l5.708,0.853c3.807,0.763,8.516,3.042,14.133,6.851
+		c5.614,3.806,10.229,8.754,13.846,14.842c4.38,7.806,9.657,13.754,15.846,17.847c6.184,4.093,12.419,6.136,18.699,6.136
+		c6.28,0,11.704-0.476,16.274-1.423c4.565-0.952,8.848-2.383,12.847-4.285c1.713-12.758,6.377-22.559,13.988-29.41
+		c-10.848-1.14-20.601-2.857-29.264-5.14c-8.658-2.286-17.605-5.996-26.835-11.14c-9.235-5.137-16.896-11.516-22.985-19.126
+		c-6.09-7.614-11.088-17.61-14.987-29.979c-3.901-12.374-5.852-26.648-5.852-42.826c0-23.035,7.52-42.637,22.557-58.817
+		c-7.044-17.318-6.379-36.732,1.997-58.24c5.52-1.715,13.706-0.428,24.554,3.853c10.85,4.283,18.794,7.952,23.84,10.994
+		c5.046,3.041,9.089,5.618,12.135,7.708c17.705-4.947,35.976-7.421,54.818-7.421s37.117,2.474,54.823,7.421l10.849-6.849
+		c7.419-4.57,16.18-8.758,26.262-12.565c10.088-3.805,17.802-4.853,23.134-3.138c8.562,21.509,9.325,40.922,2.279,58.24
+		c15.036,16.18,22.559,35.787,22.559,58.817c0,16.178-1.958,30.497-5.853,42.966c-3.9,12.471-8.941,22.457-15.125,29.979
+		c-6.191,7.521-13.901,13.85-23.131,18.986c-9.232,5.14-18.182,8.85-26.84,11.136c-8.662,2.286-18.415,4.004-29.263,5.146
+		c9.894,8.562,14.842,22.077,14.842,40.539v60.237c0,3.422,1.19,6.279,3.572,8.562c2.379,2.279,6.136,2.95,11.276,1.995
+		c44.163-14.653,80.185-41.062,108.068-79.226c27.88-38.161,41.825-81.126,41.825-128.906
+		C438.536,184.851,428.728,148.168,409.132,114.573z"/>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
+</a>
+          
+          
+          
+          <a href="/feed.xml"><svg version="1.1" id="Capa_rss" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="44" height="44"
+	 viewBox="0 0 508.52 508.52" style="enable-background:new 0 0 508.52 508.52;" xml:space="preserve">
+<g>
+	<g>
+		<path style="fill:#010002;" d="M254.26,0C113.845,0,0,113.845,0,254.26s113.845,254.26,254.26,254.26
+			s254.26-113.845,254.26-254.26C508.52,113.813,394.675,0,254.26,0z M137.141,412.441c-22.852,0-41.413-18.434-41.413-41.285
+			c0-22.693,18.561-41.349,41.413-41.349c22.915,0,41.444,18.656,41.476,41.349C178.618,393.976,160.088,412.441,137.141,412.441z
+			 M241.197,412.791c0-39.029-15.16-75.674-42.62-103.071c-27.46-27.524-63.978-42.716-102.785-42.716v-59.624
+			c113.177,0,205.315,92.137,205.315,205.41H241.197z M347.001,412.727c0-138.603-112.669-251.399-251.145-251.399v-59.624
+			c171.435,0,310.96,139.589,310.96,311.023H347.001z"/>
+	</g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
+</a>
+          <a href="http://twitter.com/nurilab"><svg version="1.1" id="Capa_twitter" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="44" height="44"
+	 viewBox="0 0 486.392 486.392" style="enable-background:new 0 0 486.392 486.392;" xml:space="preserve">
+<g>
+	<g>
+		<path style="fill:#010002;" d="M243.196,0C108.891,0,0,108.891,0,243.196s108.891,243.196,243.196,243.196
+			s243.196-108.891,243.196-243.196C486.392,108.861,377.501,0,243.196,0z M364.186,188.598l0.182,7.752
+			c0,79.16-60.221,170.359-170.359,170.359c-33.804,0-65.268-9.91-91.776-26.904c4.682,0.547,9.454,0.851,14.288,0.851
+			c28.059,0,53.868-9.576,74.357-25.627c-26.204-0.486-48.305-17.814-55.935-41.586c3.678,0.699,7.387,1.034,11.278,1.034
+			c5.472,0,10.761-0.699,15.777-2.067c-27.39-5.533-48.031-29.7-48.031-58.701v-0.76c8.086,4.499,17.297,7.174,27.116,7.509
+			c-16.051-10.731-26.63-29.062-26.63-49.825c0-10.974,2.949-21.249,8.086-30.095c29.518,36.236,73.658,60.069,123.422,62.562
+			c-1.034-4.378-1.55-8.968-1.55-13.649c0-33.044,26.812-59.857,59.887-59.857c17.206,0,32.771,7.265,43.714,18.908
+			c13.619-2.706,26.448-7.691,38.03-14.531c-4.469,13.984-13.953,25.718-26.326,33.135c12.069-1.429,23.651-4.682,34.382-9.424
+			C386.073,169.659,375.889,180.208,364.186,188.598z"/>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+	<g>
+	</g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
+</a>
+          
 
-		.tags, .categories, .entry-meta .date, .entry-meta .date a, .comment-metadata a, .search .page-header input[type="search"] {
-			color: #808080;
-		}
-		
-				
-         </style>
-    <style type="text/css" id="custom-background-css">
-body.custom-background { background-color: #E3E5E7; }
-</style>
-</head>
+          <br><br>
+          <font size=4><a href="/">HOME</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="https://github.com/hanul93/kicomav">SOURCE</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="https://github.com/hanul93/kicomav/archive/master.zip">DOWNLOAD</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="https://github.com/hanul93/kicomav/issues/new">BUG REPORT</a></font>
+          <hr>
+        </footer>
+      </div>
+      
+    <div id="main" role="main" class="container">
+      <p><span style="color: #000088;"><font size=6>About KicomAV</font></span><br>
+<hr></p>
 
-<body class="home page page-id-5 page-template-default custom-background">
-<div id="page" class="hfeed site sidebar-style-closing sidebar-style-right">
-				
-	<header id="masthead" class="site-header" role="banner">
-		
-		<a class="skip-link screen-reader-text" href="#content">Skip to content</a>
-		
-				<div id="sidebar_link" class="SidebarLink right">
-			<svg width="100%" height="100%" viewBox="0 0 240 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-				<g class="SidebarMenuTrigger" fill-rule="evenodd">
-					<path d="M0,160 L0,200 L240,200 L240,160 L0,160 Z M0,160"></path>
-					<path d="M0,80 L0,120 L240,120 L240,80 L0,80 Z M0,80"></path>
-					<path d="M0,0 L0,40 L240,40 L240,0 L0,0 Z M0,0"></path>
-				</g>
-			</svg>
-		</div>
-				
-		<div class="site-branding">
-			
-						
-						
-				<h1 class="site-title">
-				<a href="http://www.kicomav.com/" title="KICOM Anti-Virus" rel="home">KICOM Anti-Virus</a>
-				</h1>
-						
-											<h2 class="site-description"></h2>
-										
-		</div>
-				<div class="sociallinks">
-			<div class="sociallinkscontainer">
-								<a class="sociallink TwitterLink" href="https://twitter.com/nurilab" target="_blank" rel="me">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-					<g fill-rule="evenodd">
-					<path class="SocialIconFill" d="M100,0 C44.772,0 0,44.772 0,100 C0,155.228 44.772,200 100,200 C155.228,200 200,155.228 200,100 C200,44.772 155.228,0 100,0 Z M131.085844,49.1820697 C135.882815,50.1099098 141.754127,52.7769806 144.349825,55.2862809 L146.460943,57.2809493 L150.570486,56.2253903 C152.865669,55.6318732 156.377938,54.4335696 158.436466,53.5245117 C160.494994,52.6154537 162.373213,51.9430514 162.546009,52.1158475 C163.263489,52.8333271 159.112625,58.6745877 155.502689,61.9764964 L151.629801,65.5000349 L155.033134,65.0304802 C156.937648,64.7787989 160.247069,63.9786777 162.31311,63.268711 C164.551947,62.4986412 166.069548,62.2619857 166.069548,62.6827067 C166.069548,63.0696198 163.34613,66.0296927 160.081786,69.2564726 L154.21423,75.1240283 L153.744676,81.8142438 C152.294691,102.455869 144.781815,119.371108 130.852945,133.465262 C119.910442,144.53924 107.288811,151.270776 92.2330088,154.125669 C85.3925358,155.425396 72.9775093,155.85363 67.1099537,155.064778 C59.920132,154.099374 50.9873232,151.402252 43.6322182,147.905008 L37.0584523,144.734575 L43.9853234,144.26502 C52.2419734,143.746632 57.9404893,142.375532 64.529281,139.336574 C69.3976242,137.090224 75.832402,133.149721 75.3290393,132.646358 C75.1787818,132.496101 73.2855372,131.988982 71.1030469,131.590799 C63.2896566,130.159597 56.0021675,124.953174 52.3208586,117.973713 L50.5590893,114.57038 L55.9608467,114.217275 C61.3776298,113.879196 63.3309774,113.270653 61.0094989,112.571955 C53.9924733,110.46835 46.9341269,104.642115 43.7524242,98.3688646 C42.471479,95.840782 40.5819908,89.0153348 40.5819908,86.8666524 C40.5819908,86.7389335 41.2318546,87.0469614 41.990655,87.4526567 C43.4594221,88.2377522 52.1856268,90.1685611 52.5575141,89.8004302 C52.6777201,89.6802242 51.0436698,87.8658648 49.0339756,85.8110934 C47.0280379,83.756322 44.5675712,80.322938 43.5157687,78.1817685 C41.7878073,74.6544736 41.6413063,73.6402354 41.6375498,67.2655607 C41.6337934,61.852534 41.9230391,59.4709525 42.9297644,56.9353571 L44.221979,53.6484741 L46.9228576,56.6987015 C59.2477296,70.5186357 77.2523354,79.5265732 96.9285559,81.7015506 L100.684994,82.0546558 L100.452094,76.7731044 C100.189144,70.3383267 101.402473,65.7442034 104.678087,60.8082443 C109.681662,53.2578046 118.787267,48.5134238 127.445856,48.712515 C128.681724,48.7425665 129.880027,48.9491706 131.085844,49.1820697 Z" id="Twitter" fill="#444444"></path>
-					</g>
-				</svg>
-				</a>
-				
-				
-								<a class="sociallink FacebookLink" href="https://facebook.com/Kicomav" target="_blank" rel="me">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-					<g fill-rule="evenodd">
-					<path class="SocialIconFill" d="M100,0 C155.2286,0 200,43.710622 200,97.6306793 C200,148.238532 160.560101,189.852716 110.051993,194.774255 L110.051993,158.959922 L110.051993,122.527905 L124.471404,122.397324 L138.890815,122.266743 L139.306759,112.603771 C139.588936,107.28151 139.836506,101.324314 139.861352,99.4151196 L140,96.0200212 L125.025997,96.0200212 L110.051993,96.0200212 L110.190641,83.7454348 C110.322191,71.8949744 110.326406,71.3586533 111.299827,69.6427184 C113.362468,66.0067247 116.171813,65.3456729 129.740035,65.3335551 L139.445407,65.3335551 L139.722704,53.1895493 C139.898177,46.5698387 139.96983,41.1477099 139.861352,41.0455435 C139.358669,40.5721101 130.494503,40.0219997 122.807626,40.0008979 C113.439445,39.9751996 108.802828,40.4950153 103.258232,42.3513506 C92.4161664,45.9812853 85.2503847,53.0437168 81.7677643,63.5054252 C80.9145789,66.0681499 80.8160832,67.5452788 80.6585789,81.1338206 L80.5199307,96.0200212 L70.2599653,96.0200212 L60,96.0200212 L60,109.208673 L60,122.527905 L70.3986135,122.527905 L80.6585789,122.527905 L80.3812825,158.56818 C80.2399717,174.801548 80.213175,188.737218 80.3034396,193.368062 C34.5074589,184.437036 0,144.968308 0,97.6306793 C0,43.710622 44.7714,0 100,0 Z M100,0" id="Facebook" fill="#444444"></path>
-					</g>
-				</svg>
-				</a>
-				
-								
-								
-												
-								
-								
-								
-												
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								<a class="sociallink GithubLink" href="http://github.com/hanul93/kicomav" target="_blank" rel="me">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-					<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-					<path class="SocialIconFill" d="M0,100 C0,155.2286 44.7714,200 100,200 C155.2286,200 200,155.2286 200,100 C200,44.7714 155.2286,0 100,0 C44.7714,0 0,44.7714 0,100 Z M150.6562,25.4 C152.7698,28.626 153.9846,37.9372 153.1562,44.5938 L152.625,48.8562 L155.2062,51.9874 C160.3374,58.2082 163.155,65.7298 163.7186,74.725 C164.034,79.7584 163.3252,91.5746 162.4686,95.5688 C162.1878,96.8788 162.0424,98.0364 162.1498,98.1438 C162.2572,98.2512 166.8388,98.1216 172.331,97.8562 C178.1866,97.5734 183.088,97.5428 184.181,97.7812 C185.5178,98.0728 182.883,98.2622 174.8622,98.45 C168.6674,98.595 163.112,98.9354 162.4122,99.2124 C161.564,99.5484 161.0194,100.2144 160.7498,101.2436 C160.2702,103.0744 159.043,102.8318 172.0686,103.4686 C177.4508,103.7316 182.584,104.134 183.481,104.3624 C185.6578,104.9166 184.4476,104.941 180.456,104.4186 C178.6618,104.1838 173.3102,103.9562 168.5684,103.9186 L159.9496,103.8562 L158.362,106.575 C156.0142,110.5964 149.9218,116.4444 145.9182,118.5188 C141.0736,121.029 133.606,123.3814 127.037,124.4688 C123.8662,124.9936 120.9826,125.524 120.6308,125.6438 C120.1902,125.7938 120.6514,126.5576 122.1058,128.1126 C124.5016,130.674 125.7218,132.867 126.8246,136.5626 C127.4282,138.5848 127.6564,142.1844 127.887,153.6314 C128.1692,167.6364 128.1454,168.1478 127.287,168.4064 C124.4818,169.2516 119.346,170.5814 118.8808,170.5814 C118.4844,170.5814 118.2874,167.082 118.1496,157.6502 C117.9526,144.1822 117.7022,142.432 115.7496,140.8126 C115.0346,140.2196 114.9808,141.315 114.9808,155.8064 L114.9808,171.4376 L111.837,171.7814 C110.107,171.9716 107.8496,172.1466 106.8246,172.169 L104.9622,172.2128 L104.6684,163.8252 C104.5082,159.212 104.3504,151.712 104.3184,147.1628 L104.2622,138.894 L102.8684,138.894 L101.4684,138.894 L101.4684,155.669 L101.4684,172.444 L97.6246,172.369 C95.5102,172.328 93.0952,172.2098 92.2622,172.1066 L90.7498,171.919 L90.7498,155.8128 C90.7498,141.2492 90.6786,139.7714 90.0186,140.319 C87.8628,142.1082 87.7304,143.0656 87.5748,157.6628 L87.4248,171.544 L85.706,171.2316 C84.762,171.0588 82.6282,170.575 80.9622,170.1628 L77.9372,169.4128 L77.806,160.4004 L77.681,151.388 L75.3748,151.7068 C71.1312,152.2904 63.6152,152.0834 61.0248,151.313 C54.8256,149.4696 51.088,146.0926 47.831,139.3818 C45.0914,133.737 42.6232,130.4148 38.9622,127.4568 C35.1348,124.3644 34.4232,123.297 35.7246,122.6006 C36.2236,122.3336 37.7496,122.1218 39.1122,122.1256 C41.4146,122.132 45.6202,124.0678 48.212,126.4568 C49.3702,127.5244 51.2484,129.6986 52.387,131.2944 C57.1718,137.9996 62.2318,140.692 69.0246,140.1506 C72.9632,139.8368 77.6932,138.4634 78.1996,137.4882 C78.3978,137.1062 79.0304,135.5618 79.6058,134.057 C80.2762,132.3034 81.56,130.3448 83.1746,128.6008 C85.553,126.0318 85.6276,125.8664 84.6058,125.6632 C84.0104,125.5448 81.0126,125.0038 77.937,124.457 C66.5278,122.4286 58.1082,118.6336 51.7932,112.6694 C49.683,110.6764 47.272,107.974 46.4308,106.6632 L44.8996,104.2756 L34.8558,104.5632 C29.2726,104.7216 23.162,105.154 21.0996,105.5382 C17.7304,106.1658 16.5926,106.1826 17.1808,105.5944 C17.5474,105.2278 31.0384,103.96 37.7432,103.6632 C41.2674,103.5072 44.1494,103.181 44.1494,102.9382 C44.1494,102.6954 43.8384,101.891 43.4556,101.1506 C42.5108,99.3238 41.229,99.1882 27.2556,99.3694 C20.912,99.4518 15.7242,99.3752 15.7244,99.207 C15.7254,98.5884 25.0512,98.224 33.5932,98.507 C41.7982,98.7788 42.3604,98.7478 42.0682,97.9946 C41.8962,97.551 41.3,95.4044 40.7432,93.2258 C39.8556,89.7522 39.727,88.004 39.7244,79.0134 C39.7216,69.4458 39.7984,68.5452 40.8306,65.501 C42.279,61.2302 44.7806,56.4408 47.1994,53.326 L49.1432,50.826 L48.2308,46.976 C47.089,42.1816 47.2926,34.6312 48.7058,29.4948 C50.0216,24.7126 50.2068,24.5514 54.1558,24.8572 C59.2318,25.2504 65.6766,27.8206 73.7434,32.6634 L77.4746,34.901 L81.1996,34.001 C92.476,31.2752 108.7204,31.018 120.7496,33.376 L124.4184,34.0948 L128.2622,31.7386 C133.5286,28.509 138.6762,26.2346 143.1434,25.1636 C145.3898,24.624 146.9306,24.3292 148.0312,24.2876 C149.4462,24.234 150.1326,24.601 150.6562,25.4 Z M44.8113392,125.5 C43.8279276,125.5 43.5,125.686465 43.5,126.256901 C43.5,127.558949 44.7160805,128.004007 46.0532305,127.191897 C47.0542826,126.583882 46.2569319,125.5 44.8113392,125.5 L44.8113392,125.5 L44.8113392,125.5 Z M41.3302053,123.6 C40.4451349,123.6 40.15,123.786465 40.15,124.356901 C40.15,125.658949 41.2444724,126.104007 42.4479075,125.291897 C43.3488544,124.683882 42.6312387,123.6 41.3302053,123.6 L41.3302053,123.6 L41.3302053,123.6 Z M48.3,128.7376 C47.3198,128.7494 46.7682,129.372 47.1124,130.2688 C47.505,131.2918 49.9122,131.027 50.1186,129.9376 C50.2206,129.3996 49.8658,129.0394 49.0374,128.8314 C48.7708,128.7642 48.5262,128.7348 48.3,128.7376 L48.3,128.7376 L48.3,128.7376 Z M51.1688,132.8312 C49.4992,132.8312 48.8476,133.6996 49.925,134.4874 C50.986,135.2632 52.5374,134.8028 52.5374,133.7124 C52.5376,133.052 52.2002,132.8312 51.1688,132.8312 L51.1688,132.8312 L51.1688,132.8312 Z M53.95,136.175 C53.8814,136.175 53.8118,136.1778 53.7438,136.1874 C53.1452,136.273 52.7166,136.7296 52.625,137.375 C52.4988,138.263 52.6868,138.425 53.875,138.425 C54.6466,138.425 55.416,138.205 55.5812,137.9374 C56.016,137.234 54.9778,136.1766 53.95,136.175 L53.95,136.175 L53.95,136.175 Z M57.7124,139.4062 C56.6628,139.4298 56.0858,140.0874 56.4312,140.9874 C56.871,142.1332 59.2936,141.7424 59.2936,140.525 C59.2936,139.8996 58.9332,139.5422 58.1936,139.4374 C58.0258,139.4138 57.8624,139.403 57.7124,139.4062 L57.7124,139.4062 L57.7124,139.4062 Z M74.4376,140.2876 C73.9878,140.2876 73.363,140.6032 73.0438,140.9876 C72.3314,141.8458 73.1532,143.0876 74.4376,143.0876 C74.8874,143.0876 75.5184,142.772 75.8376,142.3876 C76.5498,141.5294 75.7218,140.2876 74.4376,140.2876 L74.4376,140.2876 L74.4376,140.2876 Z M68.7624,141.2438 C67.7892,141.3118 67.1762,142.1646 67.6312,143.35 C67.9936,144.294 69.7554,144.0466 70.4312,142.9562 C70.8276,142.3162 70.7836,142.0254 70.2436,141.6812 C69.718,141.3462 69.2048,141.213 68.7624,141.2438 L68.7624,141.2438 L68.7624,141.2438 Z M63.275,141.3188 C62.6408,141.3448 62.0504,141.7068 61.9312,142.3312 C61.6416,143.8496 63.6208,144.5664 64.6562,143.3188 C65.1198,142.7602 65.116,142.4766 64.6374,141.9 C64.2926,141.4844 63.7684,141.2986 63.275,141.3188 L63.275,141.3188 L63.275,141.3188 Z M63.275,141.3188" id="GitHub" fill="#444444"></path>
-					</g>
-				</svg>
-				</a>
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								<a class="sociallink RSSLink" href="http://www.kicomav.com/feed/">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-					<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-					<path class="SocialIconFill" d="M100,0 C155.228476,-3.41060513e-14 200,44.771524 200,100 C200,155.228476 155.228476,200 100,200 C44.771524,200 0,155.228476 0,100 C0,44.771524 44.771524,3.03201907e-14 100,0 Z M40.0135555,79.4855784 L40.0135555,102.780614 C55.2214198,102.790103 69.6051125,108.763989 80.3694989,119.544636 C91.1311742,130.291394 97.0806631,144.696768 97.1050629,159.95749 L97.1131962,159.95749 L97.1131962,159.999512 L120.504488,159.999512 C120.485511,137.809245 111.465711,117.709228 96.8827535,103.115434 C82.2970845,88.5243505 62.2051899,79.4991339 40.0135555,79.4855784 Z M44.7525423,155.112773 L44.7471201,155.112773 L44.7525423,155.118195 L44.7525423,155.112773 C47.7008537,158.048883 51.7200459,159.849046 56.1947014,159.849046 C60.6747791,159.849046 64.7034602,158.054305 67.6531271,155.118195 L67.6639714,155.112773 C70.6082161,152.172597 72.4056694,148.168318 72.4165138,143.718064 C72.4056694,139.259678 70.6082161,135.255399 67.6531271,132.304378 L67.6585492,132.304378 L67.6531271,132.300311 L67.6531271,132.304378 C64.6993935,129.369624 60.6747791,127.55726 56.1947014,127.55726 C51.7214015,127.55726 47.7022092,129.365557 44.7525423,132.304378 L44.7525423,132.300311 C41.8110087,135.24591 40,139.259678 40,143.718064 C40,148.17374 41.8110087,152.173952 44.7525423,155.112773 Z M40.0555774,62.9029686 C93.5271714,62.9416349 136.994841,106.477281 137.030841,159.999512 L160,159.999512 C159.984,126.919781 146.538769,96.9493582 124.809601,75.2055351 C103.073766,53.4683787 73.1233263,40.0151548 40.0555774,40.0004883 Z M40.0555774,62.9029686" id="RSS" fill="#444444"></path>
-					</g>
-				</svg>
-				</a>
-								
-								<a class="sociallink EmailLink" href="mailto:hanul93@gmail.com">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-					<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-					<path class="SocialIconFill" d="M47.525,58.4312 C44.0017303,58.4312 40.8759923,60.0775002 38.8740909,62.6461034 L99.75,94.8175812 L163.968171,60.8797969 C162.084984,59.347607 159.678721,58.4312 157.05,58.4312 Z M36.8768341,66.781991 C36.6754591,67.614632 36.5688,68.4849911 36.5688,69.3812 L36.5688,129.6188 C36.5688,135.6864 41.4574,140.5688 47.525,140.5688 L157.05,140.5688 C163.1176,140.5688 168,135.6864 168,129.6188 L168,69.3812 C168,67.6380936 167.597054,65.9928022 166.878815,64.5329757 L99.7671275,100 L99.75,99.9564542 L99.7328725,100 Z M100,0 C155.2286,0 200,44.7714 200,100 C200,155.2286 155.2286,200 100,200 C44.7714,200 0,155.2286 0,100 C0,44.7714 44.7714,0 100,0 Z M173,61.2980665 L171.309648,57 Z M173,61.2980665" id="Email" fill="#444444"></path>
-					</g>
-				</svg>
-				</a>
-							</div>
-		</div>
-		
-					<nav id="header-menu" class="menu horizontal-menu header-menu" role="navigation"><ul><li id="menu-item-34" class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-34 active"><a title="HOME" href="/">HOME</a></li>
-<li id="menu-item-35" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-35"><a title="SOURCE" href="https://github.com/hanul93/kicomav" onclick="javascript:_gaq.push(['_trackEvent','outbound-menu','http://github.com']);">SOURCE</a></li>
-<li id="menu-item-33" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-33"><a title="DOWNLOAD" href="https://github.com/hanul93/kicomav/archive/master.zip" onclick="javascript:_gaq.push(['_trackEvent','download','http://github.com/hanul93/kicomav/archive/master.zip']);">DOWNLOAD</a></li>
-<li id="menu-item-36" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-36"><a title="BUG REPORT" href="https://github.com/hanul93/kicomav/issues/new" onclick="javascript:_gaq.push(['_trackEvent','outbound-menu','http://github.com']);">BUG REPORT</a></li>
-</ul></nav><!-- #header-menu -->				
-	</header><!-- #masthead -->
+<p>KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. In fact, Since 1995, it has been written in C/C++ and it was integrated into the ViRobot engine of <a href="http://www.hauri.co.kr">HAURI</a>, 1998. I decided to re-create a new KicomAV. So, this is developed in Python. Anyone can participate in the development easily.</p>
 
-	<div id="content" class="site-content">
+<p><style>.embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; } .embed-container iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }</style><div class='embed-container'><iframe src='https://www.youtube.com/embed/In-YnHDyDbk' frameborder='0' allowfullscreen></iframe></div></p>
 
-	<div id="primary" class="content-area">
-		<main id="main" class="site-main" role="main">
+<p><span style="color: #000088;"><font size=6>How to use</font></span><br>
+<hr></p>
 
-			
-				
-<article id="post-5" class="post-5 page type-page status-publish hentry">
-	<header class="entry-header">
-		
-		<h1 class="entry-title"></h1>
-		
-	</header><!-- .entry-header -->
+<h2>Requirements</h2>
 
-	<div class="entry-content">
-		<h3><span style="color: #000088;"><strong>About KicomAV</strong></span></h3>
-<hr />
-<p>KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. In fact, Since 1995, it has been written in C/C++ and it was integrated into the ViRobot engine of <a href="http://www.hauri.net" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://www.hauri.net']);" target="_blank">HAURI</a>, 1998. I decided to re-create a new KicomAV. So, this is developed in Python. Anyone can participate in the development easily.</p>
-<p><center><iframe src="//www.youtube.com/embed/In-YnHDyDbk?rel=0" height="480" width="640" allowfullscreen="" frameborder="0"></iframe></center></p>
-<h3><span style="color: #000088;"><strong>How to use</strong></span></h3>
-<hr />
-<h4>Requirements</h4>
 <ul>
-<li><span style="color: #808080;">Python 2.7</span></li>
+<li>Python 2.7</li>
 </ul>
-<h4>Quick start</h4>
+
+<h2>Quick start</h2>
+
 <ul>
 <li>Three quick start options are available:
-<ul>
-<li><span style="color: #808080;"><a href="https://github.com/hanul93/kicomav/archive/master.zip" onclick="javascript:_gaq.push(['_trackEvent','download','http://github.com/hanul93/kicomav/archive/master.zip']);">Download the latest release</a> and unzip it</span></li>
-<li><span style="color: #808080;">Clone the repo: <span style="color: #3366ff;"><code>git clone git://github.com/hanul93/kicomav.git</code></span><br />
-</span></li>
-<li><span style="color: #808080;">Build KicomAV Engine &amp; Plugins modules : <span style="color: #3366ff;"><code>build.sh</code></span> or <span style="color: #3366ff;"><code>build.bat</code></span></span></li>
-<li><span style="color: #808080;">You can see <span style="color: #3366ff;"><code>Release</code></span> Directory. Change the <span style="color: #3366ff;"><code>Release</code></span> directory and run <span style="color: #3366ff;"><code>k2.py</code></span></span></li>
-</ul>
-</li>
-</ul>
-<h3><span style="color: #000088;"><strong>Releases</strong></span></h3>
-<hr />
-<h4>0.25 (July 18, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Added support for decompressed UPX file</span></li>
-<li><span style="color: #808080;">Added support for separated the attached files from PE file</span></li>
-<li><span style="color: #808080;">Added support for scannning the malware for Common Object File Format (COFF) </span></li>
-</ul>
-<h4>0.24 (July 7, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Added support for decompressed ALZ file</span></li>
-<li><span style="color: #808080;">Added support for decompressed EGG file</span></li>
-<li><span style="color: #808080;">Added support for scanning the malware for MSWord and MSExcel files</span></li>
-</ul>
-<h4>0.23 (June 27, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Added support for scanning the malware for PE file</span></li>
-<li><span style="color: #808080;">Added support for multi scan paths</span></li>
-<li><span style="color: #808080;">Added display for the signature number and the last update information</span></li>
-<li><span style="line-height: 1.5em; color: #808080;">BUGFIX : infinite loop in OLE PPS Dump</span></li>
-</ul>
-<h4>0.22 (June 16, 2013)</h4>
-<ul>
-<li><span style="line-height: 1.5em; color: #808080;">Added support for decompressed OLE file</span></li>
-<li><span style="color: #808080;">Added support for scanning the exploit code for Hangul Word Processor (HWP) file</span></li>
-</ul>
-<h4>0.21 (June 11, 2013)</h4>
-<ul>
-<li><span style="color: #808080; line-height: 1.5em;">Added support for command option for archive files</span></li>
-<li><span style="color: #808080; line-height: 1.5em;">Added support for decompressed ZIP file</span></li>
-</ul>
-<h4>0.20b (June 1, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Added support for command line : k2.py</span></li>
-</ul>
-<h4>0.20 (May 27, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Redesigned Plug-in architectures</span></li>
-</ul>
-<h4>0.10 (May 8, 2013)</h4>
-<ul>
-<li><span style="color: #808080;">Initial release</span></li>
-</ul>
-				
-		<footer>
-					</footer>
-	</div><!-- .entry-content -->
-</article><!-- #post-5 -->
 
-				 
-			
-		</main><!-- #main -->
-	</div><!-- #primary -->
+<ul>
+<li><a href="https://github.com/hanul93/kicomav/archive/master.zip">Download the latest release</a> and unzip it</li>
+<li>Clone the repo: <code>git clone git://github.com/hanul93/kicomav.git</code></li>
+<li>Build KicomAV Engine &amp; Plugins modules : <code>build.sh</code> or <code>build.bat</code></li>
+<li>You can see <code>Release</code> Directory. Change the <code>Release</code> directory and run <code>k2.py</code></li>
+</ul></li>
+</ul>
 
+<p><span style="color: #000088;"><font size=6>Releases</font></span><br>
+<hr></p>
 
-	 </div><!-- #content -->
+<h3>0.25 (July 18, 2013)</h3>
 
-	<footer id="colophon" class="site-footer" role="contentinfo">
-	
-			
-				
-				<div class="theme-info">
-			<p>
-			<hr/>
-			(c) 1995 - 2015 - KicomAV All rights reserved. KicomAV is a registered trademark of <a href="http://www.nurilab.com">NuriLab</a>.			
-			</p>
-		</div><!-- .theme-info -->
-				
-	</footer><!-- #colophon -->
-	</div><!-- #page -->
+<ul>
+<li>Added support for decompressed UPX file</li>
+<li>Added support for separated the attached files from PE file</li>
+<li>Added support for scannning the malware for Common Object File Format (COFF)</li>
+</ul>
+
+<h3>0.24 (July 7, 2013)</h3>
+
+<ul>
+<li>Added support for decompressed ALZ file</li>
+<li>Added support for decompressed EGG file</li>
+<li>Added support for scanning the malware for MSWord and MSExcel files</li>
+</ul>
+
+<h3>0.23 (June 27, 2013)</h3>
+
+<ul>
+<li>Added support for scanning the malware for PE file</li>
+<li>Added support for multi scan paths</li>
+<li>Added display for the signature number and the last update information</li>
+<li>BUGFIX : infinite loop in OLE PPS Dump</li>
+</ul>
+
+<h3>0.22 (June 16, 2013)</h3>
+
+<ul>
+<li>Added support for decompressed OLE file</li>
+<li>Added support for scanning the exploit code for Hangul Word Processor (HWP) file</li>
+</ul>
+
+<h3>0.21 (June 11, 2013)</h3>
+
+<ul>
+<li>Added support for command option for archive files</li>
+<li>Added support for decompressed ZIP file</li>
+</ul>
+
+<h3>0.20b (June 1, 2013)</h3>
+
+<ul>
+<li>Added support for command line : k2.py</li>
+</ul>
+
+<h3>0.20 (May 27, 2013)</h3>
+
+<ul>
+<li>Redesigned Plug-in architectures</li>
+</ul>
+
+<h3>0.10 (May 8, 2013)</h3>
+
+<ul>
+<li>Initial release</li>
+</ul>
+
+    </div>
+    
+    </div>
 
 
-		<div id="sidebar" class="sidebar right closing">
-		<div id="sidebar_top" class="SidebarTop">
-			<div id="sidebar_close" class="SidebarClose">
-				<svg width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
-				<path class="SocialIconFill" d="M0,172.881356 L72.8813559,100 L1.0658141e-14,27.1186441 L27.1186441,-2.84217094e-14 L100,72.8813559 L172.881356,0 L200,27.1186441 L127.118644,100 L200,172.881356 L172.881356,200 L100,127.118644 L27.1186441,200 Z M0,172.881356" fill="#444444"></path>
-				</svg>
-			</div> 
-		</div>
-		<div class="SidebarContent">
-					
-		<div class="widget-area" role="complementary">
+
+    <div class="wrapper-footer">
+      <div class="container">
+        <footer class="footer">
+          <br>Copyright © 1995-2015 KeiChoi and <a href='http://www.nurilab.com'>NuriLab</a> | Designed by Freepik
+        </footer>
+      </div>
+    </div>
+    
+    
+	<!-- Google Analytics -->
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 		
-						<aside id="search-2" class="widget widget_search"><form role="search" method="get" class="search-form" action="http://www.kicomav.com/">
-				<label>
-					<span class="screen-reader-text">Search for:</span>
-					<input type="search" class="search-field" placeholder="Search &hellip;" value="" name="s" title="Search for:" />
-				</label>
-				<input type="submit" class="search-submit" value="Search" />
-			</form></aside>		</div><!-- .widget-area -->		</div>
-	</div>
-		<!-- #sidebar -->
+		ga('create', 'UA-5277794-6', 'auto');
+		ga('send', 'pageview');
+	</script>
+	<!-- End Google Analytics -->
 
 
-<script type='text/javascript' src='http://s0.wp.com/wp-content/js/devicepx-jetpack.js?ver=201538'></script>
-<script type='text/javascript' src='http://www.kicomav.com/wp-content/themes/decode/js/build/decode-with-sidebar.js?ver=2.9'></script>
-
-</body>
+  </body>
 </html>
