@@ -37,11 +37,11 @@ if len(sys.argv) != 2 :
 # Compile python source files
 fname = sys.argv[1] 
 if fname.split('.')[1] == 'py' :
-    py_compile.compile(fname) # ÄÄÆÄÀÏ
-    pyc_name = fname+'c'      # ÄÄÆÄÀÏ ÀÌÈÄ ÆÄÀÏ¸í
+    py_compile.compile(fname) # ì»´íŒŒì¼
+    pyc_name = fname+'c'      # ì»´íŒŒì¼ ì´í›„ íŒŒì¼ëª…
 else :
     pyc_name = fname.split('.')[0]+'.pyc'
-    shutil.copy (fname, pyc_name) # lst ÆÄÀÏÀ» pyc ÆÄÀÏ·Î º¹»ç
+    shutil.copy (fname, pyc_name) # lst íŒŒì¼ì„ pyc íŒŒì¼ë¡œ ë³µì‚¬
 
 # Compress
 buf1 = open(pyc_name, 'rb').read()

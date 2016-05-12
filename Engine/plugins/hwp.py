@@ -26,7 +26,7 @@ __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
 
-import os # ÆÄÀÏ »èÁ¦¸¦ À§ÇØ import
+import os # íŒŒì¼ ì‚­ì œë¥¼ ìœ„í•´ import
 import zlib
 import struct, mmap
 import kernel
@@ -46,24 +46,24 @@ class HWPTag :
             ch = self.GetWord(buf, pos)
             # print ch, pos
 
-            if ch >= 1 and ch <= 9 : # 16¹ÙÀÌÆ® Á¦¾î¹®ÀÚ
+            if ch >= 1 and ch <= 9 : # 16ë°”ì´íŠ¸ ì œì–´ë¬¸ì
                 ctrl_ch = True
                 pos += 16
-            elif ch == 11 or ch == 12 : # 16¹ÙÀÌÆ® Á¦¾î¹®ÀÚ
+            elif ch == 11 or ch == 12 : # 16ë°”ì´íŠ¸ ì œì–´ë¬¸ì
                 ctrl_ch = True
                 pos += 16
-            elif ch >= 14 and ch <= 23 : # 16¹ÙÀÌÆ® Á¦¾î¹®ÀÚ
+            elif ch >= 14 and ch <= 23 : # 16ë°”ì´íŠ¸ ì œì–´ë¬¸ì
                 ctrl_ch = True
                 pos += 16
-            elif ch <= 31 :  # 2¹ÙÀÌÆ® Á¦¾î¹®ÀÚ
+            elif ch <= 31 :  # 2ë°”ì´íŠ¸ ì œì–´ë¬¸ì
                 ctrl_ch = True
                 pos += 2
 
-            # ¹®´Ü¿¡ Æ÷ÇÔµÈ ¹®ÀÚ
+            # ë¬¸ë‹¨ì— í¬í•¨ëœ ë¬¸ì
             if ctrl_ch == False :
                 str_txt += unichr(ch)
                 pos += 2
-                # ÇØ´ç ¹®ÀÚÀÇ ¹İº¹¼ºÀ» Ã¼Å©ÇØº»´Ù
+                # í•´ë‹¹ ë¬¸ìì˜ ë°˜ë³µì„±ì„ ì²´í¬í•´ë³¸ë‹¤
                 if old_ch == ch :
                     ch_count += 1
                 else :
@@ -72,7 +72,7 @@ class HWPTag :
             else :
                 ctrl_ch = False
 
-            # ¹®ÀÚÀÇ ¹İº¹¼ºÀÌ ½ÉÇÏ¸é Exploit °ø°İÀÏ °¡´É¼ºÀÌ Å©´Ù
+            # ë¬¸ìì˜ ë°˜ë³µì„±ì´ ì‹¬í•˜ë©´ Exploit ê³µê²©ì¼ ê°€ëŠ¥ì„±ì´ í¬ë‹¤
             if ch_count > 4096 :
                 ret  = -1
                 break
@@ -138,104 +138,104 @@ class HWPTag :
         return ret, tagid
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         return 0
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
     
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
-    # ¾Ç¼ºÄÚµå¸¦ °Ë»çÇÑ´Ù.
-    # ÀÎÀÚ°ª : mmhandle         - ÆÄÀÏ mmap ÇÚµé
-    #        : scan_file_struct - ÆÄÀÏ ±¸Á¶Ã¼
-    #        : format           - ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸Ë
-    # ¸®ÅÏ°ª : (¾Ç¼ºÄÚµå ¹ß°ß ¿©ºÎ, ¾Ç¼ºÄÚµå ÀÌ¸§, ¾Ç¼ºÄÚµå ID) µîµî
+    # ì•…ì„±ì½”ë“œë¥¼ ê²€ì‚¬í•œë‹¤.
+    # ì¸ìê°’ : mmhandle         - íŒŒì¼ mmap í•¸ë“¤
+    #        : scan_file_struct - íŒŒì¼ êµ¬ì¡°ì²´
+    #        : format           - ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·
+    # ë¦¬í„´ê°’ : (ì•…ì„±ì½”ë“œ ë°œê²¬ ì—¬ë¶€, ì•…ì„±ì½”ë“œ ì´ë¦„, ì•…ì„±ì½”ë“œ ID) ë“±ë“±
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
         ret = 0
         scan_state = kernel.NOT_FOUND
         ret_value = {}
-        ret_value['result']     = False # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-        ret_value['virus_name'] = ''    # ¹ÙÀÌ·¯½º ÀÌ¸§
-        ret_value['scan_state'] = kernel.NOT_FOUND # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-        ret_value['virus_id']   = -1    # ¹ÙÀÌ·¯½º ID
+        ret_value['result']     = False # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+        ret_value['virus_name'] = ''    # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+        ret_value['virus_id']   = -1    # ë°”ì´ëŸ¬ìŠ¤ ID
 
         try :
-            # HWP ExploitÀº ÁÖ·Î BodyText/SectionXX¿¡ Á¸ÀçÇÑ´Ù
-            # ÆÄÀÏÀ» ¿­¾î ¾Ç¼ºÄÚµå ÆĞÅÏ¸¸Å­ ÆÄÀÏ¿¡¼­ ÀĞ´Â´Ù.
+            # HWP Exploitì€ ì£¼ë¡œ BodyText/SectionXXì— ì¡´ì¬í•œë‹¤
+            # íŒŒì¼ì„ ì—´ì–´ ì•…ì„±ì½”ë“œ íŒ¨í„´ë§Œí¼ íŒŒì¼ì—ì„œ ì½ëŠ”ë‹¤.
             section_name = scan_file_struct['deep_filename']
 
             if section_name.find(r'BodyText/Section') != -1 :
-                data = mmhandle[:] # ÆÄÀÏ ÀüÃ¼ ³»¿ë
+                data = mmhandle[:] # íŒŒì¼ ì „ì²´ ë‚´ìš©
 
-                # HWPÀÇ Àß¸øµÈ ÅÂ±×¸¦ Ã¼Å©ÇÑ´Ù.
+                # HWPì˜ ì˜ëª»ëœ íƒœê·¸ë¥¼ ì²´í¬í•œë‹¤.
                 h = HWPTag()
                 ret, tagid = h.Check(data, len(data), 1)
-                if tagid == 0x5A or tagid == 0x42: # Tagid°¡ 0x5A, 0x42ÀÎ°ÍÀº ¾Ç¼ºÄÚµå È®½Ç
-                    scan_state = kernel.INFECTED # °¨¿°
+                if tagid == 0x5A or tagid == 0x42: # Tagidê°€ 0x5A, 0x42ì¸ê²ƒì€ ì•…ì„±ì½”ë“œ í™•ì‹¤
+                    scan_state = kernel.INFECTED # ê°ì—¼
                 else :
-                    scan_state = kernel.SUSPECT  # ÀÇ½É
+                    scan_state = kernel.SUSPECT  # ì˜ì‹¬
 
-                if ret != 0 : # ¾Ç¼ºÄÚµå ¹ß°ß
+                if ret != 0 : # ì•…ì„±ì½”ë“œ ë°œê²¬
                     s = 'Exploit.HWP.Generic.%2X' % tagid
-            elif section_name.find(r'BodyText/') != -1 : # BodyText Æú´õÀÎµ¥.. SectionXXXÀº ¾Æ´Ï¶ó´Â ÀÇ¹Ì
-                ret = 1 # ¾Ç¼ºÄÚµå ¹ß°ß
+            elif section_name.find(r'BodyText/') != -1 : # BodyText í´ë”ì¸ë°.. SectionXXXì€ ì•„ë‹ˆë¼ëŠ” ì˜ë¯¸
+                ret = 1 # ì•…ì„±ì½”ë“œ ë°œê²¬
                 s = 'Exploit.HWP.Generic.EX'
                 scan_state = kernel.SUSPECT
 
             if ret != 0 :
-                # ¾Ç¼ºÄÚµå ÆĞÅÏÀÌ °®´Ù¸é °á°ú °ªÀ» ¸®ÅÏÇÑ´Ù.
-                ret_value['result']     = True # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-                ret_value['virus_name'] = s    # ¹ÙÀÌ·¯½º ÀÌ¸§
-                ret_value['scan_state'] = scan_state # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-                ret_value['virus_id']   = 0    # ¹ÙÀÌ·¯½º ID
+                # ì•…ì„±ì½”ë“œ íŒ¨í„´ì´ ê°–ë‹¤ë©´ ê²°ê³¼ ê°’ì„ ë¦¬í„´í•œë‹¤.
+                ret_value['result']     = True # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+                ret_value['virus_name'] = s    # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+                ret_value['scan_state'] = scan_state # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+                ret_value['virus_id']   = 0    # ë°”ì´ëŸ¬ìŠ¤ ID
                 return ret_value            
         except :
             pass
 
-        # ¾Ç¼ºÄÚµå¸¦ ¹ß°ßÇÏÁö ¸øÇßÀ½À» ¸®ÅÏÇÑ´Ù.
+        # ì•…ì„±ì½”ë“œë¥¼ ë°œê²¬í•˜ì§€ ëª»í–ˆìŒì„ ë¦¬í„´í•œë‹¤.
         return ret_value
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
-    # ¾Ç¼ºÄÚµå¸¦ Ä¡·áÇÑ´Ù.
-    # ÀÎÀÚ°ª : filename   - ÆÄÀÏ ÀÌ¸§
-    #        : malwareID  - Ä¡·áÇÒ ¾Ç¼ºÄÚµå ID
-    # ¸®ÅÏ°ª : ¾Ç¼ºÄÚµå Ä¡·á ¿©ºÎ
+    # ì•…ì„±ì½”ë“œë¥¼ ì¹˜ë£Œí•œë‹¤.
+    # ì¸ìê°’ : filename   - íŒŒì¼ ì´ë¦„
+    #        : malwareID  - ì¹˜ë£Œí•  ì•…ì„±ì½”ë“œ ID
+    # ë¦¬í„´ê°’ : ì•…ì„±ì½”ë“œ ì¹˜ë£Œ ì—¬ë¶€
     #-----------------------------------------------------------------
-    def disinfect(self, filename, malwareID) : # ¾Ç¼ºÄÚµå Ä¡·á
+    def disinfect(self, filename, malwareID) : # ì•…ì„±ì½”ë“œ ì¹˜ë£Œ
         try :
             '''
-            # ¾Ç¼ºÄÚµå Áø´Ü °á°ú¿¡¼­ ¹ŞÀº ID °ªÀÌ 0ÀÎ°¡?
+            # ì•…ì„±ì½”ë“œ ì§„ë‹¨ ê²°ê³¼ì—ì„œ ë°›ì€ ID ê°’ì´ 0ì¸ê°€?
             if malwareID == 0 : 
-                os.remove(filename) # ÆÄÀÏ »èÁ¦
-                return True # Ä¡·á ¿Ï·á ¸®ÅÏ
+                os.remove(filename) # íŒŒì¼ ì‚­ì œ
+                return True # ì¹˜ë£Œ ì™„ë£Œ ë¦¬í„´
             '''
         except :
             pass
 
-        return False # Ä¡·á ½ÇÆĞ ¸®ÅÏ
+        return False # ì¹˜ë£Œ ì‹¤íŒ¨ ë¦¬í„´
 
     #-----------------------------------------------------------------
     # listvirus(self)
-    # Áø´Ü/Ä¡·á °¡´ÉÇÑ ¾Ç¼ºÄÚµåÀÇ ¸ñ·ÏÀ» ¾Ë·ÁÁØ´Ù.
+    # ì§„ë‹¨/ì¹˜ë£Œ ê°€ëŠ¥í•œ ì•…ì„±ì½”ë“œì˜ ëª©ë¡ì„ ì•Œë ¤ì¤€ë‹¤.
     #-----------------------------------------------------------------
-    def listvirus(self) : # Áø´Ü °¡´ÉÇÑ ¾Ç¼ºÄÚµå ¸ñ·Ï
-        vlist = [] # ¸®½ºÆ®Çü º¯¼ö ¼±¾ğ
+    def listvirus(self) : # ì§„ë‹¨ ê°€ëŠ¥í•œ ì•…ì„±ì½”ë“œ ëª©ë¡
+        vlist = [] # ë¦¬ìŠ¤íŠ¸í˜• ë³€ìˆ˜ ì„ ì–¸
         vlist.append('Exploit.HWP.Generic.42') 
         vlist.append('Exploit.HWP.Generic.43') 
         vlist.append('Exploit.HWP.Generic.5A')
@@ -244,18 +244,18 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = __author__          # Á¦ÀÛÀÚ
-        info['version'] = __version__        # ¹öÀü
-        info['title'] = 'HWP Exploit Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'hwp'             # ¿£Áø ÆÄÀÏ¸í
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = __author__          # ì œì‘ì
+        info['version'] = __version__        # ë²„ì „
+        info['title'] = 'HWP Exploit Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'hwp'             # ì—”ì§„ íŒŒì¼ëª…
 
-        # ÆĞÅÏ »ı¼º³¯Â¥¿Í ½Ã°£Àº ¾ø´Ù¸é ºôµå ½Ã°£À¸·Î ÀÚµ¿ ¼³Á¤
-        info['date']    = 0   # ÆĞÅÏ »ı¼º ³¯Â¥ 
-        info['time']    = 0   # ÆĞÅÏ »ı¼º ½Ã°£ 
-        info['sig_num'] = 4 # ÆĞÅÏ ¼ö
+        # íŒ¨í„´ ìƒì„±ë‚ ì§œì™€ ì‹œê°„ì€ ì—†ë‹¤ë©´ ë¹Œë“œ ì‹œê°„ìœ¼ë¡œ ìë™ ì„¤ì •
+        info['date']    = 0   # íŒ¨í„´ ìƒì„± ë‚ ì§œ 
+        info['time']    = 0   # íŒ¨í„´ ìƒì„± ì‹œê°„ 
+        info['sig_num'] = 4 # íŒ¨í„´ ìˆ˜
         return info
 

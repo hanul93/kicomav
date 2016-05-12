@@ -31,47 +31,47 @@ import kernel
 
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         return 0
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
     
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = __author__ # Á¦ÀÛÀÚ
-        info['version'] = __version__     # ¹öÀü
-        info['title'] = 'Attach Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'attach' # ¿£Áø ÆÄÀÏ¸í
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = __author__ # ì œì‘ì
+        info['version'] = __version__     # ë²„ì „
+        info['title'] = 'Attach Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'attach' # ì—”ì§„ íŒŒì¼ëª…
         return info
 
     #-----------------------------------------------------------------
     # arclist(self, scan_file_struct, format)
-    # ¾ĞÃà ÆÄÀÏ ³»ºÎÀÇ ¾ĞÃàµÈ ÆÄÀÏ¸íÀ» ¸®½ºÆ®·Î ¸®ÅÏÇÑ´Ù.
+    # ì••ì¶• íŒŒì¼ ë‚´ë¶€ì˜ ì••ì¶•ëœ íŒŒì¼ëª…ì„ ë¦¬ìŠ¤íŠ¸ë¡œ ë¦¬í„´í•œë‹¤.
     #-----------------------------------------------------------------
     def arclist(self, scan_file_struct, format) :
-        file_scan_list = [] # °Ë»ç ´ë»ó Á¤º¸¸¦ ¸ğµÎ °¡Áü
+        file_scan_list = [] # ê²€ì‚¬ ëŒ€ìƒ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì§
         deep_name = ''
 
         try :
-            # ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸ËÁß¿¡ Ãß°¡ Æ÷¸ËÀÌ ÀÖ´Â°¡?
+            # ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·ì¤‘ì— ì¶”ê°€ í¬ë§·ì´ ìˆëŠ”ê°€?
             fformat = format['ff_attach']
 
             filename = scan_file_struct['real_filename']
@@ -84,20 +84,20 @@ class KavMain :
             name = 'Attached'
             arc_name = 'arc_attach!%s' % pos
 
-            file_info = {}  # ÆÄÀÏ ÇÑ°³ÀÇ Á¤º¸
+            file_info = {}  # íŒŒì¼ í•œê°œì˜ ì •ë³´
 
             if len(deep_name) != 0 :
                 dname = '%s/%s' % (deep_name, name)
             else :
                 dname = '%s' % (name)
 
-            file_info['is_arc'] = True # ¾ĞÃà ¿©ºÎ
-            file_info['arc_engine_name'] = arc_name # ¾ĞÃà ÇØÁ¦ °¡´É ¿£Áø ID
-            file_info['arc_filename'] = filename # ½ÇÁ¦ ¾ĞÃà ÆÄÀÏ
-            file_info['arc_in_name'] = name #¾ĞÃàÇØÁ¦ ´ë»ó ÆÄÀÏ
-            file_info['real_filename'] = '' # °Ë»ç ´ë»ó ÆÄÀÏ
-            file_info['deep_filename'] = dname  # ¾ĞÃà ÆÄÀÏÀÇ ³»ºÎ¸¦ Ç¥ÇöÇÏ±â À§ÇÑ ÆÄÀÏ¸í
-            file_info['display_filename'] = scan_file_struct['display_filename'] # Ãâ·Â¿ë
+            file_info['is_arc'] = True # ì••ì¶• ì—¬ë¶€
+            file_info['arc_engine_name'] = arc_name # ì••ì¶• í•´ì œ ê°€ëŠ¥ ì—”ì§„ ID
+            file_info['arc_filename'] = filename # ì‹¤ì œ ì••ì¶• íŒŒì¼
+            file_info['arc_in_name'] = name #ì••ì¶•í•´ì œ ëŒ€ìƒ íŒŒì¼
+            file_info['real_filename'] = '' # ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼
+            file_info['deep_filename'] = dname  # ì••ì¶• íŒŒì¼ì˜ ë‚´ë¶€ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ íŒŒì¼ëª…
+            file_info['display_filename'] = scan_file_struct['display_filename'] # ì¶œë ¥ìš©
 
             file_scan_list.append(file_info)
         except :
@@ -107,7 +107,7 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # unarc(self, scan_file_struct)
-    # ÁÖ¾îÁø ¾ĞÃàµÈ ÆÄÀÏ¸íÀ¸·Î ÆÄÀÏÀ» ÇØÁ¦ÇÑ´Ù.
+    # ì£¼ì–´ì§„ ì••ì¶•ëœ íŒŒì¼ëª…ìœ¼ë¡œ íŒŒì¼ì„ í•´ì œí•œë‹¤.
     #-----------------------------------------------------------------
     def unarc(self, scan_file_struct) :
         fp = None
@@ -121,14 +121,14 @@ class KavMain :
             if arc_id[0:10] != 'arc_attach' :
                 raise SystemError
 
-            pos = int(arc_id[11:]) # Ã·ºÎµÈ ÆÄÀÏÀÇ À§Ä¡ ¾ò±â
+            pos = int(arc_id[11:]) # ì²¨ë¶€ëœ íŒŒì¼ì˜ ìœ„ì¹˜ ì–»ê¸°
             if pos <= 0 : 
                 raise SystemError
 
             arc_name = scan_file_struct['arc_filename']
             filename = scan_file_struct['arc_in_name']
 
-            # Ã·ºÎ ÆÄÀÏÀ» °¡Áø ÆÄÀÏ ¿­±â
+            # ì²¨ë¶€ íŒŒì¼ì„ ê°€ì§„ íŒŒì¼ ì—´ê¸°
             fp = open(arc_name, 'rb') 
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
 
@@ -140,7 +140,7 @@ class KavMain :
             mm = None
             fp = None
 
-            # ¾ĞÃàÀ» ÇØÁ¦ÇÏ¿© ÀÓ½Ã ÆÄÀÏÀ» »ı¼º
+            # ì••ì¶•ì„ í•´ì œí•˜ì—¬ ì„ì‹œ íŒŒì¼ì„ ìƒì„±
             rname = tempfile.mktemp(prefix='ktmp')
             fp = open(rname, 'wb')
             fp.write(data)

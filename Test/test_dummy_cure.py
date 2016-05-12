@@ -8,24 +8,24 @@ import kavcore
 
 class Test_Dummy_Cure(unittest.TestCase):
     def test_kav_dummy(self):
-        self.kav = kavcore.Engine() # ¿£Áø Å¬·¡½º
-        self.kav.SetPlugins('plugins') # ÇÃ·¯±×ÀÎ Æú´õ ¼³Á¤
+        self.kav = kavcore.Engine() # ì—”ì§„ í´ë˜ìŠ¤
+        self.kav.SetPlugins('plugins') # í”ŒëŸ¬ê·¸ì¸ í´ë” ì„¤ì •
 
-        # ¿£Áø ÀÎ½ºÅÏ½º »ı¼º1
+        # ì—”ì§„ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±1
         self.kav1 = self.kav.CreateInstance()
         self.assertTrue(self.kav1 != None)
 
-        # ¿£Áø ÃÊ±âÈ­
+        # ì—”ì§„ ì´ˆê¸°í™”
         ret = self.kav1.init()
         self.assertTrue(ret != False)
 
-        # ¾Ç¼ºÄÚµå °Ë»ç
+        # ì•…ì„±ì½”ë“œ ê²€ì‚¬
         self.kav1.scan('dummy.txt')
         ret = self.kav1.get_result()
         self.assertTrue(ret['Files'] == 1)
         self.assertTrue(ret['Infected_files'] == 1)
 
-        # ¿£Áø Á¾·á
+        # ì—”ì§„ ì¢…ë£Œ
         self.kav1.uninit()
 
 
