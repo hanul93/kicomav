@@ -26,7 +26,7 @@ __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
 
-import os # ÆÄÀÏ »èÁ¦¸¦ À§ÇØ import
+import os # íŒŒì¼ ì‚­ì œë¥¼ ìœ„í•´ import
 import zlib
 import hashlib
 import struct, mmap
@@ -34,7 +34,7 @@ import kernel
 import kavutil
 import glob
 
-# ¸ÅÅ©·Î Å¸ÀÔ
+# ë§¤í¬ë¡œ íƒ€ì…
 X95M = 1
 X97M = 2
 W95M = 3
@@ -82,9 +82,9 @@ def ExtractMacroData_W95M(data) :
         mac_num = struct.unpack('<H', data[mac_pos+2:mac_pos+4])[0]
         mac_pos += 4
 
-        # print mac_num # ¸ÅÅ©·Î °³¼ö
+        # print mac_num # ë§¤í¬ë¡œ ê°œìˆ˜
 
-        mac_info = 0 # ¸ÅÅ©·Î ÁÖ¿ä Á¤º¸ °³¼ö
+        mac_info = 0 # ë§¤í¬ë¡œ ì£¼ìš” ì •ë³´ ê°œìˆ˜
 
         all_code = []
 
@@ -134,11 +134,11 @@ def ExtractMacroData_X95M(data) :
         mac_pos += 0x3C
         if data_size < mac_pos : raise SystemError
 
-        # ¸ÅÅ©·Î Á¤º¸ À§Ä¡±îÁö µµÂø
+        # ë§¤í¬ë¡œ ì •ë³´ ìœ„ì¹˜ê¹Œì§€ ë„ì°©
         if ord(data[mac_pos]) != 0xFE or ord(data[mac_pos+1]) != 0xCA :
             raise SystemError
 
-        # ¸ÅÅ©·Î ¼Ò½º ÄÚµåÀÇ ÁÙ ¼ö ¾ò±â
+        # ë§¤í¬ë¡œ ì†ŒìŠ¤ ì½”ë“œì˜ ì¤„ ìˆ˜ ì–»ê¸°
         mac_lines = struct.unpack('<H', data[mac_pos+4:mac_pos+6])[0]
         if mac_lines == 0 : raise SystemError 
 
@@ -150,7 +150,7 @@ def ExtractMacroData_X95M(data) :
 
         # print 'ok :', hex(mac_pos), mac_lines, mac_len
 
-        # ¸ÅÅ©·Î ´ã±ä ¿µ¿ª ÃßÃâ
+        # ë§¤í¬ë¡œ ë‹´ê¸´ ì˜ì—­ ì¶”ì¶œ
         if data_size < (mac_pos + mac_len) : raise SystemError
         mac_data = data[mac_pos:mac_pos + mac_len]
 
@@ -166,17 +166,17 @@ def ExtractMacroData_Macro97(data) :
 
     try :
         if data_size < 0x200 : raise SystemError
-        if ord(data[0]) != 0x01 : raise SystemError # ¸ÅÅ©·Î ¾Æ´Ô
+        if ord(data[0]) != 0x01 : raise SystemError # ë§¤í¬ë¡œ ì•„ë‹˜
 
         if ord(data[9]) == 0x01 and ord(data[10]) == 0x01 :
-            # ¿¢¼¿ 97 or ¿öµå 97
+            # ì—‘ì…€ 97 or ì›Œë“œ 97
             mac_pos  = struct.unpack('<L', data[0xB:0xB+4])[0] + 0x4F
             mac_pos += (struct.unpack('<H', data[mac_pos:mac_pos+2])[0] * 16) + 2
             mac_pos += struct.unpack('<L', data[mac_pos:mac_pos+4])[0] + 10
             mac_pos += struct.unpack('<L', data[mac_pos:mac_pos+4])[0] + 81
             mac_pos  = struct.unpack('<L', data[mac_pos:mac_pos+4])[0] + 60
         else :
-            # ¿¢¼¿ 2000 or ¿öµå 2000 ÀÌ»ó
+            # ì—‘ì…€ 2000 or ì›Œë“œ 2000 ì´ìƒ
             mac_pos = struct.unpack('<L', data[25:25+4])[0]
             mac_pos = (mac_pos - 1) + 0x3D
 
@@ -223,7 +223,7 @@ def GetMD5_Macro(data, target_macro) :
             else :
                 if max > 3 :
                     if SIGTOOL == True :
-                        print data[i-max:i] # ÆĞÅÏ »ı¼º½Ã ÂüÁ¶ (sigtool)
+                        print data[i-max:i] # íŒ¨í„´ ìƒì„±ì‹œ ì°¸ì¡° (sigtool)
                     buf += data[i-max:i]
                 max = 0
 
@@ -233,7 +233,7 @@ def GetMD5_Macro(data, target_macro) :
 
         if SIGTOOL == True :
             str_macro = ['', 'x95m', 'x97m', 'w95m', 'w97m']
-            print '[%s] %s:%s:%s:' % (str_macro[target_macro], len(buf), md5.hexdigest(), len(data)) # ÆĞÅÏ ÃßÃâ (sigtool)
+            print '[%s] %s:%s:%s:' % (str_macro[target_macro], len(buf), md5.hexdigest(), len(data)) # íŒ¨í„´ ì¶”ì¶œ (sigtool)
 
         ret = (len(buf), fmd5, len(data))
     except :
@@ -244,16 +244,16 @@ def GetMD5_Macro(data, target_macro) :
 
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         try :
             self.plugins = plugins
             self.x95m_ptn   = []
@@ -280,7 +280,7 @@ class KavMain :
 
             return 1
 
-    def __LoadDB__(self, target_macro) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def __LoadDB__(self, target_macro) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         try :
             vdb = kavutil.VDB()
 
@@ -293,9 +293,9 @@ class KavMain :
             for i in range(len(flist)) :
                 fname = flist[i]
                 
-                # ÆĞÅÏ ·Îµù
+                # íŒ¨í„´ ë¡œë”©
                 ptn_data = vdb.Load(fname)
-                if ptn_data == None : # ÆĞÅÏ ·Îµù ½ÇÆĞ
+                if ptn_data == None : # íŒ¨í„´ ë¡œë”© ì‹¤íŒ¨
                     return 1
 
                 if target_macro   == X95M : self.x95m_ptn.append(ptn_data)
@@ -305,7 +305,7 @@ class KavMain :
 
                 self.__signum__ += vdb.GetSigNum()
 
-                # ÃÖ½Å ³¯Â¥ ±¸ÇÏ±â
+                # ìµœì‹  ë‚ ì§œ êµ¬í•˜ê¸°
                 t_d = vdb.GetDate()
                 t_t = vdb.GetTime()
 
@@ -321,18 +321,18 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
     
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
-    # ¾Ç¼ºÄÚµå¸¦ °Ë»çÇÑ´Ù.
-    # ÀÎÀÚ°ª : mmhandle         - ÆÄÀÏ mmap ÇÚµé
-    #        : scan_file_struct - ÆÄÀÏ ±¸Á¶Ã¼
-    #        : format           - ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸Ë
-    # ¸®ÅÏ°ª : (¾Ç¼ºÄÚµå ¹ß°ß ¿©ºÎ, ¾Ç¼ºÄÚµå ÀÌ¸§, ¾Ç¼ºÄÚµå ID) µîµî
+    # ì•…ì„±ì½”ë“œë¥¼ ê²€ì‚¬í•œë‹¤.
+    # ì¸ìê°’ : mmhandle         - íŒŒì¼ mmap í•¸ë“¤
+    #        : scan_file_struct - íŒŒì¼ êµ¬ì¡°ì²´
+    #        : format           - ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·
+    # ë¦¬í„´ê°’ : (ì•…ì„±ì½”ë“œ ë°œê²¬ ì—¬ë¶€, ì•…ì„±ì½”ë“œ ì´ë¦„, ì•…ì„±ì½”ë“œ ID) ë“±ë“±
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
         global SIGTOOL
@@ -340,31 +340,31 @@ class KavMain :
         ret = None
         scan_state = kernel.NOT_FOUND
         ret_value = {}
-        ret_value['result']     = False # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-        ret_value['virus_name'] = ''    # ¹ÙÀÌ·¯½º ÀÌ¸§
-        ret_value['scan_state'] = kernel.NOT_FOUND # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-        ret_value['virus_id']   = -1    # ¹ÙÀÌ·¯½º ID
+        ret_value['result']     = False # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+        ret_value['virus_name'] = ''    # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+        ret_value['virus_id']   = -1    # ë°”ì´ëŸ¬ìŠ¤ ID
 
         try :
             section_name = scan_file_struct['deep_filename']
-            data = mmhandle[:] # ÆÄÀÏ ÀüÃ¼ ³»¿ë
+            data = mmhandle[:] # íŒŒì¼ ì „ì²´ ë‚´ìš©
 
-            if scan_file_struct['signature'] == True : # ½Ã±×³ÊÃ³ »ı¼º
+            if scan_file_struct['signature'] == True : # ì‹œê·¸ë„ˆì²˜ ìƒì„±
                 SIGTOOL = True
 
-            # _VBA_PROJECT/xxxx ¿¡ Á¸ÀçÇÏ´Â ½ºÆ®¸²Àº ¿¢¼¿95 ¸ÅÅ©·Î°¡ Á¸ÀçÇÑ´Ù.
+            # _VBA_PROJECT/xxxx ì— ì¡´ì¬í•˜ëŠ” ìŠ¤íŠ¸ë¦¼ì€ ì—‘ì…€95 ë§¤í¬ë¡œê°€ ì¡´ì¬í•œë‹¤.
             if section_name.find(r'_VBA_PROJECT/') != -1 :
                 ret = self.__ScanVirus_X95M__(data)
                 target = 'MSExcel'
-            # _VBA_PROJECT_CUR/xxxx ¿¡ Á¸ÀçÇÏ´Â ½ºÆ®¸²Àº ¿¢¼¿97 ¸ÅÅ©·Î°¡ Á¸ÀçÇÑ´Ù.
+            # _VBA_PROJECT_CUR/xxxx ì— ì¡´ì¬í•˜ëŠ” ìŠ¤íŠ¸ë¦¼ì€ ì—‘ì…€97 ë§¤í¬ë¡œê°€ ì¡´ì¬í•œë‹¤.
             elif section_name.find(r'_VBA_PROJECT_CUR/') != -1 :
                 ret = self.__ScanVirus_Macro97__(data, X97M)
                 target = 'MSExcel'
-            # WordDocument ½ºÆ®¸²¿¡ ¿öµå95 ¸ÅÅ©·Î°¡ Á¸ÀçÇÑ´Ù.
+            # WordDocument ìŠ¤íŠ¸ë¦¼ì— ì›Œë“œ95 ë§¤í¬ë¡œê°€ ì¡´ì¬í•œë‹¤.
             elif section_name.find('WordDocument') != -1 :
                 ret = self.__ScanVirus_W95M__(data)
                 target = 'MSWord'
-            # Macros/xxxx ¿¡ Á¸ÀçÇÏ´Â ½ºÆ®¸²Àº ¿öµå97 ¸ÅÅ©·Î°¡ Á¸ÀçÇÑ´Ù.
+            # Macros/xxxx ì— ì¡´ì¬í•˜ëŠ” ìŠ¤íŠ¸ë¦¼ì€ ì›Œë“œ97 ë§¤í¬ë¡œê°€ ì¡´ì¬í•œë‹¤.
             elif section_name.find('Macros/') != -1 :
                 ret = self.__ScanVirus_Macro97__(data, W97M)
                 target = 'MSWord'
@@ -372,22 +372,22 @@ class KavMain :
             if ret != None :
                 scan_state, s, i_num, i_list = ret
 
-                # ¹ÙÀÌ·¯½º ÀÌ¸§ Á¶Àı
+                # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„ ì¡°ì ˆ
                 if s[0:2] == 'V.' :
                     s = 'Virus.%s.%s' % (target, s[2:])
                 elif s[0:2] == 'J.' :
                     s = 'Joke.%s.%s' % (target, s[2:])
 
-                # ¾Ç¼ºÄÚµå ÆĞÅÏÀÌ °®´Ù¸é °á°ú °ªÀ» ¸®ÅÏÇÑ´Ù.
-                ret_value['result']     = True # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-                ret_value['virus_name'] = s    # ¹ÙÀÌ·¯½º ÀÌ¸§
-                ret_value['scan_state'] = scan_state # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-                ret_value['virus_id']   = 0    # ¹ÙÀÌ·¯½º ID
+                # ì•…ì„±ì½”ë“œ íŒ¨í„´ì´ ê°–ë‹¤ë©´ ê²°ê³¼ ê°’ì„ ë¦¬í„´í•œë‹¤.
+                ret_value['result']     = True # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+                ret_value['virus_name'] = s    # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+                ret_value['scan_state'] = scan_state # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+                ret_value['virus_id']   = 0    # ë°”ì´ëŸ¬ìŠ¤ ID
                 return ret_value            
         except :
             pass
 
-        # ¾Ç¼ºÄÚµå¸¦ ¹ß°ßÇÏÁö ¸øÇßÀ½À» ¸®ÅÏÇÑ´Ù.
+        # ì•…ì„±ì½”ë“œë¥¼ ë°œê²¬í•˜ì§€ ëª»í–ˆìŒì„ ë¦¬í„´í•œë‹¤.
         return ret_value
 
     def __ScanVirus_W95M__(self, data) :
@@ -440,11 +440,11 @@ class KavMain :
         ret = None
 
         try :
-            fsize    = hash_data[0] # md5¸¦ »ı¼ºÇÑ ¹öÆÛÀÇ Å©±â
+            fsize    = hash_data[0] # md5ë¥¼ ìƒì„±í•œ ë²„í¼ì˜ í¬ê¸°
             fmd5     = hash_data[1] # md5
-            mac_size = hash_data[2] # ½ÇÁ¦ ¸ÅÅ©·Î Å©±â
+            mac_size = hash_data[2] # ì‹¤ì œ ë§¤í¬ë¡œ í¬ê¸°
 
-            # ÆĞÅÏ ºñ±³
+            # íŒ¨í„´ ë¹„êµ
             i_num = -1
 
             if   target_macro == X95M : macro_ptn = self.x95m_ptn
@@ -456,18 +456,18 @@ class KavMain :
                 vpattern = macro_ptn[i]
 
                 try :
-                    t = vpattern[fsize] # ÆĞÅÏ Áß¿¡ ÆÄÀÏ Å©±â·Î µÈ MD5°¡ Á¸ÀçÇÏ³ª?
+                    t = vpattern[fsize] # íŒ¨í„´ ì¤‘ì— íŒŒì¼ í¬ê¸°ë¡œ ëœ MD5ê°€ ì¡´ì¬í•˜ë‚˜?
 
-                    # MD5ÀÇ 6ÀÚ¸® ³»¿ëÀÌ ÀÏÄ¡ÇÏ´ÂÁö Á¶»ç
+                    # MD5ì˜ 6ìë¦¬ ë‚´ìš©ì´ ì¼ì¹˜í•˜ëŠ”ì§€ ì¡°ì‚¬
                     id = t[fmd5[0:6]]
 
-                    # ³ª¸ÓÁö 10ÀÚ¸®µµ ºñ±³ÇØ¾ß ÇÔ
-                    i_num = id[0]   # x95m.iXX ÆÄÀÏ¿¡..
-                    i_list = id[1]  # ¸î¹øÂ° ¸®½ºÆ®ÀÎÁö ¾Ë°Ô µÊ
+                    # ë‚˜ë¨¸ì§€ 10ìë¦¬ë„ ë¹„êµí•´ì•¼ í•¨
+                    i_num = id[0]   # x95m.iXX íŒŒì¼ì—..
+                    i_list = id[1]  # ëª‡ë²ˆì§¸ ë¦¬ìŠ¤íŠ¸ì¸ì§€ ì•Œê²Œ ë¨
                 except :
                     pass
 
-                if i_num != -1 : # MD5 6ÀÚ¸®¿Í ÀÏÄ¡ÇÏ´Â °ÍÀ» ¹ß°ß µÇ¾ú´Ù¸é
+                if i_num != -1 : # MD5 6ìë¦¬ì™€ ì¼ì¹˜í•˜ëŠ” ê²ƒì„ ë°œê²¬ ë˜ì—ˆë‹¤ë©´
                     try :
                         if target_macro == X95M :
                             e_vlist = self.x95m_iptn[i_num]
@@ -484,7 +484,7 @@ class KavMain :
                         elif target_macro == W97M : ptn_name = 'w97m'
 
                         fname = '%s%s%s.i%02d' % (self.plugins, os.sep,ptn_name,  i_num)
-                        vdb = kavutil.VDB() # ÆĞÅÏ ·Îµù
+                        vdb = kavutil.VDB() # íŒ¨í„´ ë¡œë”©
                         e_vlist = vdb.Load(fname)
 
                     if e_vlist != None :
@@ -493,13 +493,13 @@ class KavMain :
                         elif target_macro == W95M : self.w95m_iptn[i_num] = e_vlist
                         elif target_macro == W97M : self.w97m_iptn[i_num] = e_vlist
 
-                        p_md5_10 = e_vlist[i_list][0] # MD5 10ÀÚ¸®
-                        p_mac_size = int(e_vlist[i_list][1]) # ¸ÅÅ©·Î Å©±â 
-                        p_vname = e_vlist[i_list][2]  # ¹ÙÀÌ·¯½º ÀÌ¸§
+                        p_md5_10 = e_vlist[i_list][0] # MD5 10ìë¦¬
+                        p_mac_size = int(e_vlist[i_list][1]) # ë§¤í¬ë¡œ í¬ê¸° 
+                        p_vname = e_vlist[i_list][2]  # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
 
-                        if (p_md5_10 == fmd5[6:]) and (p_mac_size == mac_size) : # ¸ğµÎ ÀÏÄ¡
+                        if (p_md5_10 == fmd5[6:]) and (p_mac_size == mac_size) : # ëª¨ë‘ ì¼ì¹˜
                             ret = (kernel.INFECTED, p_vname, i_num, i_list)
-                        elif p_md5_10 == fmd5[6:] : # md5¸¸ ÀÏÄ¡
+                        elif p_md5_10 == fmd5[6:] : # md5ë§Œ ì¼ì¹˜
                             s = p_vname + '.Gen'
                             ret = (kernel.SUSPECT, s, i_num, i_list)
         except :
@@ -508,47 +508,47 @@ class KavMain :
         return ret
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
-    # ¾Ç¼ºÄÚµå¸¦ Ä¡·áÇÑ´Ù.
-    # ÀÎÀÚ°ª : filename   - ÆÄÀÏ ÀÌ¸§
-    #        : malwareID  - Ä¡·áÇÒ ¾Ç¼ºÄÚµå ID
-    # ¸®ÅÏ°ª : ¾Ç¼ºÄÚµå Ä¡·á ¿©ºÎ
+    # ì•…ì„±ì½”ë“œë¥¼ ì¹˜ë£Œí•œë‹¤.
+    # ì¸ìê°’ : filename   - íŒŒì¼ ì´ë¦„
+    #        : malwareID  - ì¹˜ë£Œí•  ì•…ì„±ì½”ë“œ ID
+    # ë¦¬í„´ê°’ : ì•…ì„±ì½”ë“œ ì¹˜ë£Œ ì—¬ë¶€
     #-----------------------------------------------------------------
-    def disinfect(self, filename, malwareID) : # ¾Ç¼ºÄÚµå Ä¡·á
+    def disinfect(self, filename, malwareID) : # ì•…ì„±ì½”ë“œ ì¹˜ë£Œ
         try :
             '''
-            # ¾Ç¼ºÄÚµå Áø´Ü °á°ú¿¡¼­ ¹ŞÀº ID °ªÀÌ 0ÀÎ°¡?
+            # ì•…ì„±ì½”ë“œ ì§„ë‹¨ ê²°ê³¼ì—ì„œ ë°›ì€ ID ê°’ì´ 0ì¸ê°€?
             if malwareID == 0 : 
-                os.remove(filename) # ÆÄÀÏ »èÁ¦
-                return True # Ä¡·á ¿Ï·á ¸®ÅÏ
+                os.remove(filename) # íŒŒì¼ ì‚­ì œ
+                return True # ì¹˜ë£Œ ì™„ë£Œ ë¦¬í„´
             '''
         except :
             pass
 
-        return False # Ä¡·á ½ÇÆĞ ¸®ÅÏ
+        return False # ì¹˜ë£Œ ì‹¤íŒ¨ ë¦¬í„´
 
     #-----------------------------------------------------------------
     # listvirus(self)
-    # Áø´Ü/Ä¡·á °¡´ÉÇÑ ¾Ç¼ºÄÚµåÀÇ ¸ñ·ÏÀ» ¾Ë·ÁÁØ´Ù.
+    # ì§„ë‹¨/ì¹˜ë£Œ ê°€ëŠ¥í•œ ì•…ì„±ì½”ë“œì˜ ëª©ë¡ì„ ì•Œë ¤ì¤€ë‹¤.
     #-----------------------------------------------------------------
-    def listvirus(self) : # Áø´Ü °¡´ÉÇÑ ¾Ç¼ºÄÚµå ¸ñ·Ï
-        vlist = [] # ¸®½ºÆ®Çü º¯¼ö ¼±¾ğ
+    def listvirus(self) : # ì§„ë‹¨ ê°€ëŠ¥í•œ ì•…ì„±ì½”ë“œ ëª©ë¡
+        vlist = [] # ë¦¬ìŠ¤íŠ¸í˜• ë³€ìˆ˜ ì„ ì–¸
         vlist.append('Virus.MSExcel.Laroux.A') 
         return vlist
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = __author__    # Á¦ÀÛÀÚ
-        info['version'] = __version__  # ¹öÀü
-        info['title'] = 'Macro Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'macro'     # ¿£Áø ÆÄÀÏ¸í
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = __author__    # ì œì‘ì
+        info['version'] = __version__  # ë²„ì „
+        info['title'] = 'Macro Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'macro'     # ì—”ì§„ íŒŒì¼ëª…
 
-        # ÆĞÅÏ »ı¼º³¯Â¥¿Í ½Ã°£Àº ¾ø´Ù¸é ºôµå ½Ã°£À¸·Î ÀÚµ¿ ¼³Á¤
-        info['date']    = self.__date__   # ÆĞÅÏ »ı¼º ³¯Â¥ 
-        info['time']    = self.__time__   # ÆĞÅÏ »ı¼º ½Ã°£ 
-        info['sig_num'] = self.__signum__ # ÆĞÅÏ ¼ö
+        # íŒ¨í„´ ìƒì„±ë‚ ì§œì™€ ì‹œê°„ì€ ì—†ë‹¤ë©´ ë¹Œë“œ ì‹œê°„ìœ¼ë¡œ ìë™ ì„¤ì •
+        info['date']    = self.__date__   # íŒ¨í„´ ìƒì„± ë‚ ì§œ 
+        info['time']    = self.__time__   # íŒ¨í„´ ìƒì„± ì‹œê°„ 
+        info['sig_num'] = self.__signum__ # íŒ¨í„´ ìˆ˜
         return info
 

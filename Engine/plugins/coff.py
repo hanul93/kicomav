@@ -26,9 +26,9 @@ __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
 
-import os # ÆÄÀÏ »èÁ¦¸¦ À§ÇØ import
+import os # íŒŒì¼ ì‚­ì œë¥¼ ìœ„í•´ import
 import kernel
-import pefile # PE ÆÄÀÏ Æ÷¸ËÀ» À§ÇØ import
+import pefile # PE íŒŒì¼ í¬ë§·ì„ ìœ„í•´ import
 import hashlib
 import struct
 
@@ -41,16 +41,16 @@ def int32(iv) :
     return iv   
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         self.pattern = [ \
         #['Notepad (not a virus)', [TARGET_EP, 0x80, 0x1A9393CF], [TARGET_SECTION+0, 0x000003A0, 0x80, 0xE6829D78]]
         ]
@@ -58,41 +58,41 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
 
     #-----------------------------------------------------------------
     # scan(self, filehandle, filename)
-    # ¾Ç¼ºÄÚµå¸¦ °Ë»çÇÑ´Ù.
-    # ÀÎÀÚ°ª : mmhandle         - ÆÄÀÏ mmap ÇÚµé
-    #        : scan_file_struct - ÆÄÀÏ ±¸Á¶Ã¼
-    #        : format           - ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸Ë
-    # ¸®ÅÏ°ª : (¾Ç¼ºÄÚµå ¹ß°ß ¿©ºÎ, ¾Ç¼ºÄÚµå ÀÌ¸§, ¾Ç¼ºÄÚµå ID) µîµî
+    # ì•…ì„±ì½”ë“œë¥¼ ê²€ì‚¬í•œë‹¤.
+    # ì¸ìê°’ : mmhandle         - íŒŒì¼ mmap í•¸ë“¤
+    #        : scan_file_struct - íŒŒì¼ êµ¬ì¡°ì²´
+    #        : format           - ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·
+    # ë¦¬í„´ê°’ : (ì•…ì„±ì½”ë“œ ë°œê²¬ ì—¬ë¶€, ì•…ì„±ì½”ë“œ ì´ë¦„, ì•…ì„±ì½”ë“œ ID) ë“±ë“±
     #-----------------------------------------------------------------
     def scan(self, mmhandle, scan_file_struct, format) :
         ret_value = {}
-        ret_value['result']     = False # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-        ret_value['virus_name'] = ''    # ¹ÙÀÌ·¯½º ÀÌ¸§
-        ret_value['scan_state'] = kernel.NOT_FOUND # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-        ret_value['virus_id']   = -1    # ¹ÙÀÌ·¯½º ID
+        ret_value['result']     = False # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+        ret_value['virus_name'] = ''    # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+        ret_value['scan_state'] = kernel.NOT_FOUND # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+        ret_value['virus_id']   = -1    # ë°”ì´ëŸ¬ìŠ¤ ID
 
-        try : # ¹é½Å ¿£ÁøÀÇ ¿À·ù¸¦ ¹æÁöÇÏ±â À§ÇØ ¿¹¿Ü Ã³¸®¸¦ ¼±¾ğ 
-            # ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸ËÁß¿¡ pe Æ÷¸ËÀÌ ÀÖ´Â°¡?
+        try : # ë°±ì‹  ì—”ì§„ì˜ ì˜¤ë¥˜ë¥¼ ë°©ì§€í•˜ê¸° ìœ„í•´ ì˜ˆì™¸ ì²˜ë¦¬ë¥¼ ì„ ì–¸ 
+            # ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·ì¤‘ì— pe í¬ë§·ì´ ìˆëŠ”ê°€?
             fformat = format['ff_pe']
 
-            mm = mmhandle # ÆÄÀÏ mmap ÇÚµéÀ» mm¿¡ ÀúÀå
+            mm = mmhandle # íŒŒì¼ mmap í•¸ë“¤ì„ mmì— ì €ì¥
 
             file_pattern_1st = {}
 
-            # EP¿¡¼­ ÆĞÅÏÀ» »ı¼º
+            # EPì—ì„œ íŒ¨í„´ì„ ìƒì„±
             offset = fformat['pe']['EntryPointRaw']
             # print hex(offset)
 
             file_pattern_1st[TARGET_EP] = self.__MakePattern__(mm, offset)
 
-            # °¢ ¼½¼Ç¿¡¼­ ÆĞÅÏÀ» »ı¼º
+            # ê° ì„¹ì…˜ì—ì„œ íŒ¨í„´ì„ ìƒì„±
             sections = fformat['pe']['Sections']
              
             for i in range(fformat['pe']['SectionNumber']) :
@@ -102,25 +102,25 @@ class KavMain :
 
             # print hex(file_pattern_1st[TARGET_EP][0x80])
 
-            # 1Â÷ ÆĞÅÏ ºñ±³
+            # 1ì°¨ íŒ¨í„´ ë¹„êµ
             for p in self.pattern :
                 vname   = p[0]
                 ptn_1st = p[1]
                 ptn_2nd = p[2]
 
-                target  = ptn_1st[0] # 1Â÷ ÆĞÅÏ À§Ä¡ 
-                size    = ptn_1st[1] # 1Â÷ ÆĞÅÏ Å©±â
-                ptn_crc = ptn_1st[2] # 1Â÷ ÆĞÅÏ Å©±â
+                target  = ptn_1st[0] # 1ì°¨ íŒ¨í„´ ìœ„ì¹˜ 
+                size    = ptn_1st[1] # 1ì°¨ íŒ¨í„´ í¬ê¸°
+                ptn_crc = ptn_1st[2] # 1ì°¨ íŒ¨í„´ í¬ê¸°
 
-                # 1Â÷ ÆĞÅÏ ÀÏÄ¡¾ÊÀ¸¸é ´ÙÀ½ ÆĞÅÏ ºñ±³
+                # 1ì°¨ íŒ¨í„´ ì¼ì¹˜ì•Šìœ¼ë©´ ë‹¤ìŒ íŒ¨í„´ ë¹„êµ
                 if file_pattern_1st[target][size] != ptn_crc : 
                     continue
 
-                #2Â÷ ÆĞÅÏ ºñ±³
-                target  = ptn_2nd[0] # 2Â÷ ÆĞÅÏ À§Ä¡ 
-                pos     = ptn_2nd[1] # 2Â÷ ÆĞÅÏ À§Ä¡ 
-                size    = ptn_2nd[2] # 2Â÷ ÆĞÅÏ Å©±â
-                ptn_crc = ptn_2nd[3] # 2Â÷ ÆĞÅÏ Å©±â
+                #2ì°¨ íŒ¨í„´ ë¹„êµ
+                target  = ptn_2nd[0] # 2ì°¨ íŒ¨í„´ ìœ„ì¹˜ 
+                pos     = ptn_2nd[1] # 2ì°¨ íŒ¨í„´ ìœ„ì¹˜ 
+                size    = ptn_2nd[2] # 2ì°¨ íŒ¨í„´ í¬ê¸°
+                ptn_crc = ptn_2nd[3] # 2ì°¨ íŒ¨í„´ í¬ê¸°
 
                 if target == TARGET_EP :
                     offset = fformat['pe']['EntryPointRaw']
@@ -133,7 +133,7 @@ class KavMain :
 
                 offset = int32(offset + pos)
 
-                # 2Â÷ ÆĞÅÏ ÀÏÄ¡ÇÑ´Ù¸é 
+                # 2ì°¨ íŒ¨í„´ ì¼ì¹˜í•œë‹¤ë©´ 
                 crc32 = self.__k2crc32__(mm, offset, size)
                 '''
                 print hex(offset)
@@ -142,28 +142,28 @@ class KavMain :
                 print hex(ptn_crc)
                 '''
                 if self.__k2crc32__(mm, offset, size) == ptn_crc :
-                    # ¸Â´Ù¸é °Ë»ç °á°ú¿Í ÀÌ¸§, ID¸¦ ¸®ÅÏ
-                    ret_value['result']     = True             # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-                    ret_value['virus_name'] = vname # ¹ÙÀÌ·¯½º ÀÌ¸§
-                    ret_value['scan_state'] = kernel.INFECTED # 0:¾øÀ½, 1:°¨¿°, 2:ÀÇ½É, 3:°æ°í
-                    ret_value['virus_id']   = 0                # ¹ÙÀÌ·¯½º ID
+                    # ë§ë‹¤ë©´ ê²€ì‚¬ ê²°ê³¼ì™€ ì´ë¦„, IDë¥¼ ë¦¬í„´
+                    ret_value['result']     = True             # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+                    ret_value['virus_name'] = vname # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+                    ret_value['scan_state'] = kernel.INFECTED # 0:ì—†ìŒ, 1:ê°ì—¼, 2:ì˜ì‹¬, 3:ê²½ê³ 
+                    ret_value['virus_id']   = 0                # ë°”ì´ëŸ¬ìŠ¤ ID
                     return ret_value
 
-        except : # ¸ğµç ¿¹¿Ü»çÇ×À» Ã³¸®
+        except : # ëª¨ë“  ì˜ˆì™¸ì‚¬í•­ì„ ì²˜ë¦¬
             pass
 
-        # ¾Ç¼ºÄÚµå¸¦ ¹ß°ßÇÏÁö ¸øÇßÀ½À» ¸®ÅÏÇÑ´Ù.
+        # ì•…ì„±ì½”ë“œë¥¼ ë°œê²¬í•˜ì§€ ëª»í–ˆìŒì„ ë¦¬í„´í•œë‹¤.
         return ret_value
 
     def __MakePattern__(self, mm, offset) :
         pos = [0x10, 0x20, 0x40, 0x80]
         pattern = {}
 
-        # ÃÊ±âÈ­
+        # ì´ˆê¸°í™”
         for i in pos : pattern[i] = 0
 
         try :
-            # ÆĞÅÏ »ı¼º
+            # íŒ¨í„´ ìƒì„±
             for i in pos :
                 pattern[i] = self.__k2crc32__(mm, offset, i)
         except :
@@ -195,39 +195,39 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)
-    # ¾Ç¼ºÄÚµå¸¦ Ä¡·áÇÑ´Ù.
-    # ÀÎÀÚ°ª : filename   - ÆÄÀÏ ÀÌ¸§
-    #        : malwareID  - Ä¡·áÇÒ ¾Ç¼ºÄÚµå ID
-    # ¸®ÅÏ°ª : ¾Ç¼ºÄÚµå Ä¡·á ¿©ºÎ
+    # ì•…ì„±ì½”ë“œë¥¼ ì¹˜ë£Œí•œë‹¤.
+    # ì¸ìê°’ : filename   - íŒŒì¼ ì´ë¦„
+    #        : malwareID  - ì¹˜ë£Œí•  ì•…ì„±ì½”ë“œ ID
+    # ë¦¬í„´ê°’ : ì•…ì„±ì½”ë“œ ì¹˜ë£Œ ì—¬ë¶€
     #-----------------------------------------------------------------
-    def disinfect(self, filename, malwareID) : # ¾Ç¼ºÄÚµå Ä¡·á
-        return False # Ä¡·á ½ÇÆĞ ¸®ÅÏ
+    def disinfect(self, filename, malwareID) : # ì•…ì„±ì½”ë“œ ì¹˜ë£Œ
+        return False # ì¹˜ë£Œ ì‹¤íŒ¨ ë¦¬í„´
 
     #-----------------------------------------------------------------
     # listvirus(self)
-    # Áø´Ü/Ä¡·á °¡´ÉÇÑ ¾Ç¼ºÄÚµåÀÇ ¸ñ·ÏÀ» ¾Ë·ÁÁØ´Ù.
+    # ì§„ë‹¨/ì¹˜ë£Œ ê°€ëŠ¥í•œ ì•…ì„±ì½”ë“œì˜ ëª©ë¡ì„ ì•Œë ¤ì¤€ë‹¤.
     #-----------------------------------------------------------------
     def listvirus(self) :
-        vlist = [] # ¸®½ºÆ®Çü º¯¼ö ¼±¾ğ
+        vlist = [] # ë¦¬ìŠ¤íŠ¸í˜• ë³€ìˆ˜ ì„ ì–¸
 
         return vlist
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = __author__   # Á¦ÀÛÀÚ
-        info['version'] = __version__ # ¹öÀü
-        info['title'] = 'COFF Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'coff'     # ¿£Áø ÆÄÀÏ¸í
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = __author__   # ì œì‘ì
+        info['version'] = __version__ # ë²„ì „
+        info['title'] = 'COFF Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'coff'     # ì—”ì§„ íŒŒì¼ëª…
 
         
-        # ÆĞÅÏ »ı¼º³¯Â¥¿Í ½Ã°£Àº ¾ø´Ù¸é ºôµå ½Ã°£À¸·Î ÀÚµ¿ ¼³Á¤
-        info['date']    = 0   # ÆĞÅÏ »ı¼º ³¯Â¥ 
-        info['time']    = 0   # ÆĞÅÏ »ı¼º ½Ã°£ 
-        info['sig_num'] = len(self.pattern) # ÆĞÅÏ ¼ö
+        # íŒ¨í„´ ìƒì„±ë‚ ì§œì™€ ì‹œê°„ì€ ì—†ë‹¤ë©´ ë¹Œë“œ ì‹œê°„ìœ¼ë¡œ ìë™ ì„¤ì •
+        info['date']    = 0   # íŒ¨í„´ ìƒì„± ë‚ ì§œ 
+        info['time']    = 0   # íŒ¨í„´ ìƒì„± ì‹œê°„ 
+        info['sig_num'] = len(self.pattern) # íŒ¨í„´ ìˆ˜
         
         return info
 

@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 # Made by Kei Choi(hanul93@gmail.com)
 
-# EXTRA BBD Àû¿ë ¹öÀü
-# mmap Áö¿ø
+# EXTRA BBD ì ìš© ë²„ì „
+# mmap ì§€ì›
 import struct
 import mmap
 import tempfile
@@ -12,23 +12,23 @@ import kavutil
 # GetDword(s, offset)
 # GetWord(s, offset)
 # GetRead(s, offset, size)
-# ¹öÆÛ¿¡¼­ ÁöÁ¤ÇÑ Å©±â¸¸Å­ ÀĞ¾î¿Â´Ù
+# ë²„í¼ì—ì„œ ì§€ì •í•œ í¬ê¸°ë§Œí¼ ì½ì–´ì˜¨ë‹¤
 #---------------------------------------------------------------------
-# ÆÄÀÏ µ¥ÀÌÅÍ¿¡¼­ 4Byte °ª ÃßÃâ
+# íŒŒì¼ ë°ì´í„°ì—ì„œ 4Byte ê°’ ì¶”ì¶œ
 def GetDword(s, offset) :
   return struct.unpack("<L", s[offset:offset+4])[0]
 
-# ÆÄÀÏ µ¥ÀÌÅÍ¿¡¼­ 2Byte °ª ÃßÃâ
+# íŒŒì¼ ë°ì´í„°ì—ì„œ 2Byte ê°’ ì¶”ì¶œ
 def GetWord(s, offset) :
   return struct.unpack("<H", s[offset:offset+2])[0]
 
-# ÆÄÀÏ µ¥ÀÌÅÍ¿¡¼­ Æ¯Á¤ Å©±â¸¸Å­ ÀĞ±â
+# íŒŒì¼ ë°ì´í„°ì—ì„œ íŠ¹ì • í¬ê¸°ë§Œí¼ ì½ê¸°
 def GetRead(s, offset, size) :
   return s[offset:offset+size]
 
 
 #---------------------------------------------------------------------
-# OLE Å¬·¡½º
+# OLE í´ë˜ìŠ¤
 #---------------------------------------------------------------------
 class OLE :
     def __init__ (self, filename) :
@@ -93,7 +93,7 @@ class OLE :
         if self.OleHeader.e_magic1 != 0xe011cfd0L or self.OleHeader.e_magic2 != 0xe11ab1a1L:
             return 0
         else :
-            return 1 # OLE ÆÄÀÏ ¸ÂÀ½
+            return 1 # OLE íŒŒì¼ ë§ìŒ
 
     def readBDB(self, num_of_bbd_blocks) :
         if num_of_bbd_blocks > 109 :
@@ -108,16 +108,16 @@ class OLE :
 
     def parse(self) :
         try :
-            # OLE ÆÄÀÏ ½Ã±×³ÊÃ³ Ã¼Å©
+            # OLE íŒŒì¼ ì‹œê·¸ë„ˆì²˜ ì²´í¬
             if self.isOLE() == 0:
                 self.Error = -1
                 raise AttributeError
 
-            # BBD ºí·° °³¼ö¸¸Å­ BDB ÀĞ±â
+            # BBD ë¸”ëŸ­ ê°œìˆ˜ë§Œí¼ BDB ì½ê¸°
             num_of_bbd_blocks = self.OleHeader.e_num_of_bbd_blocks
             self.readBDB(num_of_bbd_blocks)
 
-            # XBBD ºí·° Ã³¸®
+            # XBBD ë¸”ëŸ­ ì²˜ë¦¬
             num_of_Xbbd_blocks = self.OleHeader.e_num_of_Xbbd_blocks
             xbbd_start         = self.OleHeader.e_xbbd_start
 
@@ -136,12 +136,12 @@ class OLE :
                     self.bbd_list.append(val)
                     self.bbd_list_pos.append((val+1) << 9)
 
-            # BBD °®±â
+            # BBD ê°–ê¸°
     #       bbd = ""
             for i in range(num_of_bbd_blocks) :
                 self.bbd += GetRead(self.mm, self.bbd_list_pos[i], 0x200)
 
-            # SBD ºí·° °³¼ö¸¸Å­ SBD ÀĞ±â
+            # SBD ë¸”ëŸ­ ê°œìˆ˜ë§Œí¼ SBD ì½ê¸°
             sbd_startblock = self.OleHeader.e_sbd_startblock
             num_of_sbd_blocks = self.OleHeader.e_num_of_sbd_blocks
 
@@ -157,13 +157,13 @@ class OLE :
                 self.sbd_list_pos.append((val+1)<<9)
                 i = val
 
-            # SBD °®±â
+            # SBD ê°–ê¸°
     #       sbd = ""
             for i in range(num_of_sbd_blocks) :
                 self.sbd += GetRead(self.mm, self.sbd_list_pos[i], 0x200)
 
 
-            # Root Entry ÃßÃ´ÇÏ±â
+            # Root Entry ì¶”ì²™í•˜ê¸°
             root_startblock = self.OleHeader.e_root_startblock
 
             self.root_list.append(root_startblock)
@@ -178,12 +178,12 @@ class OLE :
                 self.root_list_pos.append((val+1)<<9)
                 i = val  
 
-            # root °®±â
+            # root ê°–ê¸°
             root = ""
             for i in range(len(self.root_list_pos)) :
                 root += GetRead(self.mm, self.root_list_pos[i], 0x200)
 
-            # PPS ÃßÃâ
+            # PPS ì¶”ì¶œ
             for i in range(len(self.root_list_pos) * 4) :
                 pps = {}
                 pps_buf = GetRead(root, i*0x80, 0x80)
@@ -199,7 +199,7 @@ class OLE :
 
                 self.pps_list.append(pps)
 
-            # SDB °®±â
+            # SDB ê°–ê¸°
             sdb_startblock = self.pps_list[0]['StartBlock']
 
             self.sdb_list.append(sdb_startblock)
@@ -220,12 +220,12 @@ class OLE :
 
         return self.Error
 
-    # PPS Æ®¸®¸¦ ¾ò´Â´Ù
+    # PPS íŠ¸ë¦¬ë¥¼ ì–»ëŠ”ë‹¤
     def GetPPSList(self) :
         self.PPSNum = 0
         self.GetPPSNum()
 
-        # ¾µ¸ğ ¾ø´Â PPS ¹ö¸®±â
+        # ì“¸ëª¨ ì—†ëŠ” PPS ë²„ë¦¬ê¸°
         for i in range(len(self.pps_list) - self.PPSNum) :
             self.pps_list.pop()
 
@@ -235,7 +235,7 @@ class OLE :
         if self.Error == -1 :
             return -1
 
-        self.PPSNum += 1 # Á¸ÀçÇÏ´Â PPS
+        self.PPSNum += 1 # ì¡´ì¬í•˜ëŠ” PPS
 
         if self.pps_list[node]['Dir'] != 0xFFFFFFFFL :
             self.deep += 1
@@ -251,7 +251,7 @@ class OLE :
         return 0
 
 
-    # PPS Æ®¸® Ãâ·ÂÇÏ±â
+    # PPS íŠ¸ë¦¬ ì¶œë ¥í•˜ê¸°
     def PrintTree(self, node=0, prefix="") :
         if self.Error == -1 :
             return -1
@@ -271,7 +271,7 @@ class OLE :
 
         return 0
 
-    # PPS¸¦ ´ıÇÁÇÑ´Ù
+    # PPSë¥¼ ë¤í”„í•œë‹¤
     def DumpPPS(self, node, fname) :
         '''
         if self.Error == -1 :
@@ -291,7 +291,7 @@ class OLE :
         bd_list = []
         bd_list.append(sb);
 
-        # PPS ´ıÇÁ¸¦ À§ÇØ ¸î ºí·°À¸·Î ÀÌ·ç¾îÁ³´ÂÁö °è»ê
+        # PPS ë¤í”„ë¥¼ ìœ„í•´ ëª‡ ë¸”ëŸ­ìœ¼ë¡œ ì´ë£¨ì–´ì¡ŒëŠ”ì§€ ê³„ì‚°
         tmp_size = (size/pps_size) * pps_size
         if size % pps_size :
             tmp_size += pps_size
@@ -328,50 +328,50 @@ class OLE :
 
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         return 0
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
     
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = 'Kei Choi' # Á¦ÀÛÀÚ
-        info['version'] = '1.0'     # ¹öÀü
-        info['title'] = 'OLE Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'ole' # ¿£Áø ÆÄÀÏ¸í
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = 'Kei Choi' # ì œì‘ì
+        info['version'] = '1.0'     # ë²„ì „
+        info['title'] = 'OLE Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'ole' # ì—”ì§„ íŒŒì¼ëª…
         return info
 
     #-----------------------------------------------------------------
     # format(self, mmhandle, filename)
-    # Æ÷¸Ë ºĞ¼®±âÀÌ´Ù.
+    # í¬ë§· ë¶„ì„ê¸°ì´ë‹¤.
     #-----------------------------------------------------------------
     def format(self, mmhandle, filename) :
         ole = None
 
         try :
-            fformat = {} # Æ÷¸Ë Á¤º¸¸¦ ´ãÀ» °ø°£
+            fformat = {} # í¬ë§· ì •ë³´ë¥¼ ë‹´ì„ ê³µê°„
 
             ole = OLE(filename)
-            if ole.parse() == 0 : # OLE ÆÄ¼­
-                fformat['pps'] = ole.GetPPSList() # Æ÷¸Ë ÁÖ¿ä Á¤º¸ ÀúÀå
+            if ole.parse() == 0 : # OLE íŒŒì„œ
+                fformat['pps'] = ole.GetPPSList() # í¬ë§· ì£¼ìš” ì •ë³´ ì €ì¥
 
                 ret = {}
                 ret['ff_ole'] = fformat
@@ -387,7 +387,7 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # arclist(self, scan_file_struct, format)
-    # Æ÷¸Ë ºĞ¼®±âÀÌ´Ù.
+    # í¬ë§· ë¶„ì„ê¸°ì´ë‹¤.
     #-----------------------------------------------------------------
     def FullpathPPSList(self, pps_list) :
         self.pps_list = pps_list
@@ -405,7 +405,7 @@ class KavMain :
             pps_name = self.pps_list[node]['Name'][0:self.pps_list[node]['NameSize']-2:2]
             name = prefix + '/' + pps_name
             # print ("%02d : %d %s") % (node, self.deep, name)
-            if self.pps_list[node]['Type'] == 2 : # Stream¸¸ ÀúÀå
+            if self.pps_list[node]['Type'] == 2 : # Streamë§Œ ì €ì¥
                 plist = {}
                 plist['Node'] = node
                 plist['Name'] = name[1:]
@@ -425,11 +425,11 @@ class KavMain :
         return 0
 
     def arclist(self, scan_file_struct, format) :
-        file_scan_list = [] # °Ë»ç ´ë»ó Á¤º¸¸¦ ¸ğµÎ °¡Áü
+        file_scan_list = [] # ê²€ì‚¬ ëŒ€ìƒ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì§
         deep_name = ''
 
         try :
-            # ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸ËÁß¿¡ ZIP Æ÷¸ËÀÌ ÀÖ´Â°¡?
+            # ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·ì¤‘ì— ZIP í¬ë§·ì´ ìˆëŠ”ê°€?
             fformat = format['ff_ole']
 
             filename = scan_file_struct['real_filename']
@@ -439,7 +439,7 @@ class KavMain :
             full_path_list = self.FullpathPPSList(all_pps)
 
             for pps in  full_path_list:
-                file_info = {}  # ÆÄÀÏ ÇÑ°³ÀÇ Á¤º¸
+                file_info = {}  # íŒŒì¼ í•œê°œì˜ ì •ë³´
 
                 name = pps['Name']
 
@@ -448,13 +448,13 @@ class KavMain :
                 else :
                     dname = '%s' % (name)
 
-                file_info['is_arc'] = True # ¾ĞÃà ¿©ºÎ
-                file_info['arc_engine_name'] = 'arc_ole' # ¾ĞÃà ÇØÁ¦ °¡´É ¿£Áø ID
-                file_info['arc_filename'] = filename # ½ÇÁ¦ ¾ĞÃà ÆÄÀÏ
-                file_info['arc_in_name'] = name #¾ĞÃàÇØÁ¦ ´ë»ó ÆÄÀÏ
-                file_info['real_filename'] = '' # °Ë»ç ´ë»ó ÆÄÀÏ
-                file_info['deep_filename'] = dname  # ¾ĞÃà ÆÄÀÏÀÇ ³»ºÎ¸¦ Ç¥ÇöÇÏ±â À§ÇÑ ÆÄÀÏ¸í
-                file_info['display_filename'] = scan_file_struct['display_filename'] # Ãâ·Â¿ë
+                file_info['is_arc'] = True # ì••ì¶• ì—¬ë¶€
+                file_info['arc_engine_name'] = 'arc_ole' # ì••ì¶• í•´ì œ ê°€ëŠ¥ ì—”ì§„ ID
+                file_info['arc_filename'] = filename # ì‹¤ì œ ì••ì¶• íŒŒì¼
+                file_info['arc_in_name'] = name #ì••ì¶•í•´ì œ ëŒ€ìƒ íŒŒì¼
+                file_info['real_filename'] = '' # ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼
+                file_info['deep_filename'] = dname  # ì••ì¶• íŒŒì¼ì˜ ë‚´ë¶€ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ íŒŒì¼ëª…
+                file_info['display_filename'] = scan_file_struct['display_filename'] # ì¶œë ¥ìš©
 
                 file_scan_list.append(file_info)
         except :
@@ -473,7 +473,7 @@ class KavMain :
             arc_name = scan_file_struct['arc_filename']
             filename = scan_file_struct['arc_in_name']
 
-            # ¾ĞÃàÀ» ÇØÁ¦ÇÏ¿© ÀÓ½Ã ÆÄÀÏÀ» »ı¼º
+            # ì••ì¶•ì„ í•´ì œí•˜ì—¬ ì„ì‹œ íŒŒì¼ì„ ìƒì„±
             rname = tempfile.mktemp(prefix='ktmp')
 
             ofile = OLE(arc_name)
@@ -483,7 +483,7 @@ class KavMain :
 
                 node = 0
                 for pps in  full_path_list:
-                    file_info = {}  # ÆÄÀÏ ÇÑ°³ÀÇ Á¤º¸
+                    file_info = {}  # íŒŒì¼ í•œê°œì˜ ì •ë³´
 
                     node = pps['Node']
                     name = pps['Name']

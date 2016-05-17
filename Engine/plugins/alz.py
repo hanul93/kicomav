@@ -34,7 +34,7 @@ import tempfile
 import kernel
 
 #---------------------------------------------------------------------
-# AlzFile Å¬·¡½º
+# AlzFile í´ë˜ìŠ¤
 #---------------------------------------------------------------------
 COMPRESS_METHOD_STORE   = 0
 COMPRESS_METHOD_BZIP2   = 1
@@ -43,7 +43,7 @@ COMPRESS_METHOD_DEFLATE = 2
 class AlzFile :
     #-----------------------------------------------------------------
     # __init__(self, filename)
-    # ¾ĞÃàÀ» ÇØÁ¦ÇÒ Alz ÆÄÀÏÀ» ÁöÁ¤ÇÑ´Ù.
+    # ì••ì¶•ì„ í•´ì œí•  Alz íŒŒì¼ì„ ì§€ì •í•œë‹¤.
     #-----------------------------------------------------------------
     def __init__(self, filename) :
         self.fp = None
@@ -57,7 +57,7 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # def close(self)
-    # EGG ÆÄÀÏÀ» ´İ´Â´Ù.
+    # EGG íŒŒì¼ì„ ë‹«ëŠ”ë‹¤.
     #-----------------------------------------------------------------
     def close(self) :
         if self.mm != None : self.mm.close()
@@ -65,8 +65,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # read(self, filename)
-    # EGG ÆÄÀÏ ³»ºÎÀÇ ÆÄÀÏÀ» ¾ĞÃà ÇØÁ¦ÇÑ´Ù.
-    # ¸®ÅÏ°ª : ¾ĞÃà ÇØÁ¦µÈ data ½ºÆ®¸²
+    # EGG íŒŒì¼ ë‚´ë¶€ì˜ íŒŒì¼ì„ ì••ì¶• í•´ì œí•œë‹¤.
+    # ë¦¬í„´ê°’ : ì••ì¶• í•´ì œëœ data ìŠ¤íŠ¸ë¦¼
     #-----------------------------------------------------------------
     def read(self, filename) :
         ret_data = None
@@ -99,8 +99,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # namelist(self)
-    # EGG ÆÄÀÏ ³»ºÎÀÇ ÆÄÀÏ¸íÀ» ¸®ÅÏÇÑ´Ù.
-    # ¸®ÅÏ°ª : EGG ÆÄÀÏ ³»ºÎÀÇ ¾ĞÃà ÆÄÀÏ¸íÀ» ´ãÀº ¸®½ºÆ®
+    # EGG íŒŒì¼ ë‚´ë¶€ì˜ íŒŒì¼ëª…ì„ ë¦¬í„´í•œë‹¤.
+    # ë¦¬í„´ê°’ : EGG íŒŒì¼ ë‚´ë¶€ì˜ ì••ì¶• íŒŒì¼ëª…ì„ ë‹´ì€ ë¦¬ìŠ¤íŠ¸
     #-----------------------------------------------------------------
     def namelist(self) :
         name_list = []
@@ -117,13 +117,13 @@ class AlzFile :
         return name_list
 
     #-----------------------------------------------------------------
-    # AlzFile Å¬·¡½ºÀÇ ³»ºÎ ¸â¹ö ÇÔ¼öµé
+    # AlzFile í´ë˜ìŠ¤ì˜ ë‚´ë¶€ ë©¤ë²„ í•¨ìˆ˜ë“¤
     #-----------------------------------------------------------------
 
     #-----------------------------------------------------------------
     # __FindFirstFileName__(self)
-    # Alz ÆÄÀÏ ³»ºÎ¿¡ ¾ĞÃàµÈ ÆÄÀÏ¸íÀÇ Ã¹¹øÂ° ÀÌ¸§À» ¾ò¾î¿Â´Ù.
-    # ¸®ÅÏ°ª : ¾ĞÃàµÈ Ã¹¹øÂ° ÆÄÀÏ¸í, ¾ĞÃà ½ºÆ®¸²
+    # Alz íŒŒì¼ ë‚´ë¶€ì— ì••ì¶•ëœ íŒŒì¼ëª…ì˜ ì²«ë²ˆì§¸ ì´ë¦„ì„ ì–»ì–´ì˜¨ë‹¤.
+    # ë¦¬í„´ê°’ : ì••ì¶•ëœ ì²«ë²ˆì§¸ íŒŒì¼ëª…, ì••ì¶• ìŠ¤íŠ¸ë¦¼
     #-----------------------------------------------------------------
     def __FindFirstFileName__(self) :
         self.alz_pos = 8
@@ -137,8 +137,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __FindNextFileName__(self)
-    # Alz ÆÄÀÏ ³»ºÎ¿¡ ¾ĞÃàµÈ ÆÄÀÏ¸íÀÇ ´ÙÀ½ ÀÌ¸§À» ¾ò¾î¿Â´Ù.
-    # ¸®ÅÏ°ª : ¾ĞÃàµÈ ´ÙÀ½ ÆÄÀÏ¸í, ¾ĞÃà ½ºÆ®¸²
+    # Alz íŒŒì¼ ë‚´ë¶€ì— ì••ì¶•ëœ íŒŒì¼ëª…ì˜ ë‹¤ìŒ ì´ë¦„ì„ ì–»ì–´ì˜¨ë‹¤.
+    # ë¦¬í„´ê°’ : ì••ì¶•ëœ ë‹¤ìŒ íŒŒì¼ëª…, ì••ì¶• ìŠ¤íŠ¸ë¦¼
     #-----------------------------------------------------------------
     def __FindNextFileName__(self) :
         start = self.alz_pos
@@ -149,8 +149,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __GetFileName__(self, alz_pos)
-    # ÁÖ¾îÁø À§Ä¡ ÀÌÈÄ·Î Filename Header¸¦ Ã£¾Æ ºĞ¼®ÇÑ´Ù.
-    # ¸®ÅÏ°ª : Filename Header³»ÀÇ ÆÄÀÏ¸í, ÇöÀç À§Ä¡
+    # ì£¼ì–´ì§„ ìœ„ì¹˜ ì´í›„ë¡œ Filename Headerë¥¼ ì°¾ì•„ ë¶„ì„í•œë‹¤.
+    # ë¦¬í„´ê°’ : Filename Headerë‚´ì˜ íŒŒì¼ëª…, í˜„ì¬ ìœ„ì¹˜
     #-----------------------------------------------------------------
     def __GetFileName__(self, alz_pos) :
         mm           = self.mm
@@ -176,8 +176,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __ReadFileData__(self)
-    # ÇöÀç À§Ä¡¿¡¼­ºÎÅÍ Block Header¸¦ Ã£¾Æ ºĞ¼®ÇÑ´Ù.
-    # ¸®ÅÏ°ª : ¾ĞÃàµÈ data ½ºÆ®¸², ¾ĞÃà ¹æ½Ä
+    # í˜„ì¬ ìœ„ì¹˜ì—ì„œë¶€í„° Block Headerë¥¼ ì°¾ì•„ ë¶„ì„í•œë‹¤.
+    # ë¦¬í„´ê°’ : ì••ì¶•ëœ data ìŠ¤íŠ¸ë¦¼, ì••ì¶• ë°©ì‹
     #-----------------------------------------------------------------
     def __ReadFileData__(self, data) :
         alz_pos      = self.alz_pos
@@ -196,7 +196,7 @@ class AlzFile :
                 if   file_desc & 0x10 : 
                     Compress_Size   = ord(data[size])
                     Uncompress_Size = ord(data[size+1])
-                    size += (1 * 2) # ÆÄÀÏ Å©±â°¡ 2°³ ¿È(¾ĞÃàÀü, ¾ĞÃà ÈÄ)
+                    size += (1 * 2) # íŒŒì¼ í¬ê¸°ê°€ 2ê°œ ì˜´(ì••ì¶•ì „, ì••ì¶• í›„)
                 elif file_desc & 0x20 : 
                     Compress_Size   = struct.unpack('<H', data[size  :size+2])[0]
                     Uncompress_Size = struct.unpack('<H', data[size+2:size+4])[0]
@@ -211,7 +211,7 @@ class AlzFile :
                     size += (8 * 2)
                 else                  : raise SystemError
 
-                size += fname_size # ÆÄÀÏ ÀÌ¸§
+                size += fname_size # íŒŒì¼ ì´ë¦„
                 
                 if file_desc & 1 :
                     size += 12 # Encrypt Block
@@ -226,8 +226,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __DefaultMagicIDProc__(self, Magic, alz_pos)
-    # ÁÖ¾îÁø À§Ä¡ÀÇ MagicÀ» ºĞ¼®ÇÏ°í ÆÄ½ÌÇÑ´Ù.
-    # ¸®ÅÏ°ª : ´ÙÀ½ MagicÀÇ À§Ä¡
+    # ì£¼ì–´ì§„ ìœ„ì¹˜ì˜ Magicì„ ë¶„ì„í•˜ê³  íŒŒì‹±í•œë‹¤.
+    # ë¦¬í„´ê°’ : ë‹¤ìŒ Magicì˜ ìœ„ì¹˜
     #-----------------------------------------------------------------
     def __DefaultMagicIDProc__(self, Magic, alz_pos) :
         mm           = self.mm
@@ -258,34 +258,34 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __ALZ_LocalFile_Header_Size__(self, data)
-    # ¾ĞÃà ÆÄÀÏÀÇ LocalFile HeaderÀÇ Å©±â¸¦ ±¸ÇÑ´Ù.
-    # ¸®ÅÏ°ª : LocalFile HeaderÀÇ Å©±â
+    # ì••ì¶• íŒŒì¼ì˜ LocalFile Headerì˜ í¬ê¸°ë¥¼ êµ¬í•œë‹¤.
+    # ë¦¬í„´ê°’ : LocalFile Headerì˜ í¬ê¸°
     #-----------------------------------------------------------------
     def __ALZ_LocalFile_Header_Size__(self, data) :
         size = 0
 
         try :
-            size += 4 # 0X015A4C42 Çì´õ
+            size += 4 # 0X015A4C42 í—¤ë”
 
             fname_size = struct.unpack('<H', data[size:size+2])[0]
-            size += 2 # ÆÄÀÏ ÀÌ¸§ ±æÀÌ
-            size += 1 # ÆÄÀÏ ¼Ó¼º
-            size += 4 # ÆÄÀÏ ³¯Â¥/½Ã°£
+            size += 2 # íŒŒì¼ ì´ë¦„ ê¸¸ì´
+            size += 1 # íŒŒì¼ ì†ì„±
+            size += 4 # íŒŒì¼ ë‚ ì§œ/ì‹œê°„
 
             file_desc = ord(data[size])
-            size += 1 # ÆÄÀÏ µğ½ºÅ©¸³Æ® 
-                      # 1 ºñÆ® ON - ¾ÏÈ£ 0x10 : ÆÄÀÏÅ©±â 1Byte, 0x20 : 2Byte...
+            size += 1 # íŒŒì¼ ë””ìŠ¤í¬ë¦½íŠ¸ 
+                      # 1 ë¹„íŠ¸ ON - ì•”í˜¸ 0x10 : íŒŒì¼í¬ê¸° 1Byte, 0x20 : 2Byte...
             size += 1 # unknown
 
             compress_method = ord(data[size])
-            size += 1 # ¾ĞÃà ¹æ½Ä (0:¾ĞÃà¾ÈÇÔ, 1:BZip2, 2:Deflate)
+            size += 1 # ì••ì¶• ë°©ì‹ (0:ì••ì¶•ì•ˆí•¨, 1:BZip2, 2:Deflate)
             size += 1 # unknown
             size += 4 # CRC
 
             if   file_desc & 0x10 : 
                 Compress_Size   = ord(data[size])
                 Uncompress_Size = ord(data[size+1])
-                size += (1 * 2) # ÆÄÀÏ Å©±â°¡ 2°³ ¿È(¾ĞÃàÀü, ¾ĞÃà ÈÄ)
+                size += (1 * 2) # íŒŒì¼ í¬ê¸°ê°€ 2ê°œ ì˜´(ì••ì¶•ì „, ì••ì¶• í›„)
             elif file_desc & 0x20 : 
                 Compress_Size   = struct.unpack('<H', data[size  :size+2])[0]
                 Uncompress_Size = struct.unpack('<H', data[size+2:size+4])[0]
@@ -301,7 +301,7 @@ class AlzFile :
             else                  : raise SystemError
 
             # print data[size:size+fname_size], hex(Compress_Size), hex(Uncompress_Size), compress_method
-            size += fname_size # ÆÄÀÏ ÀÌ¸§
+            size += fname_size # íŒŒì¼ ì´ë¦„
             
             if file_desc & 1 :
                 size += 12 # Encrypt Block
@@ -316,8 +316,8 @@ class AlzFile :
 
     #-----------------------------------------------------------------
     # __ALZ_LocalFile_Header__(self, data)
-    # ¾ĞÃà ÆÄÀÏÀÇ LocalFile Header¸¦ ÆÄ½ÌÇÑ´Ù.
-    # ¸®ÅÏ°ª : LocalFile HeaderÀÇ Å©±â, ¾ĞÃà ÆÄÀÏ¸í
+    # ì••ì¶• íŒŒì¼ì˜ LocalFile Headerë¥¼ íŒŒì‹±í•œë‹¤.
+    # ë¦¬í„´ê°’ : LocalFile Headerì˜ í¬ê¸°, ì••ì¶• íŒŒì¼ëª…
     #-----------------------------------------------------------------
     def __ALZ_LocalFile_Header__(self, data) :
         size = 0
@@ -338,7 +338,7 @@ class AlzFile :
             if   file_desc & 0x10 : 
                 Compress_Size   = ord(data[size])
                 Uncompress_Size = ord(data[size+1])
-                size += (1 * 2) # ÆÄÀÏ Å©±â°¡ 2°³ ¿È(¾ĞÃàÀü, ¾ĞÃà ÈÄ)
+                size += (1 * 2) # íŒŒì¼ í¬ê¸°ê°€ 2ê°œ ì˜´(ì••ì¶•ì „, ì••ì¶• í›„)
             elif file_desc & 0x20 : 
                 Compress_Size   = struct.unpack('<H', data[size  :size+2])[0]
                 Uncompress_Size = struct.unpack('<H', data[size+2:size+4])[0]
@@ -354,7 +354,7 @@ class AlzFile :
             else                  : raise SystemError
 
             fname = data[size:size+fname_size]
-            size += fname_size # ÆÄÀÏ ÀÌ¸§
+            size += fname_size # íŒŒì¼ ì´ë¦„
             
             if file_desc & 1 :
                 size += 12 # Encrypt Block
@@ -381,49 +381,49 @@ if __name__ == '__main__' :
 '''
 
 #---------------------------------------------------------------------
-# KavMain Å¬·¡½º
-# Å°ÄŞ¹é½Å ¿£Áø ¸ğµâÀÓÀ» ³ªÅ¸³»´Â Å¬·¡½ºÀÌ´Ù.
-# ÀÌ Å¬·¡½º°¡ ¾øÀ¸¸é ¹é½Å ¿£Áø Ä¿³Î ¸ğµâ¿¡¼­ ·ÎµùÇÏÁö ¾Ê´Â´Ù.
+# KavMain í´ë˜ìŠ¤
+# í‚¤ì½¤ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì„ì„ ë‚˜íƒ€ë‚´ëŠ” í´ë˜ìŠ¤ì´ë‹¤.
+# ì´ í´ë˜ìŠ¤ê°€ ì—†ìœ¼ë©´ ë°±ì‹  ì—”ì§„ ì»¤ë„ ëª¨ë“ˆì—ì„œ ë¡œë”©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 #---------------------------------------------------------------------
 class KavMain :
     #-----------------------------------------------------------------
     # init(self, plugins)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def init(self, plugins) : # ¹é½Å ¸ğµâ ÃÊ±âÈ­
+    def init(self, plugins) : # ë°±ì‹  ëª¨ë“ˆ ì´ˆê¸°í™”
         return 0
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ Á¾·áÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì¢…ë£Œí™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
     #-----------------------------------------------------------------
-    def uninit(self) : # ¹é½Å ¸ğµâ Á¾·áÈ­
+    def uninit(self) : # ë°±ì‹  ëª¨ë“ˆ ì¢…ë£Œí™”
         return 0
     
     #-----------------------------------------------------------------
     # getinfo(self)
-    # ¹é½Å ¿£Áø ¸ğµâÀÇ ÁÖ¿ä Á¤º¸¸¦ ¾Ë·ÁÁØ´Ù. (¹öÀü, Á¦ÀÛÀÚ...)
+    # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ ì£¼ìš” ì •ë³´ë¥¼ ì•Œë ¤ì¤€ë‹¤. (ë²„ì „, ì œì‘ì...)
     #-----------------------------------------------------------------
     def getinfo(self) :
-        info = {} # »çÀüÇü º¯¼ö ¼±¾ğ
-        info['author'] = __author__ # Á¦ÀÛÀÚ
-        info['version'] = __version__     # ¹öÀü
-        info['title'] = 'Alz Engine' # ¿£Áø ¼³¸í
-        info['kmd_name'] = 'alz' # ¿£Áø ÆÄÀÏ¸í
-        info['engine_type'] = kernel.ARCHIVE_ENGINE # ¿£Áø Å¸ÀÔ
+        info = {} # ì‚¬ì „í˜• ë³€ìˆ˜ ì„ ì–¸
+        info['author'] = __author__ # ì œì‘ì
+        info['version'] = __version__     # ë²„ì „
+        info['title'] = 'Alz Engine' # ì—”ì§„ ì„¤ëª…
+        info['kmd_name'] = 'alz' # ì—”ì§„ íŒŒì¼ëª…
+        info['engine_type'] = kernel.ARCHIVE_ENGINE # ì—”ì§„ íƒ€ì…
         return info
 
     #-----------------------------------------------------------------
     # format(self, mmhandle, filename)
-    # Æ÷¸Ë ºĞ¼®±âÀÌ´Ù.
+    # í¬ë§· ë¶„ì„ê¸°ì´ë‹¤.
     #-----------------------------------------------------------------
     def format(self, mmhandle, filename) :
         try :
-            fformat = {} # Æ÷¸Ë Á¤º¸¸¦ ´ãÀ» °ø°£
+            fformat = {} # í¬ë§· ì •ë³´ë¥¼ ë‹´ì„ ê³µê°„
 
             mm = mmhandle
-            if mm[0:4] == 'ALZ\x01' : # Çì´õ Ã¼Å©
-                fformat['size'] = len(mm) # Æ÷¸Ë ÁÖ¿ä Á¤º¸ ÀúÀå
+            if mm[0:4] == 'ALZ\x01' : # í—¤ë” ì²´í¬
+                fformat['size'] = len(mm) # í¬ë§· ì£¼ìš” ì •ë³´ ì €ì¥
 
                 ret = {}
                 ret['ff_alz'] = fformat
@@ -436,14 +436,14 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # arclist(self, scan_file_struct, format)
-    # ¾ĞÃà ÆÄÀÏ ³»ºÎÀÇ ¾ĞÃàµÈ ÆÄÀÏ¸íÀ» ¸®½ºÆ®·Î ¸®ÅÏÇÑ´Ù.
+    # ì••ì¶• íŒŒì¼ ë‚´ë¶€ì˜ ì••ì¶•ëœ íŒŒì¼ëª…ì„ ë¦¬ìŠ¤íŠ¸ë¡œ ë¦¬í„´í•œë‹¤.
     #-----------------------------------------------------------------
     def arclist(self, scan_file_struct, format) :
-        file_scan_list = [] # °Ë»ç ´ë»ó Á¤º¸¸¦ ¸ğµÎ °¡Áü
+        file_scan_list = [] # ê²€ì‚¬ ëŒ€ìƒ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì§
         deep_name = ''
 
         try :
-            # ¹Ì¸® ºĞ¼®µÈ ÆÄÀÏ Æ÷¸ËÁß¿¡ ALZ Æ÷¸ËÀÌ ÀÖ´Â°¡?
+            # ë¯¸ë¦¬ ë¶„ì„ëœ íŒŒì¼ í¬ë§·ì¤‘ì— ALZ í¬ë§·ì´ ìˆëŠ”ê°€?
             fformat = format['ff_alz']
 
             filename = scan_file_struct['real_filename']
@@ -451,20 +451,20 @@ class KavMain :
                 
             alzfile = AlzFile(filename)
             for name in alzfile.namelist() :
-                file_info = {}  # ÆÄÀÏ ÇÑ°³ÀÇ Á¤º¸
+                file_info = {}  # íŒŒì¼ í•œê°œì˜ ì •ë³´
 
                 if len(deep_name) != 0 :
                     dname = '%s/%s' % (deep_name, name)
                 else :
                     dname = '%s' % (name)
 
-                file_info['is_arc'] = True # ¾ĞÃà ¿©ºÎ
-                file_info['arc_engine_name'] = 'arc_alz' # ¾ĞÃà ÇØÁ¦ °¡´É ¿£Áø ID
-                file_info['arc_filename'] = filename # ½ÇÁ¦ ¾ĞÃà ÆÄÀÏ
-                file_info['arc_in_name'] = name #¾ĞÃàÇØÁ¦ ´ë»ó ÆÄÀÏ
-                file_info['real_filename'] = '' # °Ë»ç ´ë»ó ÆÄÀÏ
-                file_info['deep_filename'] = dname  # ¾ĞÃà ÆÄÀÏÀÇ ³»ºÎ¸¦ Ç¥ÇöÇÏ±â À§ÇÑ ÆÄÀÏ¸í
-                file_info['display_filename'] = scan_file_struct['display_filename'] # Ãâ·Â¿ë
+                file_info['is_arc'] = True # ì••ì¶• ì—¬ë¶€
+                file_info['arc_engine_name'] = 'arc_alz' # ì••ì¶• í•´ì œ ê°€ëŠ¥ ì—”ì§„ ID
+                file_info['arc_filename'] = filename # ì‹¤ì œ ì••ì¶• íŒŒì¼
+                file_info['arc_in_name'] = name #ì••ì¶•í•´ì œ ëŒ€ìƒ íŒŒì¼
+                file_info['real_filename'] = '' # ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼
+                file_info['deep_filename'] = dname  # ì••ì¶• íŒŒì¼ì˜ ë‚´ë¶€ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ íŒŒì¼ëª…
+                file_info['display_filename'] = scan_file_struct['display_filename'] # ì¶œë ¥ìš©
 
                 file_scan_list.append(file_info)
             alzfile.close()
@@ -475,7 +475,7 @@ class KavMain :
 
     #-----------------------------------------------------------------
     # unarc(self, scan_file_struct)
-    # ÁÖ¾îÁø ¾ĞÃàµÈ ÆÄÀÏ¸íÀ¸·Î ÆÄÀÏÀ» ÇØÁ¦ÇÑ´Ù.
+    # ì£¼ì–´ì§„ ì••ì¶•ëœ íŒŒì¼ëª…ìœ¼ë¡œ íŒŒì¼ì„ í•´ì œí•œë‹¤.
     #-----------------------------------------------------------------
     def unarc(self, scan_file_struct) :
         try :
@@ -492,7 +492,7 @@ class KavMain :
             data = alzfile.read(filename)
             alzfile.close()
 
-            # ¾ĞÃàÀ» ÇØÁ¦ÇÏ¿© ÀÓ½Ã ÆÄÀÏÀ» »ı¼º
+            # ì••ì¶•ì„ í•´ì œí•˜ì—¬ ì„ì‹œ íŒŒì¼ì„ ìƒì„±
             rname = tempfile.mktemp(prefix='ktmp')
             fp = open(rname, 'wb')
             fp.write(data)

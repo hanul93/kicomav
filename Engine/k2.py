@@ -44,7 +44,7 @@ KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 g_EngineInit = 0
 
 #---------------------------------------------------------------------
-# ÄÜ¼Ö¿¡ »ö±ò Ãâ·ÂÀ» À§ÇÑ Å¬·¡½º ¹× ÇÔ¼öµé
+# ì½˜ì†”ì— ìƒ‰ê¹” ì¶œë ¥ì„ ìœ„í•œ í´ë˜ìŠ¤ ë° í•¨ìˆ˜ë“¤
 #---------------------------------------------------------------------
 FOREGROUND_BLACK     = 0x0000
 FOREGROUND_BLUE      = 0x0001
@@ -134,7 +134,7 @@ def PrintError(msg) :
 
 #---------------------------------------------------------------------
 # PrintLogo()
-# Å°ÄŞ¹é½ÅÀÇ ·Î°í¸¦ Ãâ·ÂÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹ ì˜ ë¡œê³ ë¥¼ ì¶œë ¥í•œë‹¤
 #---------------------------------------------------------------------
 def PrintLogo() :
     logo = 'KICOM Anti-Virus II (for %s) Ver %s (%s)\nCopyright (C) 1995-%s Kei Choi. All rights reserved.\n'
@@ -146,7 +146,7 @@ def PrintLogo() :
 
 #---------------------------------------------------------------------
 # Update()
-# Å°ÄŞ¹é½Å ÃÖ½Å ¹öÀüÀ» ¾÷µ¥ÀÌÆ® ÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹  ìµœì‹  ë²„ì „ì„ ì—…ë°ì´íŠ¸ í•œë‹¤
 #---------------------------------------------------------------------
 def Update() :
     print
@@ -154,56 +154,56 @@ def Update() :
     try :
         url = 'https://dl.dropboxusercontent.com/u/5806441/k2/'
 
-        # ¾÷µ¥ÀÌÆ®ÇØ¾ß ÇÒ ÆÄÀÏ ¸ñ·ÏÀ» ±¸ÇÑ´Ù.
+        # ì—…ë°ì´íŠ¸í•´ì•¼ í•  íŒŒì¼ ëª©ë¡ì„ êµ¬í•œë‹¤.
         down_list = GetDownloadList(url)
 
         while len(down_list) != 0 :
             filename = down_list.pop(0)
-            # ÆÄÀÏ ÇÑ°³¾¿ ¾÷µ¥ÀÌÆ® ÇÑ´Ù.
+            # íŒŒì¼ í•œê°œì”© ì—…ë°ì´íŠ¸ í•œë‹¤.
             Download_file(url, filename, hook)
 
-        # ¾÷µ¥ÀÌÆ® ¿Ï·á ¸Ş½ÃÁö Ãâ·Â
+        # ì—…ë°ì´íŠ¸ ì™„ë£Œ ë©”ì‹œì§€ ì¶œë ¥
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update complete', FOREGROUND_GREEN)
         cprint(']\n', FOREGROUND_GREY)
 
-        # ¾÷µ¥ÀÌÆ® ¼³Á¤ ÆÄÀÏ »èÁ¦
+        # ì—…ë°ì´íŠ¸ ì„¤ì • íŒŒì¼ ì‚­ì œ
         os.remove('update.cfg')
     except :
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
 
-# ¾÷µ¥ÀÌÆ® ÁøÇàÀ² Ç¥½Ã
+# ì—…ë°ì´íŠ¸ ì§„í–‰ìœ¨ í‘œì‹œ
 def hook(blocknumber, blocksize, totalsize) :
     cprint('.', FOREGROUND_GREY)
 
-# ÇÑ°³ÀÇ ÆÄÀÏÀ» ´Ù¿î·Îµå ÇÑ´Ù.
+# í•œê°œì˜ íŒŒì¼ì„ ë‹¤ìš´ë¡œë“œ í•œë‹¤.
 def Download_file(url, file, fnhook=None) :
     rurl = url
 
-    # ¾÷µ¥ÀÌÆ® ¼³Á¤ ÆÄÀÏ¿¡ ÀÖ´Â ¸ñ·ÏÀ» URL ÁÖ¼Ò·Î º¯È¯ÇÑ´Ù
+    # ì—…ë°ì´íŠ¸ ì„¤ì • íŒŒì¼ì— ìˆëŠ” ëª©ë¡ì„ URL ì£¼ì†Œë¡œ ë³€í™˜í•œë‹¤
     rurl += file.replace('\\', '/')
 
-    # ÀúÀåÇØ¾ß ÇÒ ÆÄÀÏÀÇ ÀüÃ¼ °æ·Î¸¦ ±¸ÇÑ´Ù
+    # ì €ì¥í•´ì•¼ í•  íŒŒì¼ì˜ ì „ì²´ ê²½ë¡œë¥¼ êµ¬í•œë‹¤
     pwd = os.path.abspath('') + os.sep + file
 
     if fnhook != None :
         cprint(file + ' ', FOREGROUND_GREY)
 
-    # ÆÄÀÏÀ» ´Ù¿î·Îµå ÇÑ´Ù
+    # íŒŒì¼ì„ ë‹¤ìš´ë¡œë“œ í•œë‹¤
     urllib.urlretrieve(rurl, pwd, fnhook)
 
     if fnhook != None :
         cprint(' update\n', FOREGROUND_GREEN)
 
-# ¾÷µ¥ÀÌÆ® ÇØ¾ß ÇÒ ÆÄÀÏÀÇ ¸ñ·ÏÀ» ±¸ÇÑ´Ù
+# ì—…ë°ì´íŠ¸ í•´ì•¼ í•  íŒŒì¼ì˜ ëª©ë¡ì„ êµ¬í•œë‹¤
 def GetDownloadList(url) :
     down_list = []
 
     pwd = os.path.abspath('')
 
-    # ¾÷µ¥ÀÌÆ® ¼³Á¤ ÆÄÀÏÀ» ´Ù¿î·Îµå ÇÑ´Ù
+    # ì—…ë°ì´íŠ¸ ì„¤ì • íŒŒì¼ì„ ë‹¤ìš´ë¡œë“œ í•œë‹¤
     Download_file(url, 'update.cfg')
 
     fp = open('update.cfg', 'r')
@@ -212,45 +212,45 @@ def GetDownloadList(url) :
         line = fp.readline().strip()
         if not line :
             break
-        t = line.split(' ') # ¾÷µ¥ÀÌÆ® ¸ñ·Ï ÇÑ°³¸¦ ±¸ÇÑ´Ù
+        t = line.split(' ') # ì—…ë°ì´íŠ¸ ëª©ë¡ í•œê°œë¥¼ êµ¬í•œë‹¤
 
-        # ¾÷µ¥ÀÌÆ® ¼³Á¤ ÆÄÀÏÀÇ ÇØ½Ã¿Í ·ÎÄÃÀÇ ÇØ½Ã¸¦ ºñ±³ÇÑ´Ù
+        # ì—…ë°ì´íŠ¸ ì„¤ì • íŒŒì¼ì˜ í•´ì‹œì™€ ë¡œì»¬ì˜ í•´ì‹œë¥¼ ë¹„êµí•œë‹¤
         if ChekNeedUpdate(pwd + os.sep + t[1], t[0]) == 1:
-            # ´Ù¸£¸é ¾÷µ¥ÀÌÆ® ¸ñ·Ï¿¡ Ãß°¡
+            # ë‹¤ë¥´ë©´ ì—…ë°ì´íŠ¸ ëª©ë¡ì— ì¶”ê°€
             down_list.append(t[1])
 
     fp.close()
 
     return down_list
 
-# ¾÷µ¥ÀÌÆ® ¼³Á¤ ÆÄÀÏÀÇ ÇØ½Ã¿Í ·ÎÄÃÀÇ ÇØ½Ã¸¦ ºñ±³ÇÑ´Ù
+# ì—…ë°ì´íŠ¸ ì„¤ì • íŒŒì¼ì˜ í•´ì‹œì™€ ë¡œì»¬ì˜ í•´ì‹œë¥¼ ë¹„êµí•œë‹¤
 def ChekNeedUpdate(file, hash) :
     try :
-        # ·ÎÄÃ ÆÄÀÏÀÇ ÇØ½Ã¸¦ ±¸ÇÑ´Ù
+        # ë¡œì»¬ íŒŒì¼ì˜ í•´ì‹œë¥¼ êµ¬í•œë‹¤
         fp = open(file, 'rb')
         data = fp.read()
         fp.close()
 
-        # ÇØ½Ã¸¦ ºñ±³ÇÑ´Ù
+        # í•´ì‹œë¥¼ ë¹„êµí•œë‹¤
         s = hashlib.sha1()
         s.update(data)
         if s.hexdigest() == hash :
-            return 0 # ¾÷µ¥ÀÌÆ® ´ë»ó ¾Æ´Ô
+            return 0 # ì—…ë°ì´íŠ¸ ëŒ€ìƒ ì•„ë‹˜
     except :
         pass
 
-    return 1 # ¾÷µ¥ÀÌÆ® ´ë»ó
+    return 1 # ì—…ë°ì´íŠ¸ ëŒ€ìƒ
 
 #---------------------------------------------------------------------
 # PrintUsage()
-# Å°ÄŞ¹é½ÅÀÇ »ç¿ë¹ıÀ» Ãâ·ÂÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹ ì˜ ì‚¬ìš©ë²•ì„ ì¶œë ¥í•œë‹¤
 #---------------------------------------------------------------------
 def PrintUsage() :
     print '\nUsage: k2.py path[s] [options]'
 
 #---------------------------------------------------------------------
 # PrintOptions()
-# Å°ÄŞ¹é½ÅÀÇ ¿É¼ÇÀ» Ãâ·ÂÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹ ì˜ ì˜µì…˜ì„ ì¶œë ¥í•œë‹¤
 #---------------------------------------------------------------------
 def PrintOptions() :
     options_string = \
@@ -269,7 +269,7 @@ def PrintOptions() :
 
 #---------------------------------------------------------------------
 # DefineOptions()
-# Å°ÄŞ¹é½ÅÀÇ ¿É¼ÇÀ» Á¤ÀÇÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹ ì˜ ì˜µì…˜ì„ ì •ì˜í•œë‹¤
 #---------------------------------------------------------------------
 def DefineOptions() :
     try :
@@ -399,7 +399,7 @@ def DefineOptions() :
 
 #---------------------------------------------------------------------
 # ParserOptions()
-# Å°ÄŞ¹é½ÅÀÇ ¿É¼ÇÀ» ºĞ¼®ÇÑ´Ù
+# í‚¤ì½¤ë°±ì‹ ì˜ ì˜µì…˜ì„ ë¶„ì„í•œë‹¤
 #---------------------------------------------------------------------
 def ParserOptions() :
     parser = DefineOptions()
@@ -431,10 +431,10 @@ def print_result(result) :
     print
 
 #---------------------------------------------------------------------
-# ¾Ç¼ºÄÚµå °á°ú¸¦ ÇÑÁÙ¿¡ Ãâ·ÂÇÏ±â À§ÇÑ ÇÔ¼ö
+# ì•…ì„±ì½”ë“œ ê²°ê³¼ë¥¼ í•œì¤„ì— ì¶œë ¥í•˜ê¸° ìœ„í•œ í•¨ìˆ˜
 #---------------------------------------------------------------------
 def convert_display_filename(real_filename) :
-    # Ãâ·Â¿ë ÀÌ¸§
+    # ì¶œë ¥ìš© ì´ë¦„
     fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
     display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
     return display_filename
@@ -470,7 +470,7 @@ def listvirus_callback(ret_virus, ret_getinfo) :
         print '%-50s [%s.kmd]' % (name, ret_getinfo['kmd_name'])
 
 #---------------------------------------------------------------------
-# scan Äİ¹é ÇÔ¼ö
+# scan ì½œë°± í•¨ìˆ˜
 #---------------------------------------------------------------------
 def scan_callback(ret_value) :
     real_name = ret_value['real_filename']
@@ -540,39 +540,39 @@ def main() :
     kav1 = None
 
     try :
-        # ¿É¼Ç ºĞ¼®
+        # ì˜µì…˜ ë¶„ì„
         options, args = ParserOptions()
 
-        # Ãâ·Â »ö±ò ¾ø¾Ö±â
+        # ì¶œë ¥ ìƒ‰ê¹” ì—†ì• ê¸°
         if options != None :
             if os.name == 'nt' and options.opt_nocolor == True :
                 NOCOLOR = True
 
-        # ·Î°í Ãâ·Â
+        # ë¡œê³  ì¶œë ¥
         PrintLogo()
 
-        # Àß¸øµÈ ¿É¼Ç?
+        # ì˜ëª»ëœ ì˜µì…˜?
         if options == None :
             PrintUsage()
             PrintOptions()
             return 0
 
-        # Help ¿É¼Ç ¼ÂÆÃ?
+        # Help ì˜µì…˜ ì…‹íŒ…?
         if options.opt_help == True :
             PrintUsage()
             PrintOptions()
             return 0
 
-        # ¾÷µ¥ÀÌÆ®?
+        # ì—…ë°ì´íŠ¸?
         if options.opt_update == True :
             Update()
             return 0
 
-        # Å°ÄŞ¹é½Å ¿£Áø ±¸µ¿
-        kav = kavcore.Engine() # ¿£Áø Å¬·¡½º
-        kav.SetPlugins('plugins') # ÇÃ·¯±×ÀÎ Æú´õ ¼³Á¤
+        # í‚¤ì½¤ë°±ì‹  ì—”ì§„ êµ¬ë™
+        kav = kavcore.Engine() # ì—”ì§„ í´ë˜ìŠ¤
+        kav.SetPlugins('plugins') # í”ŒëŸ¬ê·¸ì¸ í´ë” ì„¤ì •
 
-        # ¿£Áø ÀÎ½ºÅÏ½º »ı¼º1
+        # ì—”ì§„ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±1
         kav1 = kav.CreateInstance()
         if kav1 == None :
             print
@@ -580,11 +580,11 @@ def main() :
             # print 'Error : KICOM Anti-Virus Engine CreateInstance'
             return 0
 
-        # ¾²·¹µå »ı¼º
+        # ì“°ë ˆë“œ ìƒì„±
         Start_Thread()
         thread.start_new_thread(PringLoding, (0, 'Loading Engine... '))
 
-        # ¿£Áø ÃÊ±âÈ­
+        # ì—”ì§„ ì´ˆê¸°í™”
         if kav1.init() == False :
             print
             PrintError('KICOM Anti-Virus Engine Init')
@@ -593,24 +593,24 @@ def main() :
 
         End_Thread()
 
-        # ¿£Áø ¹öÀüÀ» Ãâ·Â
+        # ì—”ì§„ ë²„ì „ì„ ì¶œë ¥
         c = kav1.getversion()
         msg = '\rLast updated %s UTC\n' % c.ctime()
         cprint(msg, FOREGROUND_GREY)
 
-        # ·ÎµùµÈ ½Ã±×³ÊÃÄ °³¼ö Ãâ·Â
+        # ë¡œë”©ëœ ì‹œê·¸ë„ˆì³ ê°œìˆ˜ ì¶œë ¥
         msg = 'Signature number: %d' % kav1.getsignum()
         print msg
         print
 
-        # ¿É¼ÇÀ» ¼³Á¤ÇÑ´Ù
+        # ì˜µì…˜ì„ ì„¤ì •í•œë‹¤
         if kav1.set_options(options) == False :
             PrintError('KICOM Anti-Virus Engine Options')
             # print 'Error : KICOM Anti-Virus Engine Options'
             raise SystemError
 
         '''
-        # ·ÎµùµÈ ¿£Áø Ãâ·Â
+        # ë¡œë”©ëœ ì—”ì§„ ì¶œë ¥
         s = kav1.getinfo()
         for i in s :
             print 'Loaded Engine : %s' % i['title']
@@ -618,22 +618,22 @@ def main() :
         '''
 
 
-        if options.opt_vlist == True : # ¾Ç¼ºÄÚµå ¸®½ºÆ® Ãâ·Â?
+        if options.opt_vlist == True : # ì•…ì„±ì½”ë“œ ë¦¬ìŠ¤íŠ¸ ì¶œë ¥?
             kav1.listvirus(listvirus_callback)
-        else :                         # ¾Ç¼ºÄÚµå °Ë»ç
+        else :                         # ì•…ì„±ì½”ë“œ ê²€ì‚¬
             kav1.set_result()
 
-            # °Ë»ç¿ë Path (´ÙÁß °æ·Î Áö¿ø)
-            for scan_path in args : # ¿É¼ÇÀ» Á¦¿ÜÇÑ Ã¹¹øÂ°°¡ °Ë»ç ´ë»ó
+            # ê²€ì‚¬ìš© Path (ë‹¤ì¤‘ ê²½ë¡œ ì§€ì›)
+            for scan_path in args : # ì˜µì…˜ì„ ì œì™¸í•œ ì²«ë²ˆì§¸ê°€ ê²€ì‚¬ ëŒ€ìƒ
                 scan_path = os.path.abspath(scan_path)
 
-                if os.path.exists(scan_path) : # Æú´õ È¤Àº ÆÄÀÏ°¡ Á¸ÀçÇÏ´Â°¡?
+                if os.path.exists(scan_path) : # í´ë” í˜¹ì€ íŒŒì¼ê°€ ì¡´ì¬í•˜ëŠ”ê°€?
                     kav1.scan(scan_path, scan_callback)
                 else :
                     PrintError('Invalid path: \'%s\'' % scan_path)
                     # print 'Error: Invalid path: \'%s\'' % scan_path
 
-            # °á°ú Ãâ·Â
+            # ê²°ê³¼ ì¶œë ¥
             ret = kav1.get_result()
             print_result(ret)
 

@@ -17,15 +17,15 @@ import time
 import struct
 
 #---------------------------------------------------------------------
-# Engine Å¬·¡½º
+# Engine í´ë˜ìŠ¤
 #---------------------------------------------------------------------
 class Engine :
     def __init__(self) :
         self.kmd_list = []
         self.mod_list = []
-        self.plugins  = None # ÇÃ·¯±×ÀÎ Æú´õ À§Ä¡
+        self.plugins  = None # í”ŒëŸ¬ê·¸ì¸ í´ë” ìœ„ì¹˜
 
-    # plugins Æú´õ¿¡ kmd ¸ğµâÀ» ·ÎµùÇÑ´Ù.
+    # plugins í´ë”ì— kmd ëª¨ë“ˆì„ ë¡œë”©í•œë‹¤.
     def SetPlugins(self, plugins) :
         ret = False
 
@@ -33,13 +33,13 @@ class Engine :
         self.ckmd = KMD()
 
         try :
-            if len(self.kmd_list) == 0 : # ¿ì¼±¼øÀ§ list ³»¿ëÀÌ ¾ø´Ù¸é
-                # kmd ·Îµù ¿ì¼±¼øÀ§ ¸®½ºÆ®¸¦ °¡Áø kmd ÆÄÀÏ¿¡¼­ ¸®½ºÆ® È®º¸
-                self.kmd_list = self.ckmd.GetList(plugins) # kicom.kmd ÆÄÀÏ ·Îµù
-                if len(self.kmd_list) == 0 :      # °á°ú °ªÀÌ ¾øÀ¸¸é Á¾·á
+            if len(self.kmd_list) == 0 : # ìš°ì„ ìˆœìœ„ list ë‚´ìš©ì´ ì—†ë‹¤ë©´
+                # kmd ë¡œë”© ìš°ì„ ìˆœìœ„ ë¦¬ìŠ¤íŠ¸ë¥¼ ê°€ì§„ kmd íŒŒì¼ì—ì„œ ë¦¬ìŠ¤íŠ¸ í™•ë³´
+                self.kmd_list = self.ckmd.GetList(plugins) # kicom.kmd íŒŒì¼ ë¡œë”©
+                if len(self.kmd_list) == 0 :      # ê²°ê³¼ ê°’ì´ ì—†ìœ¼ë©´ ì¢…ë£Œ
                     raise SystemError
 
-            # kmd ·Îµù ¿ì¼±¼øÀ§ ¸®½ºÆ® ¼øÀ¸·Î µ¿Àû ·Îµù
+            # kmd ë¡œë”© ìš°ì„ ìˆœìœ„ ë¦¬ìŠ¤íŠ¸ ìˆœìœ¼ë¡œ ë™ì  ë¡œë”©
             if len(self.mod_list) == 0 :
                 self.mod_list = self.ckmd.Import(plugins, self.kmd_list)
 
@@ -51,7 +51,7 @@ class Engine :
 
     def CreateInstance(self) :
         try :
-            sys.modules['kernel'] # kernel.kmd´Â ¹«Á¶°Ç ÀÖ¾î¾ß ÇÔ
+            sys.modules['kernel'] # kernel.kmdëŠ” ë¬´ì¡°ê±´ ìˆì–´ì•¼ í•¨
             ei = EngineInstance(self.plugins)
             ret = ei.SetModuleList(self.ckmd, self.mod_list)
 
@@ -63,7 +63,7 @@ class Engine :
         return None
 
 #---------------------------------------------------------------------
-# EngineInstance Å¬·¡½º
+# EngineInstance í´ë˜ìŠ¤
 #---------------------------------------------------------------------
 class EngineInstance :
     def __init__(self, plugins) :
@@ -77,16 +77,16 @@ class EngineInstance :
     def SetModuleList(self, ckmd, mod_list) :
         try :
             for m in mod_list :
-                # µ¿Àû ·Îµù µÇ¾úÀ¸¸é ¸ğµâ °ü¸® ¸®½ºÆ®¿¡ Ãß°¡
+                # ë™ì  ë¡œë”© ë˜ì—ˆìœ¼ë©´ ëª¨ë“ˆ ê´€ë¦¬ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
                 mod = ckmd.ExecKavMain(m)
                 if mod != None :
                     self.modules.append(mod)
 
-            # ·ÎµùµÈ ¸ğµâÀÌ ÇÏ³ªµµ ¾øÀ¸¸é Á¾·á
+            # ë¡œë”©ëœ ëª¨ë“ˆì´ í•˜ë‚˜ë„ ì—†ìœ¼ë©´ ì¢…ë£Œ
             if len(self.modules) == 0 :
                 raise SystemError
 
-            # ¿£Áø ÃÖ½Å ºôµå ³¯Â¥¿Í ½Ã°£À» ¾Ë¾Æ¿È
+            # ì—”ì§„ ìµœì‹  ë¹Œë“œ ë‚ ì§œì™€ ì‹œê°„ì„ ì•Œì•„ì˜´
             self.last_update = ckmd.GetLastUpdate() 
         except :
             return 1
@@ -95,43 +95,43 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # init(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀ» ÃÊ±âÈ­ ÇÑ´Ù.
-    # ¸®ÅÏ°ª : ¼º°ø ¿©ºÎ (True, False)
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì„ ì´ˆê¸°í™” í•œë‹¤.
+    # ë¦¬í„´ê°’ : ì„±ê³µ ì—¬ë¶€ (True, False)
     #-----------------------------------------------------------------
     def init(self) :
         try :
-            # ¸ğµç ¹é½Å ¿£Áø ¸ğµâÀÇ init ¸â¹ö ÇÔ¼ö È£Ãâ
+            # ëª¨ë“  ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ init ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
             for mod in self.modules :
-                if dir(mod).count('init') != 0 : # API Á¸Àç
-                    ret_init = mod.init(self.plugins) # È£Ãâ
+                if dir(mod).count('init') != 0 : # API ì¡´ì¬
+                    ret_init = mod.init(self.plugins) # í˜¸ì¶œ
                     if ret_init != 0 :
                         raise SystemError
         except :
             return False
 
         self.options = {}
-        self.set_options() # ¿É¼Ç ÃÊ±âÈ­
+        self.set_options() # ì˜µì…˜ ì´ˆê¸°í™”
 
-        self.set_result() # °á°ú ÃÊ±âÈ­
+        self.set_result() # ê²°ê³¼ ì´ˆê¸°í™”
         return True
 
     #-----------------------------------------------------------------
     # uninit(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀ» Á¾·áÈ­ ÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì„ ì¢…ë£Œí™” í•œë‹¤.
     #-----------------------------------------------------------------
     def uninit(self) :
-        # ¹é½Å ¿£Áø ¸ğµâÀÇ uninit ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ uninit ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         for mod in self.modules :
-            if dir(mod).count('uninit') != 0 : # API Á¸Àç
+            if dir(mod).count('uninit') != 0 : # API ì¡´ì¬
                 ret_uninit = mod.uninit()
 
     #-----------------------------------------------------------------
     # set_result(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÇ °Ë»ç °á°ú¸¦ ÃÊ±âÈ­ ÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì˜ ê²€ì‚¬ ê²°ê³¼ë¥¼ ì´ˆê¸°í™” í•œë‹¤.
     #-----------------------------------------------------------------
     def set_result(self) :
         self.result = {}
-        self.identified_virus = [] # À¯´ÏÅ©ÇÑ ¾Ç¼ºÄÚµå °³¼ö¸¦ ±¸ÇÏ±â À§ÇØ »ç¿ë
+        self.identified_virus = [] # ìœ ë‹ˆí¬í•œ ì•…ì„±ì½”ë“œ ê°œìˆ˜ë¥¼ êµ¬í•˜ê¸° ìœ„í•´ ì‚¬ìš©
 
         self.result['Folders']            = 0
         self.result['Files']              = 0
@@ -146,14 +146,14 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # get_result(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÇ °Ë»ç °á°ú¸¦ ¾ò´Â´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì˜ ê²€ì‚¬ ê²°ê³¼ë¥¼ ì–»ëŠ”ë‹¤.
     #-----------------------------------------------------------------
     def get_result(self) :
         return self.result
 
     #-----------------------------------------------------------------
     # set_options(self, options)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÇ ¿É¼ÇÀ» ¼³Á¤ÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì˜ ì˜µì…˜ì„ ì„¤ì •í•œë‹¤.
     #-----------------------------------------------------------------
     def set_options(self, options = None) :
         if options == None :
@@ -232,54 +232,54 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # get_options(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÇ ¿É¼ÇÀ» ¼³Á¤ÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì˜ ì˜µì…˜ì„ ì„¤ì •í•œë‹¤.
     #-----------------------------------------------------------------
     def get_options(self) :
         return self.options
 
     #-----------------------------------------------------------------
     # scan(self, filename)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÌ ¾Ç¼ºÄÚµå¸¦ Áø´ÜÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì´ ì•…ì„±ì½”ë“œë¥¼ ì§„ë‹¨í•œë‹¤.
     #-----------------------------------------------------------------
     def scan(self, filename, *callback) :
         del_master_file = ''
-        del_temp_list = [] # °Ë»ç¸¦ À§ÇØ ÀÓ½Ã·Î »ı¼ºµÈ ÆÄÀÏµé
+        del_temp_list = [] # ê²€ì‚¬ë¥¼ ìœ„í•´ ì„ì‹œë¡œ ìƒì„±ëœ íŒŒì¼ë“¤
         ret_value = {
             'result':False, 'engine_id':-1, 'virus_name':'',
             'virus_id':-1, 'scan_state':None, 'scan_info':None
         }
 
-        # °¡º¯ÀÎÀÚ È®ÀÎ
+        # ê°€ë³€ì¸ì í™•ì¸
         argc = len(callback)
 
-        if argc == 0 : # ÀÎÀÚ°¡ ¾øÀ¸¸é
+        if argc == 0 : # ì¸ìê°€ ì—†ìœ¼ë©´
             cb = None
-        elif argc == 1 : # callback ÇÔ¼ö°¡ Á¸ÀçÇÏ´ÂÁö Ã¼Å©
+        elif argc == 1 : # callback í•¨ìˆ˜ê°€ ì¡´ì¬í•˜ëŠ”ì§€ ì²´í¬
             cb = callback[0]
-        else : # ÀÎÀÚ°¡ ³Ê¹« ¸¹À¸¸é ¿¡·¯
+        else : # ì¸ìê°€ ë„ˆë¬´ ë§ìœ¼ë©´ ì—ëŸ¬
             return -1
 
-        # 1. °Ë»ç ´ë»ó ¸®½ºÆ®¿¡ ÆÄÀÏÀ» µî·Ï
-        file_scan_list = [] # °Ë»ç ´ë»ó Á¤º¸¸¦ ¸ğµÎ °¡Áü
-        file_info = {}  # ÆÄÀÏ ÇÑ°³ÀÇ Á¤º¸
+        # 1. ê²€ì‚¬ ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì— íŒŒì¼ì„ ë“±ë¡
+        file_scan_list = [] # ê²€ì‚¬ ëŒ€ìƒ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì§
+        file_info = {}  # íŒŒì¼ í•œê°œì˜ ì •ë³´
 
-        # °Ë»ç ´ë»ó ¸®½ºÆ®¿¡´Â °Ë»ç ´ë»ó ÆÄÀÏ ÀÌ¸§°ú Ãâ·Â¿ë ÀÌ¸§À» µ¿½Ã¿¡ ÀúÀå
-        file_info['is_arc'] = False # ¾ĞÃà ¿©ºÎ
-        file_info['arc_engine_name'] = -1 # ¾ĞÃà ÇØÁ¦ °¡´É ¿£Áø ID
-        file_info['arc_filename'] = '' # ½ÇÁ¦ ¾ĞÃà ÆÄÀÏ
-        file_info['arc_in_name'] = '' #¾ĞÃàÇØÁ¦ ´ë»ó ÆÄÀÏ
-        file_info['real_filename'] = filename # °Ë»ç ´ë»ó ÆÄÀÏ
-        file_info['deep_filename'] = ''  # ¾ĞÃà ÆÄÀÏÀÇ ³»ºÎ¸¦ Ç¥ÇöÇÏ±â À§ÇÑ ÆÄÀÏ¸í
-        file_info['display_filename'] = filename # Ãâ·Â¿ë
-        file_info['signature'] = self.options['opt_sigtool'] # ½Ã±×³ÊÃÄ »ı¼ºÀ» ¿äÃ» ¿©ºÎ
+        # ê²€ì‚¬ ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì—ëŠ” ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼ ì´ë¦„ê³¼ ì¶œë ¥ìš© ì´ë¦„ì„ ë™ì‹œì— ì €ì¥
+        file_info['is_arc'] = False # ì••ì¶• ì—¬ë¶€
+        file_info['arc_engine_name'] = -1 # ì••ì¶• í•´ì œ ê°€ëŠ¥ ì—”ì§„ ID
+        file_info['arc_filename'] = '' # ì‹¤ì œ ì••ì¶• íŒŒì¼
+        file_info['arc_in_name'] = '' #ì••ì¶•í•´ì œ ëŒ€ìƒ íŒŒì¼
+        file_info['real_filename'] = filename # ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼
+        file_info['deep_filename'] = ''  # ì••ì¶• íŒŒì¼ì˜ ë‚´ë¶€ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ íŒŒì¼ëª…
+        file_info['display_filename'] = filename # ì¶œë ¥ìš©
+        file_info['signature'] = self.options['opt_sigtool'] # ì‹œê·¸ë„ˆì³ ìƒì„±ì„ ìš”ì²­ ì—¬ë¶€
         file_scan_list.append(file_info)
 
-        # °Ë»ç ´ë»ó ¸®½ºÆ®¿¡ ÆÄÀÏÀÌ ÀÖÀ¸¸é...
+        # ê²€ì‚¬ ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì— íŒŒì¼ì´ ìˆìœ¼ë©´...
         while len(file_scan_list) != 0 :
-            # 1. °Ë»ç ´ë»ó ¸®½ºÆ®¿¡¼­ ÆÄÀÏ ÇÏ³ª »©¿À±â
+            # 1. ê²€ì‚¬ ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì—ì„œ íŒŒì¼ í•˜ë‚˜ ë¹¼ì˜¤ê¸°
             scan_file = file_scan_list.pop(0)
 
-            # ÀÓ½Ã ÆÄÀÏ Á¤¸®
+            # ì„ì‹œ íŒŒì¼ ì •ë¦¬
             if del_master_file != scan_file['display_filename'] :
                 if len(del_temp_list) != 0 :
                     self.__del_temp_file__(del_temp_list)
@@ -288,50 +288,50 @@ class EngineInstance :
 
             real_name = scan_file['real_filename']
 
-            ret_value['real_filename'] = real_name    # ½ÇÁ¦ ÆÄÀÏ ÀÌ¸§
+            ret_value['real_filename'] = real_name    # ì‹¤ì œ íŒŒì¼ ì´ë¦„
 
-            # Æú´õ¸é ³»ºÎ ÆÄÀÏ¸®½ºÆ®¸¸ °Ë»ç ´ë»ó ¸®½ºÆ®¿¡ µî·Ï
+            # í´ë”ë©´ ë‚´ë¶€ íŒŒì¼ë¦¬ìŠ¤íŠ¸ë§Œ ê²€ì‚¬ ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì— ë“±ë¡
             if os.path.isdir(real_name) == True :
-                self.result['Folders'] += 1 # Æú´õ ¼ö Áõ°¡
-                ret_value['result'] = False # Æú´õÀÌ¹Ç·Î ¹ÙÀÌ·¯½º ¾øÀ½
+                self.result['Folders'] += 1 # í´ë” ìˆ˜ ì¦ê°€
+                ret_value['result'] = False # í´ë”ì´ë¯€ë¡œ ë°”ì´ëŸ¬ìŠ¤ ì—†ìŒ
                 ret_value['scan_info']  = scan_file
 
-                if self.options['opt_list'] == True : # ¸ğµç ¸®½ºÆ® Ãâ·ÂÀÎ°¡?
+                if self.options['opt_list'] == True : # ëª¨ë“  ë¦¬ìŠ¤íŠ¸ ì¶œë ¥ì¸ê°€?
                     if cb != None :
                         cb(ret_value)
 
-                # Æú´õ µîÀ» Ã³¸®ÇÒ ¶§¸¦ À§ÇØ µÚ¿¡ ºÑ´Â os.sep´Â ¿ì¼± Á¦°Å
+                # í´ë” ë“±ì„ ì²˜ë¦¬í•  ë•Œë¥¼ ìœ„í•´ ë’¤ì— ë¶‡ëŠ” os.sepëŠ” ìš°ì„  ì œê±°
                 if real_name[len(real_name)-1] == os.sep :
                     real_name = real_name[:len(real_name)-1]
 
-                # Æú´õ ¾ÈÀÇ ÆÄÀÏµéÀ» °Ë»ç´ë»ó ¸®½ºÆ®¿¡ Ãß°¡
+                # í´ë” ì•ˆì˜ íŒŒì¼ë“¤ì„ ê²€ì‚¬ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
                 flist = glob.glob(real_name + os.sep + '*')
                 for rfname in flist :
                     tmp_info = {}
 
-                    tmp_info['is_arc'] = False # ¾ĞÃà ¿©ºÎ
-                    tmp_info['arc_engine_name'] = -1 # ¾ĞÃà ÇØÁ¦ °¡´É ¿£Áø ID
-                    tmp_info['arc_filename'] = '' # ½ÇÁ¦ ¾ĞÃà ÆÄÀÏ
-                    tmp_info['arc_in_name'] = '' #¾ĞÃàÇØÁ¦ ´ë»ó ÆÄÀÏ
-                    tmp_info['real_filename'] = rfname # °Ë»ç ´ë»ó ÆÄÀÏ
-                    tmp_info['deep_filename'] = ''  # ¾ĞÃà ÆÄÀÏÀÇ ³»ºÎ¸¦ Ç¥ÇöÇÏ±â À§ÇÑ ÆÄÀÏ¸í
-                    tmp_info['display_filename'] = rfname # Ãâ·Â¿ë
-                    tmp_info['signature'] = self.options['opt_sigtool'] # ½Ã±×³ÊÃÄ »ı¼ºÀ» ¿äÃ» ¿©ºÎ
+                    tmp_info['is_arc'] = False # ì••ì¶• ì—¬ë¶€
+                    tmp_info['arc_engine_name'] = -1 # ì••ì¶• í•´ì œ ê°€ëŠ¥ ì—”ì§„ ID
+                    tmp_info['arc_filename'] = '' # ì‹¤ì œ ì••ì¶• íŒŒì¼
+                    tmp_info['arc_in_name'] = '' #ì••ì¶•í•´ì œ ëŒ€ìƒ íŒŒì¼
+                    tmp_info['real_filename'] = rfname # ê²€ì‚¬ ëŒ€ìƒ íŒŒì¼
+                    tmp_info['deep_filename'] = ''  # ì••ì¶• íŒŒì¼ì˜ ë‚´ë¶€ë¥¼ í‘œí˜„í•˜ê¸° ìœ„í•œ íŒŒì¼ëª…
+                    tmp_info['display_filename'] = rfname # ì¶œë ¥ìš©
+                    tmp_info['signature'] = self.options['opt_sigtool'] # ì‹œê·¸ë„ˆì³ ìƒì„±ì„ ìš”ì²­ ì—¬ë¶€
                     file_scan_list.append(tmp_info)
 
-            else : # ÆÄÀÏÀÌ¸é °Ë»ç
-                self.result['Files'] += 1 # ÆÄÀÏ ¼ö Áõ°¡
+            else : # íŒŒì¼ì´ë©´ ê²€ì‚¬
+                self.result['Files'] += 1 # íŒŒì¼ ìˆ˜ ì¦ê°€
 
-                # ¾ĞÃàµÈ ÆÄÀÏÀÌ¸é ÇØÁ¦ÇÏ±â
+                # ì••ì¶•ëœ íŒŒì¼ì´ë©´ í•´ì œí•˜ê¸°
                 ret = self.__unarc_file__(scan_file)
                 if ret != None :
                     ret['signature'] = self.options['opt_sigtool']
-                    if ret['is_arc'] == True : # ¾ĞÃàÀÌ Ç®·ÈÀ»¶§¿¡¸¸ »èÁ¦ ´ë»ó µî·Ï
+                    if ret['is_arc'] == True : # ì••ì¶•ì´ í’€ë ¸ì„ë•Œì—ë§Œ ì‚­ì œ ëŒ€ìƒ ë“±ë¡
                         del_master_file = ret['display_filename']
                         del_temp_list.append(ret['real_filename'])
                     scan_file = ret
 
-                # 2. Æ÷¸Ë ºĞ¼®
+                # 2. í¬ë§· ë¶„ì„
                 ff = self.__get_fileformat__(scan_file)
 
                 '''
@@ -341,29 +341,29 @@ class EngineInstance :
                 print '-' * 79
                 '''
 
-                # 3. ÆÄÀÏ·Î ¾Ç¼ºÄÚµå °Ë»ç
+                # 3. íŒŒì¼ë¡œ ì•…ì„±ì½”ë“œ ê²€ì‚¬
                 ret = self.__scan_file__(scan_file, ff)
 
-                #    ¾Ç¼ºÄÚµå ¹ß°ßÀÌ¸é Äİ¹é È£Ãâ ¶Ç´Â °Ë»ç ¸®ÅÏ°ª ´©Àû »ı¼º
-                ret_value['result']     = ret['result'    ] # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-                ret_value['engine_id']  = ret['engine_id' ] # ¿£Áø ID
-                ret_value['virus_name'] = ret['virus_name'] # ¹ÙÀÌ·¯½º ÀÌ¸§
-                ret_value['scan_state'] = ret['scan_state'] # ¹ÙÀÌ·¯½º °Ë»ç »óÅÂ
-                ret_value['virus_id']   = ret['virus_id'  ] # ¹ÙÀÌ·¯½º ID
+                #    ì•…ì„±ì½”ë“œ ë°œê²¬ì´ë©´ ì½œë°± í˜¸ì¶œ ë˜ëŠ” ê²€ì‚¬ ë¦¬í„´ê°’ ëˆ„ì  ìƒì„±
+                ret_value['result']     = ret['result'    ] # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+                ret_value['engine_id']  = ret['engine_id' ] # ì—”ì§„ ID
+                ret_value['virus_name'] = ret['virus_name'] # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
+                ret_value['scan_state'] = ret['scan_state'] # ë°”ì´ëŸ¬ìŠ¤ ê²€ì‚¬ ìƒíƒœ
+                ret_value['virus_id']   = ret['virus_id'  ] # ë°”ì´ëŸ¬ìŠ¤ ID
                 ret_value['scan_info']  = scan_file
 
-                if self.options['opt_list'] == True : # ¸ğµç ¸®½ºÆ® Ãâ·ÂÀÎ°¡?
+                if self.options['opt_list'] == True : # ëª¨ë“  ë¦¬ìŠ¤íŠ¸ ì¶œë ¥ì¸ê°€?
                     if cb != None :
                         cb(ret_value)
-                else : # ¾Æ´Ï¶ó¸é ¹ÙÀÌ·¯½ºÀÎ °Í¸¸ Ãâ·Â
+                else : # ì•„ë‹ˆë¼ë©´ ë°”ì´ëŸ¬ìŠ¤ì¸ ê²ƒë§Œ ì¶œë ¥
                     if ret_value['result'] == True :
                         if cb != None :
                             cb(ret_value)
 
-                # ÀÌ¹Ì ÇØ´ç ÆÄÀÏÀÌ ¹ÙÀÌ·¯½º¶ó°í ÆÇ¸íµÇ¾ú´Ù¸é
-                # ±× ÆÄÀÏÀ» ¾ĞÃàÇØÁ¦ÇØ¼­ ³»ºÎ¸¦ º¼ ÇÊ¿ä´Â ¾ø´Ù.
-                if ret_value['result'] == False : # µû¶ó¼­ ¹ÙÀÌ·¯½º°¡ ¾Æ´Ñ°æ¿ì¸¸ °Ë»ç
-                    # 4. ¾ĞÃà ÆÄÀÏÀÌ¸é °Ë»ç´ë»ó ¸®½ºÆ®¿¡ Ãß°¡
+                # ì´ë¯¸ í•´ë‹¹ íŒŒì¼ì´ ë°”ì´ëŸ¬ìŠ¤ë¼ê³  íŒëª…ë˜ì—ˆë‹¤ë©´
+                # ê·¸ íŒŒì¼ì„ ì••ì¶•í•´ì œí•´ì„œ ë‚´ë¶€ë¥¼ ë³¼ í•„ìš”ëŠ” ì—†ë‹¤.
+                if ret_value['result'] == False : # ë”°ë¼ì„œ ë°”ì´ëŸ¬ìŠ¤ê°€ ì•„ë‹Œê²½ìš°ë§Œ ê²€ì‚¬
+                    # 4. ì••ì¶• íŒŒì¼ì´ë©´ ê²€ì‚¬ëŒ€ìƒ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
                     try :
                         scan_file['real_filename'] = scan_file['temp_filename']
                     except :
@@ -372,35 +372,35 @@ class EngineInstance :
                     if len(arc_file_list) != 0 :
                         file_scan_list = arc_file_list + file_scan_list
 
-        # °Ë»ç ¸¶¹«¸® ÀÛ¾÷(ÀÓ½Ã ÆÄÀÏ Á¤¸®)
+        # ê²€ì‚¬ ë§ˆë¬´ë¦¬ ì‘ì—…(ì„ì‹œ íŒŒì¼ ì •ë¦¬)
         if len(del_temp_list) != 0 :
             self.__del_temp_file__(del_temp_list)
 
-        return 0 # Á¤»óÀûÀ¸·Î °Ë»ç Á¾·á
+        return 0 # ì •ìƒì ìœ¼ë¡œ ê²€ì‚¬ ì¢…ë£Œ
 
 
     def __get_list_arc__(self, scan_file_struct, format) :
         import kernel
 
-        file_scan_list = [] # °Ë»ç ´ë»ó Á¤º¸¸¦ ¸ğµÎ °¡Áü
+        file_scan_list = [] # ê²€ì‚¬ ëŒ€ìƒ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì§
 
-        # ¾ĞÃà ¿£Áø ¸ğµâÀÇ arclist ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ì••ì¶• ì—”ì§„ ëª¨ë“ˆì˜ arclist ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         for mod in self.modules :
-            if dir(mod).count('arclist') != 0 : # API Á¸Àç
-                if self.options['opt_arc'] == True : # ¾ĞÃà °Ë»ç ¿É¼ÇÀÌ ÀÖÀ¸¸é ¸ğµÎ È£Ãâ
+            if dir(mod).count('arclist') != 0 : # API ì¡´ì¬
+                if self.options['opt_arc'] == True : # ì••ì¶• ê²€ì‚¬ ì˜µì…˜ì´ ìˆìœ¼ë©´ ëª¨ë‘ í˜¸ì¶œ
                     file_scan_list = mod.arclist(scan_file_struct, format) 
-                else : # ¾ĞÃà °Ë»ç ¿É¼ÇÀÌ ¾ø´Ù¸é ¼±º°Àû È£Ãâ
-                    if dir(mod).count('getinfo') != 0 : # API Á¸Àç
+                else : # ì••ì¶• ê²€ì‚¬ ì˜µì…˜ì´ ì—†ë‹¤ë©´ ì„ ë³„ì  í˜¸ì¶œ
+                    if dir(mod).count('getinfo') != 0 : # API ì¡´ì¬
                         ret_getinfo = mod.getinfo()
                         try :
                             if ret_getinfo['engine_type'] != kernel.ARCHIVE_ENGINE : 
-                                # ¾ĞÃà ¿£ÁøÀÌ ¾Æ´Ï¾îµµ È£Ãâ
+                                # ì••ì¶• ì—”ì§„ì´ ì•„ë‹ˆì–´ë„ í˜¸ì¶œ
                                 file_scan_list = mod.arclist(scan_file_struct, format)
                         except :
-                            # entine_typeÀÌ ¾ø¾îµµ È£Ãâ
+                            # entine_typeì´ ì—†ì–´ë„ í˜¸ì¶œ
                             file_scan_list = mod.arclist(scan_file_struct, format)
 
-                if len(file_scan_list) != 0 : # ¾ĞÃàÀÌ Ç®·ÈÀ¸¸é Á¾·á
+                if len(file_scan_list) != 0 : # ì••ì¶•ì´ í’€ë ¸ìœ¼ë©´ ì¢…ë£Œ
                     self.result['Packed'] += 1
                     break
 
@@ -410,11 +410,11 @@ class EngineInstance :
     def __unarc_file__(self, scan_file_struct) :
         try :
             if scan_file_struct['is_arc'] == True :
-                # ¾ĞÃà ¿£Áø ¸ğµâÀÇ arclist ¸â¹ö ÇÔ¼ö È£Ãâ
+                # ì••ì¶• ì—”ì§„ ëª¨ë“ˆì˜ arclist ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
                 for mod in self.modules :
-                    if dir(mod).count('unarc') != 0 : # API Á¸Àç
+                    if dir(mod).count('unarc') != 0 : # API ì¡´ì¬
                         rname_struct = mod.unarc(scan_file_struct)
-                        if rname_struct != None : # ¾ĞÃàÀÌ Ç®·ÈÀ¸¸é Á¾·á
+                        if rname_struct != None : # ì••ì¶•ì´ í’€ë ¸ìœ¼ë©´ ì¢…ë£Œ
                             break
 
                 return rname_struct
@@ -439,20 +439,20 @@ class EngineInstance :
 
         try :
             fsize = os.path.getsize(filename)
-            if fsize == 0 : # ÆÄÀÏ Å©±â°¡ 0ÀÎ °æ¿ì °Ë»ç Á¦¿Ü
+            if fsize == 0 : # íŒŒì¼ í¬ê¸°ê°€ 0ì¸ ê²½ìš° ê²€ì‚¬ ì œì™¸
                 raise SystemError
 
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
 
-            # ¹é½Å ¿£Áø ¸ğµâÀÇ scan ¸â¹ö ÇÔ¼ö È£Ãâ
+            # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ scan ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
             for mod in self.modules :
-                if dir(mod).count('scan') != 0 : # API Á¸Àç
+                if dir(mod).count('scan') != 0 : # API ì¡´ì¬
                     ret_value = mod.scan(mm, scan_file_struct, format)
-                    ret   = ret_value['result']     # ¹ÙÀÌ·¯½º ¹ß°ß ¿©ºÎ
-                    vname = ret_value['virus_name'] # ¹ÙÀÌ·¯½º ÀÌ¸§
+                    ret   = ret_value['result']     # ë°”ì´ëŸ¬ìŠ¤ ë°œê²¬ ì—¬ë¶€
+                    vname = ret_value['virus_name'] # ë°”ì´ëŸ¬ìŠ¤ ì´ë¦„
 
-                    if ret == True : # ¾Ç¼ºÄÚµå ¹ß°ßÀÌ¸é °Ë»ç Áß´Ü
+                    if ret == True : # ì•…ì„±ì½”ë“œ ë°œê²¬ì´ë©´ ê²€ì‚¬ ì¤‘ë‹¨
                         break
 
             mm.close()
@@ -461,21 +461,21 @@ class EngineInstance :
             if ret == True :
                 import kernel
                 if ret_value['scan_state'] == kernel.INFECTED :
-                    self.result['Infected_files'] += 1 # ¾Ç¼ºÄÚµå ¹ß°ß ¼ö Áõ°¡
+                    self.result['Infected_files'] += 1 # ì•…ì„±ì½”ë“œ ë°œê²¬ ìˆ˜ ì¦ê°€
                 elif ret_value['scan_state'] == kernel.SUSPECT :
-                    self.result['Suspect_files'] += 1 # ¾Ç¼ºÄÚµå ¹ß°ß ¼ö Áõ°¡
+                    self.result['Suspect_files'] += 1 # ì•…ì„±ì½”ë“œ ë°œê²¬ ìˆ˜ ì¦ê°€
                 elif ret_value['scan_state'] == kernel.WARNING :
-                    self.result['Warnings'] += 1 # ¾Ç¼ºÄÚµå ¹ß°ß ¼ö Áõ°¡
+                    self.result['Warnings'] += 1 # ì•…ì„±ì½”ë“œ ë°œê²¬ ìˆ˜ ì¦ê°€
 
-                # µ¿ÀÏÇÑ ¾Ç¼ºÄÚµå ¹ß°ß À¯¹« Ã¼Å©
+                # ë™ì¼í•œ ì•…ì„±ì½”ë“œ ë°œê²¬ ìœ ë¬´ ì²´í¬
                 if self.identified_virus.count(vname) == 0 :
                     self.identified_virus.append(vname)
                     self.result['Identified_viruses'] += 1
 
-                ret_value['engine_id'] = self.modules.index(mod) # ¹ß°ßµÈ ¿£Áø ID
+                ret_value['engine_id'] = self.modules.index(mod) # ë°œê²¬ëœ ì—”ì§„ ID
                 return ret_value
         except :
-            self.result['IO_errors'] += 1 # ¿À·ù ¹ß»ı ¼ö Áõ°¡
+            self.result['IO_errors'] += 1 # ì˜¤ë¥˜ ë°œìƒ ìˆ˜ ì¦ê°€
             pass
 
         ret_value['engine_id'] = -1
@@ -490,9 +490,9 @@ class EngineInstance :
             fp = open(filename, 'rb')
             mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
 
-            # ¹é½Å ¿£Áø ¸ğµâÀÇ scan ¸â¹ö ÇÔ¼ö È£Ãâ
+            # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ scan ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
             for mod in self.modules :
-                if dir(mod).count('format') != 0 : # API Á¸Àç
+                if dir(mod).count('format') != 0 : # API ì¡´ì¬
                     ff = mod.format(mm, filename)
                     if ff != None :
                         ret.update(ff)
@@ -506,14 +506,14 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, modID, virusID)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÌ ¾Ç¼ºÄÚµå¸¦ Ä¡·áÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì´ ì•…ì„±ì½”ë“œë¥¼ ì¹˜ë£Œí•œë‹¤.
     #-----------------------------------------------------------------
     def disinfect(self, filename, modID, virusID) :
         ret_disinfect = False
 
         try :
             mod = self.modules[modID]
-            if dir(mod).count('disinfect') != 0 : # API Á¸Àç
+            if dir(mod).count('disinfect') != 0 : # API ì¡´ì¬
                 ret_disinfect = mod.disinfect(filename, virusID)
 
         except :
@@ -523,14 +523,14 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # getinfo(self)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÇ °¢ ¿£Áø ¸ğµâÀÇ Á¤º¸¸¦ ¸®ÅÏÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì˜ ê° ì—”ì§„ ëª¨ë“ˆì˜ ì •ë³´ë¥¼ ë¦¬í„´í•œë‹¤.
     #-----------------------------------------------------------------
     def getinfo(self) :
         ret = []
 
-        # ¹é½Å ¿£Áø ¸ğµâÀÇ getinfo ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ getinfo ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         for mod in self.modules :
-            if dir(mod).count('getinfo') != 0 : # API Á¸Àç
+            if dir(mod).count('getinfo') != 0 : # API ì¡´ì¬
                 ret_getinfo = mod.getinfo()
                 ret.append(ret_getinfo)
 
@@ -538,55 +538,55 @@ class EngineInstance :
 
     #-----------------------------------------------------------------
     # listvirus(self, *callback)
-    # Å°ÄŞ¹é½Å ¿£ÁøÀÌ Áø´ÜÇÏ´Â ¾Ç¼ºÄÚµå ÀÌ¸§À» ¸®ÅÏÇÑ´Ù.
+    # í‚¤ì½¤ë°±ì‹  ì—”ì§„ì´ ì§„ë‹¨í•˜ëŠ” ì•…ì„±ì½”ë“œ ì´ë¦„ì„ ë¦¬í„´í•œë‹¤.
     #-----------------------------------------------------------------
     def listvirus(self, *callback) :
-        # °¡º¯ÀÎÀÚ È®ÀÎ
+        # ê°€ë³€ì¸ì í™•ì¸
         argc = len(callback)
 
-        if argc == 0 : # ÀÎÀÚ°¡ ¾øÀ¸¸é
+        if argc == 0 : # ì¸ìê°€ ì—†ìœ¼ë©´
             cb = None
-        elif argc == 1 : # callback ÇÔ¼ö°¡ Á¸ÀçÇÏ´ÂÁö Ã¼Å©
+        elif argc == 1 : # callback í•¨ìˆ˜ê°€ ì¡´ì¬í•˜ëŠ”ì§€ ì²´í¬
             cb = callback[0]
-        else : # ÀÎÀÚ°¡ ³Ê¹« ¸¹À¸¸é ¿¡·¯
+        else : # ì¸ìê°€ ë„ˆë¬´ ë§ìœ¼ë©´ ì—ëŸ¬
             return []
 
-        # ¹é½Å ¿£Áø ¸ğµâÀÇ listvirus ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ listvirus ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         ret = []
 
         for mod in self.modules :
-            if dir(mod).count('listvirus') != 0 : # API Á¸Àç
+            if dir(mod).count('listvirus') != 0 : # API ì¡´ì¬
                 ret_listvirus = mod.listvirus()
 
-                # callback ÇÔ¼ö°¡ ÀÖ´Ù¸é
-                # callback ÇÔ¼ö È£Ãâ
+                # callback í•¨ìˆ˜ê°€ ìˆë‹¤ë©´
+                # callback í•¨ìˆ˜ í˜¸ì¶œ
                 if type(cb) is types.FunctionType :
-                    # ÇØ´ç kmdÀÇ Á¤º¸µµ ÇÔ²² Á¦°ø
+                    # í•´ë‹¹ kmdì˜ ì •ë³´ë„ í•¨ê»˜ ì œê³µ
                     ret_getinfo = None
                     if dir(mod).count('getinfo') != 0 :
                         ret_getinfo = mod.getinfo()
                     cb(ret_listvirus, ret_getinfo)
-                # callback ÇÔ¼ö°¡ ¾ø´Ù¸é
-                # ¾Ç¼ºÄÚµå ÀÌ¸§À» ¸®½ºÆ®¿¡ ´©Àû
+                # callback í•¨ìˆ˜ê°€ ì—†ë‹¤ë©´
+                # ì•…ì„±ì½”ë“œ ì´ë¦„ì„ ë¦¬ìŠ¤íŠ¸ì— ëˆ„ì 
                 else :
                     ret += ret_listvirus
 
-        # callback ÇÔ¼ö ¾øÀ¸¸é ´©ÀûµÈ ¾Ç¼ºÄÚµå ¸®½ºÆ®¸¦ ¸®ÅÏ
+        # callback í•¨ìˆ˜ ì—†ìœ¼ë©´ ëˆ„ì ëœ ì•…ì„±ì½”ë“œ ë¦¬ìŠ¤íŠ¸ë¥¼ ë¦¬í„´
         if argc == 0 :
             return ret
 
     def getversion(self) :
         t = CTIME()
 
-        # self.last_update¿¡´Â ¿£Áø ºôµå ³¯Â¥¿Í ½Ã°£ Á¤º¸¸¸ Á¸Àç
+        # self.last_updateì—ëŠ” ì—”ì§„ ë¹Œë“œ ë‚ ì§œì™€ ì‹œê°„ ì •ë³´ë§Œ ì¡´ì¬
         update_date = self.last_update 
 
-        # °¢ ¹é½Å ¿£Áø ¸ğµâÀÌ °¡Áø ÆĞÅÏÀÇ ³¯Â¥¿Í ½Ã°£ Á¤º¸¸¦ ºñ±³ÇØ¼­
-        # ÃÖ½Å ¿£ÁøÀÇ ³¯Â¥¿Í ½Ã°£Á¤º¸¸¦ Ãâ·ÂÇØ¾ß ÇÔ
+        # ê° ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì´ ê°€ì§„ íŒ¨í„´ì˜ ë‚ ì§œì™€ ì‹œê°„ ì •ë³´ë¥¼ ë¹„êµí•´ì„œ
+        # ìµœì‹  ì—”ì§„ì˜ ë‚ ì§œì™€ ì‹œê°„ì •ë³´ë¥¼ ì¶œë ¥í•´ì•¼ í•¨
 
-        # ¹é½Å ¿£Áø ¸ğµâÀÇ getinfo ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ getinfo ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         for mod in self.modules :
-            if dir(mod).count('getinfo') != 0 : # API Á¸Àç
+            if dir(mod).count('getinfo') != 0 : # API ì¡´ì¬
                 ret_getinfo = mod.getinfo()
 
                 try :
@@ -598,7 +598,7 @@ class EngineInstance :
 
                     t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
 
-                    # ÃÖ½Å ³¯Â¥¸¦ ±¸ÇÔ
+                    # ìµœì‹  ë‚ ì§œë¥¼ êµ¬í•¨
 
                     if update_date < t_datetime :
                         update_date = t_datetime
@@ -610,9 +610,9 @@ class EngineInstance :
     def getsignum(self) :
         sig_num = 0
 
-        # ¹é½Å ¿£Áø ¸ğµâÀÇ getinfo ¸â¹ö ÇÔ¼ö È£Ãâ
+        # ë°±ì‹  ì—”ì§„ ëª¨ë“ˆì˜ getinfo ë©¤ë²„ í•¨ìˆ˜ í˜¸ì¶œ
         for mod in self.modules :
-            if dir(mod).count('getinfo') != 0 : # API Á¸Àç
+            if dir(mod).count('getinfo') != 0 : # API ì¡´ì¬
                 ret_getinfo = mod.getinfo()
 
                 try :
@@ -650,7 +650,7 @@ class CTIME :
         return (h, m, s)
 
 #---------------------------------------------------------------------
-# KMD Å¬·¡½º
+# KMD í´ë˜ìŠ¤
 #---------------------------------------------------------------------
 class KMD :
     def __init__(self) :
@@ -663,56 +663,56 @@ class KMD :
         kmd_list = []
 
         try :
-            # kicom.kmd ÆÄÀÏÀ» º¹È£È­
+            # kicom.kmd íŒŒì¼ì„ ë³µí˜¸í™”
             ret, buf = self.Decrypt(plugins + os.sep + 'kicom.kmd')
 
-            if ret == True : # ¼º°ø
-                msg = StringIO.StringIO(buf) # ¹öÆÛ IO ÁØºñ
+            if ret == True : # ì„±ê³µ
+                msg = StringIO.StringIO(buf) # ë²„í¼ IO ì¤€ë¹„
 
                 while 1 :
-                    # ¹öÆÛ ÇÑ ÁÙÀ» ÀĞ¾î ¿£ÅÍÅ° Á¦°Å
+                    # ë²„í¼ í•œ ì¤„ì„ ì½ì–´ ì—”í„°í‚¤ ì œê±°
                     line = msg.readline().strip()
-                    if line.find('.kmd') != -1 : # kmd È®ÀåÀÚ°¡ Á¸ÀçÇÑ´Ù¸é
-                        kmd_list.append(line) # kmd ¼ø¼­ ¸®½ºÆ®¿¡ Ãß°¡
+                    if line.find('.kmd') != -1 : # kmd í™•ì¥ìê°€ ì¡´ì¬í•œë‹¤ë©´
+                        kmd_list.append(line) # kmd ìˆœì„œ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
                     else :
                         break
         except :
             pass
 
-        return kmd_list # kmd ¼ø¼­ ¸®½ºÆ® ¸®ÅÏ
+        return kmd_list # kmd ìˆœì„œ ë¦¬ìŠ¤íŠ¸ ë¦¬í„´
 
     def Decrypt(self, fname) :
         t = CTIME()
         header_length = 8
         hash_length = 0x40
 
-        try : # ¿¹¿Ü°¡ ¹ß»ıÇÒ °¡´É¼º¿¡ ´ëÇØ Ã³¸®
-            fp = open(fname, 'rb') # kmd ÆÄÀÏ ÀĞ±â
+        try : # ì˜ˆì™¸ê°€ ë°œìƒí•  ê°€ëŠ¥ì„±ì— ëŒ€í•´ ì²˜ë¦¬
+            fp = open(fname, 'rb') # kmd íŒŒì¼ ì½ê¸°
             buf = fp.read()
             fp.close()
 
-            f_hash = buf[len(buf)-hash_length:] # ÆÄÀÏ µÚÂÊ¿¡¼­ MD5 ÇØ½Ã °ª ºĞ¸®
+            f_hash = buf[len(buf)-hash_length:] # íŒŒì¼ ë’¤ìª½ì—ì„œ MD5 í•´ì‹œ ê°’ ë¶„ë¦¬
 
             hash = hashlib.sha256()
 
-            val_5hash = buf[0:len(buf)-hash_length] # ÆÄÀÏ µÚÂÊ hash_lengthByte¸¦ Á¦¿ÜÇÑ ³ª¸ÓÁö ¿µ¿ª
-            for i in range(3): # MD5 ÇØ½Ã °ªÀ» 3¹ø ¿¬¼ÓÀ¸·Î ±¸ÇÏ±â
+            val_5hash = buf[0:len(buf)-hash_length] # íŒŒì¼ ë’¤ìª½ hash_lengthByteë¥¼ ì œì™¸í•œ ë‚˜ë¨¸ì§€ ì˜ì—­
+            for i in range(3): # MD5 í•´ì‹œ ê°’ì„ 3ë²ˆ ì—°ì†ìœ¼ë¡œ êµ¬í•˜ê¸°
                 hash.update(val_5hash)
                 val_5hash = hash.hexdigest()
 
             if f_hash != val_5hash:
-                return False, '' # ¿¡·¯
+                return False, '' # ì—ëŸ¬
 
-            buf2 = buf[header_length:len(buf)-hash_length] # KAVM Çì´õ Á¦°Å
+            buf2 = buf[header_length:len(buf)-hash_length] # KAVM í—¤ë” ì œê±°
 
             buf3 =""
-            for i in range(len(buf2)):  # buf2 Å©±â¸¸Å­...
-                c = ord(buf2[i]) ^ 0xFF #¡¡0xFF·Î XOR ¾ÏÈ£È­ ÇÑ´Ù
+            for i in range(len(buf2)):  # buf2 í¬ê¸°ë§Œí¼...
+                c = ord(buf2[i]) ^ 0xFF #ã€€0xFFë¡œ XOR ì•”í˜¸í™” í•œë‹¤
                 buf3 += chr(c)
 
-            buf4 = zlib.decompress(buf3) # ¾ĞÃà ÇØÁ¦
+            buf4 = zlib.decompress(buf3) # ì••ì¶• í•´ì œ
 
-            # ÃÖ±Ù ³¯Â¥ ±¸ÇÏ±â
+            # ìµœê·¼ ë‚ ì§œ êµ¬í•˜ê¸°
             kmd_date = buf[4:6]
             kmd_time = buf[6:8]
 
@@ -723,9 +723,9 @@ class KMD :
             if self.max_datetime < t_datetime :
                 self.max_datetime = t_datetime
 
-            return True, buf4 # kmd º¹È£È­ ¼º°ø ±×¸®°í º¹È£È­µÈ ³»¿ë ¸®ÅÏ
-        except : # ¿¹¿Ü ¹ß»ı
-            return False, '' # ¿¡·¯
+            return True, buf4 # kmd ë³µí˜¸í™” ì„±ê³µ ê·¸ë¦¬ê³  ë³µí˜¸í™”ëœ ë‚´ìš© ë¦¬í„´
+        except : # ì˜ˆì™¸ ë°œìƒ
+            return False, '' # ì—ëŸ¬
 
     def Import(self, plugins, kmd_list) :
         mod_list = []
@@ -742,10 +742,10 @@ class KMD :
 
     def LoadModule(self, kmd_name, buf) :
         try :
-            code = marshal.loads(buf[8:]) # ¹öÆÛ¸¦ ÄÄÆÄÀÏ °¡´ÉÇÑ Á÷·ÄÈ­ µÈ ¹®ÀÚ¿­·Î º¯È¯
-            module = imp.new_module(kmd_name) # »õ·Î¿î ¸ğµâ »ı¼º
-            exec(code, module.__dict__) # Á÷·ÄÈ­ µÈ ¹®ÀÚ¿­À» ÄÄÆÄÀÏÇÏ¿© ¸ğµâ°ú ¿¬°á
-            sys.modules[kmd_name] = module # Àü¿ª¿¡¼­ »ç¿ë°¡´ÉÇÏ°Ô µî·Ï
+            code = marshal.loads(buf[8:]) # ë²„í¼ë¥¼ ì»´íŒŒì¼ ê°€ëŠ¥í•œ ì§ë ¬í™” ëœ ë¬¸ìì—´ë¡œ ë³€í™˜
+            module = imp.new_module(kmd_name) # ìƒˆë¡œìš´ ëª¨ë“ˆ ìƒì„±
+            exec(code, module.__dict__) # ì§ë ¬í™” ëœ ë¬¸ìì—´ì„ ì»´íŒŒì¼í•˜ì—¬ ëª¨ë“ˆê³¼ ì—°ê²°
+            sys.modules[kmd_name] = module # ì „ì—­ì—ì„œ ì‚¬ìš©ê°€ëŠ¥í•˜ê²Œ ë“±ë¡
             return True, module
         except :
             return False, None
@@ -753,18 +753,18 @@ class KMD :
     def ExecKavMain(self, module) :
         obj = None
 
-        # ·ÎµùµÈ ¸ğµâ¿¡¼­ KavMainÀÌ ÀÖ´ÂÁö °Ë»ç
-        # KavMainÀÌ ¹ß°ßµÇ¾úÀ¸¸é Å¬·¡½ºÀÇ ÀÎ½ºÅÏ½º »ı¼º
+        # ë¡œë”©ëœ ëª¨ë“ˆì—ì„œ KavMainì´ ìˆëŠ”ì§€ ê²€ì‚¬
+        # KavMainì´ ë°œê²¬ë˜ì—ˆìœ¼ë©´ í´ë˜ìŠ¤ì˜ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±
         if dir(module).count('KavMain') != 0 :
             obj = module.KavMain()
 
-        # »ı¼ºµÈ ÀÎ½ºÅÏ½º°¡ ¾ø´Ù¸é Áö±İ ·ÎµùÇÑ ¸ğµâÀº Ãë¼Ò
+        # ìƒì„±ëœ ì¸ìŠ¤í„´ìŠ¤ê°€ ì—†ë‹¤ë©´ ì§€ê¸ˆ ë¡œë”©í•œ ëª¨ë“ˆì€ ì·¨ì†Œ
         if obj == None :
-            # ·Îµù Ãë¼Ò
+            # ë¡œë”© ì·¨ì†Œ
             del sys.modules[kmd_name]
             del module
 
-        return obj # »ı¼ºµÈ ÀÎ½ºÅÏ½º ¸®ÅÏ
+        return obj # ìƒì„±ëœ ì¸ìŠ¤í„´ìŠ¤ ë¦¬í„´
 
 #---------------------------------------------------------------------
 # TEST
@@ -774,19 +774,19 @@ def cb(list_vir) :
     for vir in list_vir :
         print vir
 
-# ¿£Áø Å¬·¡½º
+# ì—”ì§„ í´ë˜ìŠ¤
 kav = Engine()
-kav.SetPlugins('plugins') # ÇÃ·¯±×ÀÎ Æú´õ ¼³Á¤
+kav.SetPlugins('plugins') # í”ŒëŸ¬ê·¸ì¸ í´ë” ì„¤ì •
 
 print '----------------------------'
-# ¿£Áø ÀÎ½ºÅÏ½º »ı¼º1
+# ì—”ì§„ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±1
 kav1 = kav.CreateInstance()
 if kav1 == None :
     print 'Error : KICOM Anti-Virus Engine CreateInstance1'
 else :
     print kav1
 
-# ¿£Áø ÀÎ½ºÅÏ½º »ı¼º2
+# ì—”ì§„ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±2
 kav2 = kav.CreateInstance()
 if kav2 == None :
     print 'Error : KICOM Anti-Virus Engine CreateInstance2'
