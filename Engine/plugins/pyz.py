@@ -25,9 +25,12 @@ __author__   = 'Kei Choi'
 __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
-import mmap
-import kernel
 
+import os # 파일 삭제를 위해 import
+import zlib
+import struct
+import marshal
+import kernel
 
 #---------------------------------------------------------------------
 # KavMain 클래스
@@ -55,62 +58,55 @@ class KavMain :
     #-----------------------------------------------------------------
     def getinfo(self) :
         info = {} # 사전형 변수 선언
-        info['author'] = __author__ # 제작자
-        info['version'] = __version__     # 버전
-        info['title'] = 'Attach Engine' # 엔진 설명
-        info['kmd_name'] = 'attach' # 엔진 파일명
+        info['author'] = 'Kei Choi' # 제작자
+        info['version'] = '1.0'     # 버전
+        info['title'] = 'PYZ Engine' # 엔진 설명
+        info['kmd_name'] = 'pyz' # 엔진 파일명
+        info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
         return info
 
     #-----------------------------------------------------------------
     # format(self, mmhandle, filename)
     # 포맷 분석기이다.
-    # 한글의 BinData중 OLE 파일을 추출하기 위한 용도..
     #-----------------------------------------------------------------
     def format(self, mmhandle, filename) :
         try :
-            ret = {}
             fformat = {} # 포맷 정보를 담을 공간
-            mm = mmhandle
-                
-            # 한글 파일의 BinData/BIN0001.OLE 등의 파일을 진단하기 위한 조치
-            # 첫 4바이트는 전체 크기
-            # 나머지는 OLE 파일
-            rsize = struct.unpack('<L', mm[0:4])[0]
-            fsize = os.path.getsize(filename)
-            
-            if rsize +4 != fsize :
-                return None
 
-            if mm[4:4+8] == '\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1' :
-                fformat = {} # 포맷 정보를 담을 공간
-                fformat['Attached_Pos'] = 4
-                ret['ff_attach'] = fformat
-                
+            mm = mmhandle
+            if mm[0:4] == 'PYZ\x00' : # 헤더 체크
+                off = struct.unpack('>L', mm[8:0xC])[0] # PKZ 파일에서 TOC 위치
+                fformat['TOC_off'] = off 
+
+                ret = {}
+                ret['ff_pyz'] = fformat
+
                 return ret
         except :
             pass
 
         return None
-        
+
     #-----------------------------------------------------------------
     # arclist(self, scan_file_struct, format)
-    # 압축 파일 내부의 압축된 파일명을 리스트로 리턴한다.
+    # 포맷 분석기이다.
     #-----------------------------------------------------------------
     def arclist(self, filename, format) :
         file_scan_list = [] # 검사 대상 정보를 모두 가짐
 
         try :
-            # 미리 분석된 파일 포맷중에 추가 포맷이 있는가?
-            fformat = format['ff_attach']
+            # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
+            fformat = format['ff_pyz']
+            toc_off = fformat['TOC_off']
 
-            pos = fformat['Attached_Pos']
-            if pos <= 0 : 
-                raise SystemError
+            fp = open(filename, 'rb')
+            fp.seek(toc_off)
+            toc = fp.read()
+            tocs = marshal.loads(toc)
+            fp.close()
 
-            name = 'Attached'
-            arc_name = 'arc_attach!%s' % pos
-
-            file_scan_list.append([arc_name, name])
+            for name in tocs.keys() :
+                file_scan_list.append(['arc_pyz', name])
         except :
             pass
 
@@ -121,35 +117,30 @@ class KavMain :
     # 주어진 압축된 파일명으로 파일을 해제한다.
     #-----------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, arc_in_name) :
-        fp = None
-        mm = None
-
         try :
-            arc_id = arc_engine_id
-            if arc_id[0:10] != 'arc_attach' :
+            if arc_engine_id != 'arc_pyz' :
                 raise SystemError
 
-            pos = int(arc_id[11:]) # 첨부된 파일의 위치 얻기
-            if pos <= 0 : 
-                raise SystemError
+            fp = open(arc_name, 'rb')
+            buf = fp.read(0x10)
+            toc_off = struct.unpack('>L', buf[8:0xC])[0]
+            fp.seek(toc_off)
+            toc_buf = fp.read()
+            tocs = marshal.loads(toc_buf)
 
-            # 첨부 파일을 가진 파일 열기
-            fp = open(arc_name, 'rb') 
-            mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
+            toc = tocs[arc_in_name]
+            start = toc[1]
+            size  = toc[2]
 
-            data = mm[pos:]
+            fp.seek(start)
+            buf = fp.read(size)
 
-            mm.close()
+            data = zlib.decompress(buf)
+
             fp.close()
-
-            mm = None
-            fp = None
 
             return data
         except :
             pass
-
-        if mm != None : mm.close()
-        if fp != None : fp.close()
 
         return None

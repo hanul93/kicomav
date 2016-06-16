@@ -20,9 +20,11 @@ python kmake.py dummy.py
 python kmake.py eicar.py
 python kmake.py ole.py
 python kmake.py upx.py
+python kmake.py apk.py
 python kmake.py zip.py
 python kmake.py egg.py
 python kmake.py alz.py
+python kmake.py attach.py
 
 rm -rf *.pyc
 rm -rf kicom.lst

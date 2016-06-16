@@ -1,6 +1,31 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
 
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 1 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
+import re
 import os # 파일 삭제를 위해 import
 import kernel
 
@@ -15,9 +40,12 @@ class KavMain :
     # 백신 엔진 모듈의 초기화 작업을 수행한다.
     #-----------------------------------------------------------------
     def init(self, plugins) : # 백신 모듈 초기화
-        self.virus_name = 'Dummy-Test-File (not a virus)' # 진단하는 악성코드 이름
         # 악성코드 패턴 등록
-        self.dummy_pattern = 'Dummy Engine test file - KICOM Anti-Virus Project, 2012, Kei Choi'
+        self.virus_pattern = [
+            ['Exploit.OLE.CVE-2014-4114', 256, '[.]txt.+[\\\\].+[.]inf'],
+            ['Exploit.OLE.CVE-2014-4114', 256, '[.]txt.+[\\\\].+[.]gif'],
+        ]
+        
         return 0
 
     #-----------------------------------------------------------------
@@ -25,12 +53,6 @@ class KavMain :
     # 백신 엔진 모듈의 종료화 작업을 수행한다.
     #-----------------------------------------------------------------
     def uninit(self) : # 백신 모듈 종료화
-        try :
-            del self.virus_name
-            del self.dummy_pattern
-        except :
-            pass
-
         return 0
     
     #-----------------------------------------------------------------
@@ -43,22 +65,16 @@ class KavMain :
     #-----------------------------------------------------------------
     def scan(self, mmhandle, filename, deepname, format) :
         try :
-            # 미리 분석된 파일 포맷중에 Dummy 포맷이 있는가?
-            fformat = format['ff_dummy']
-
-            # 미리 분석된 파일 포맷에 크기가 65Byte?
-            if fformat['size'] != len(self.dummy_pattern) :
-                raise SystemError
-
-            # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
-            fp = open(filename)
-            buf = fp.read(len(self.dummy_pattern)) # 패턴은 65 Byte 크기
-            fp.close()
-
-            # 악성코드 패턴을 비교한다.
-            if buf == self.dummy_pattern :
-                # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                return (True, self.virus_name, 0, kernel.INFECTED)
+            # 바이러스 패턴 비교
+            for ptn in self.virus_pattern : 
+                try :
+                    buf = mmhandle[:ptn[1]]
+                    re.search(ptn[2], buf).group()
+                    
+                    # 여기까지 진행되었으면 악성코드가 존재하는 상태임
+                    return (True, ptn[0], self.virus_pattern.index(ptn), kernel.INFECTED)
+                except :
+                    continue
         except :
             pass
 
@@ -75,7 +91,7 @@ class KavMain :
     def disinfect(self, filename, malwareID) : # 악성코드 치료
         try :
             # 악성코드 진단 결과에서 받은 ID 값이 0인가?
-            if malwareID == 0 : 
+            if malwareID >= 0 and malwareID < len(self.virus_pattern) : 
                 os.remove(filename) # 파일 삭제
                 return True # 치료 완료 리턴
         except :
@@ -89,7 +105,9 @@ class KavMain :
     #-----------------------------------------------------------------
     def listvirus(self) : # 진단 가능한 악성코드 목록
         vlist = [] # 리스트형 변수 선언
-        vlist.append(self.virus_name) # 진단하는 악성코드 이름 등록
+        for ptn in self.virus_pattern : 
+            vlist.append(ptn[0]) # 진단하는 악성코드 이름 등록
+            vlist = list(set(vlist)) # 중복제거
         return vlist
 
     #-----------------------------------------------------------------
@@ -100,32 +118,12 @@ class KavMain :
         info = {} # 사전형 변수 선언
         info['author'] = 'Kei Choi' # 제작자
         info['version'] = '1.0'     # 버전
-        info['title'] = 'Dummy Scan Engine' # 엔진 설명
-        info['kmd_name'] = 'dummy' # 엔진 파일명
+        info['title'] = 'Scan Engine' # 엔진 설명
+        info['kmd_name'] = 'base1' # 엔진 파일명
 
         # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
         info['date']    = 0   # 패턴 생성 날짜 
         info['time']    = 0   # 패턴 생성 시간 
-        info['sig_num'] = 1 # 패턴 수
+        info['sig_num'] = len(self.virus_pattern) # 패턴 수
 
         return info
-
-    #-----------------------------------------------------------------
-    # format(self, mmhandle, filename)
-    # Dummy 전용 포맷 분석기이다.
-    #-----------------------------------------------------------------
-    def format(self, mmhandle, filename) :
-        try :
-            fformat = {} # 포맷 정보를 담을 공간
-
-            mm = mmhandle
-            if mm[0:5] == 'Dummy' : # 헤더 체크
-                fformat['size'] = len(mm) # 포맷 주요 정보 저장
-
-                ret = {}
-                ret['ff_dummy'] = fformat
-                return ret
-        except :
-            pass
-
-        return None

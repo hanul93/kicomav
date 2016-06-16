@@ -1,7 +1,7 @@
 <img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
 
 
-# KicomAV v0.25 [![Build Status](https://secure.travis-ci.org/hanul93/kicomav.png)](http://travis-ci.org/hanul93/kicomav)
+# KicomAV v0.26
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
 
@@ -17,7 +17,7 @@ Three quick start options are available:
 
 * [Download the latest release](https://github.com/hanul93/kicomav/archive/master.zip) and unzip it.
 * Clone the repo: `git clone git://github.com/hanul93/kicomav.git`.
-* Build KicomAV Engine & Plugins modules : `build.sh` or `build.bat`
+* Build KicomAV Engine & Plugins modules : `build.sh` or `build.bat build`
 * You can see `Release` Directory. Change the `Release` directory and run `k2.py`.
 
 
@@ -33,8 +33,8 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.25 (July 18 2013)
-Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
+Copyright (C) 1995-2016 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Usage: k2.py path[s] [options]
@@ -57,11 +57,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.25 (July 18 2013)
-Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
+Copyright (C) 1995-2016 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jul 18 04:31:48 2013 UTC
-Signature number: 6
+Last updated Thu Jun 16 05:09:56 2016 UTC
+Signature number: 10
 
 Z:\Dropbox\?? ?? ... \org\k2\dummy.txt infected : Dummy-Test-File (not a virus)
 Z:\Dropbox\?? ?? ... \org\k2\eicar.txt infected : EICAR-Test-File (not a virus)
@@ -85,11 +85,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.25 (July 18 2013)
-Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
+Copyright (C) 1995-2016 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jul 18 04:31:48 2013 UTC
-Signature number: 6
+Last updated Thu Jun 16 05:09:56 2016 UTC
+Signature number: 10
 
 c:\temp ok
 c:\temp\1.zip ok
@@ -142,18 +142,21 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.25 (July 18 2013)
-Copyright (C) 1995-2013 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
+Copyright (C) 1995-2016 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jul 18 04:31:48 2013 UTC
-Signature number: 6
+Last updated Thu Jun 16 05:09:56 2016 UTC
+Signature number: 10
 
+Virus.MSExcel.Laroux.A                             [macro.kmd]
 Exploit.HWP.Generic.42                             [hwp.kmd]
 Exploit.HWP.Generic.43                             [hwp.kmd]
 Exploit.HWP.Generic.5A                             [hwp.kmd]
 Exploit.HWP.Generic.EX                             [hwp.kmd]
 Dummy-Test-File (not a virus)                      [dummy.kmd]
 EICAR Test                                         [eicar.kmd]
+Exploit.Android.MasterKey.A                        [apk.kmd]
+Exploit.OLE.CVE-2014-4114                          [base1.kmd]
 
 C:\kicomav\Release> _
 ```
