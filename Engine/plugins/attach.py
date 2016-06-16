@@ -26,6 +26,8 @@ __version__  = '1.0.0.%d' % int( __revision__[21:-2] )
 __contact__  = 'hanul93@gmail.com'
 
 import mmap
+import os
+import struct
 import kernel
 
 
