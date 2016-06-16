@@ -2,32 +2,41 @@
 layout: default
 ---
 
-<span style="color: #000088;"><font size=6>About KicomAV</font></span>
-<hr>
+# About KicomAV
+
+***
 
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. In fact, Since 1995, it has been written in C/C++ and it was integrated into the ViRobot engine of [HAURI](http://www.hauri.co.kr), 1998. I decided to re-create a new KicomAV. So, this is developed in Python. Anyone can participate in the development easily.
 
 <style>.embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; } .embed-container iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }</style><div class='embed-container'><iframe src='https://www.youtube.com/embed/In-YnHDyDbk' frameborder='0' allowfullscreen></iframe></div>
 
-<span style="color: #000088;"><font size=6>How to use</font></span>
-<hr>
+## 1. How to use
 
-## Requirements
+***
+
+### Requirements
 
 * Python 2.7
 
 
-## Quick start
+### Quick start
 
 * Three quick start options are available:
     * [Download the latest release](https://github.com/hanul93/kicomav/archive/master.zip) and unzip it
     * Clone the repo: ```git clone git://github.com/hanul93/kicomav.git```
-    * Build KicomAV Engine & Plugins modules : ```build.sh``` or ```build.bat```
+    * Build KicomAV Engine & Plugins modules : ```build.sh``` or ```build.bat build```
     * You can see ```Release``` Directory. Change the ```Release``` directory and run ```k2.py```
 
-<span style="color: #000088;"><font size=6>Releases</font></span>
-<hr>
+## 2. Releases
+
+***
+
+### 0.26 (June 16, 2016)
+
+* Added support for decompressed BinData/BIN0001.OLE in HWP File
+* Added support for decompressed OleNative in OLE File
+* Added support for scanning the malware for APK(Android) files
 
 ### 0.25 (July 18, 2013)
 

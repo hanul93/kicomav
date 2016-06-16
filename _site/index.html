@@ -299,93 +299,105 @@
       </div>
       
     <div id="main" role="main" class="container">
-      <p><span style="color: #000088;"><font size=6>About KicomAV</font></span><br>
-<hr></p>
+      <h1 id="about-kicomav">About KicomAV</h1>
+
+<hr />
 
 <p>KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. In fact, Since 1995, it has been written in C/C++ and it was integrated into the ViRobot engine of <a href="http://www.hauri.co.kr">HAURI</a>, 1998. I decided to re-create a new KicomAV. So, this is developed in Python. Anyone can participate in the development easily.</p>
 
-<p><style>.embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; } .embed-container iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }</style><div class='embed-container'><iframe src='https://www.youtube.com/embed/In-YnHDyDbk' frameborder='0' allowfullscreen></iframe></div></p>
+<style>.embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; } .embed-container iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }</style>
+<div class="embed-container"><iframe src="https://www.youtube.com/embed/In-YnHDyDbk" frameborder="0" allowfullscreen=""></iframe></div>
 
-<p><span style="color: #000088;"><font size=6>How to use</font></span><br>
-<hr></p>
+<h2 id="how-to-use">1. How to use</h2>
 
-<h2>Requirements</h2>
+<hr />
+
+<h3 id="requirements">Requirements</h3>
 
 <ul>
-<li>Python 2.7</li>
+  <li>Python 2.7</li>
 </ul>
 
-<h2>Quick start</h2>
+<h3 id="quick-start">Quick start</h3>
 
 <ul>
-<li>Three quick start options are available:
-
-<ul>
-<li><a href="https://github.com/hanul93/kicomav/archive/master.zip">Download the latest release</a> and unzip it</li>
-<li>Clone the repo: <code>git clone git://github.com/hanul93/kicomav.git</code></li>
-<li>Build KicomAV Engine &amp; Plugins modules : <code>build.sh</code> or <code>build.bat</code></li>
-<li>You can see <code>Release</code> Directory. Change the <code>Release</code> directory and run <code>k2.py</code></li>
-</ul></li>
+  <li>Three quick start options are available:
+    <ul>
+      <li><a href="https://github.com/hanul93/kicomav/archive/master.zip">Download the latest release</a> and unzip it</li>
+      <li>Clone the repo: <code class="highlighter-rouge">git clone git://github.com/hanul93/kicomav.git</code></li>
+      <li>Build KicomAV Engine &amp; Plugins modules : <code class="highlighter-rouge">build.sh</code> or <code class="highlighter-rouge">build.bat build</code></li>
+      <li>You can see <code class="highlighter-rouge">Release</code> Directory. Change the <code class="highlighter-rouge">Release</code> directory and run <code class="highlighter-rouge">k2.py</code></li>
+    </ul>
+  </li>
 </ul>
 
-<p><span style="color: #000088;"><font size=6>Releases</font></span><br>
-<hr></p>
+<h2 id="releases">2. Releases</h2>
 
-<h3>0.25 (July 18, 2013)</h3>
+<hr />
+
+<h3 id="june-16-2016">0.26 (June 16, 2016)</h3>
 
 <ul>
-<li>Added support for decompressed UPX file</li>
-<li>Added support for separated the attached files from PE file</li>
-<li>Added support for scannning the malware for Common Object File Format (COFF)</li>
+  <li>Added support for decompressed BinData/BIN0001.OLE in HWP File</li>
+  <li>Added support for decompressed OleNative in OLE File</li>
+  <li>Added support for scanning the malware for APK(Android) files</li>
 </ul>
 
-<h3>0.24 (July 7, 2013)</h3>
+<h3 id="july-18-2013">0.25 (July 18, 2013)</h3>
 
 <ul>
-<li>Added support for decompressed ALZ file</li>
-<li>Added support for decompressed EGG file</li>
-<li>Added support for scanning the malware for MSWord and MSExcel files</li>
+  <li>Added support for decompressed UPX file</li>
+  <li>Added support for separated the attached files from PE file</li>
+  <li>Added support for scannning the malware for Common Object File Format (COFF)</li>
 </ul>
 
-<h3>0.23 (June 27, 2013)</h3>
+<h3 id="july-7-2013">0.24 (July 7, 2013)</h3>
 
 <ul>
-<li>Added support for scanning the malware for PE file</li>
-<li>Added support for multi scan paths</li>
-<li>Added display for the signature number and the last update information</li>
-<li>BUGFIX : infinite loop in OLE PPS Dump</li>
+  <li>Added support for decompressed ALZ file</li>
+  <li>Added support for decompressed EGG file</li>
+  <li>Added support for scanning the malware for MSWord and MSExcel files</li>
 </ul>
 
-<h3>0.22 (June 16, 2013)</h3>
+<h3 id="june-27-2013">0.23 (June 27, 2013)</h3>
 
 <ul>
-<li>Added support for decompressed OLE file</li>
-<li>Added support for scanning the exploit code for Hangul Word Processor (HWP) file</li>
+  <li>Added support for scanning the malware for PE file</li>
+  <li>Added support for multi scan paths</li>
+  <li>Added display for the signature number and the last update information</li>
+  <li>BUGFIX : infinite loop in OLE PPS Dump</li>
 </ul>
 
-<h3>0.21 (June 11, 2013)</h3>
+<h3 id="june-16-2013">0.22 (June 16, 2013)</h3>
 
 <ul>
-<li>Added support for command option for archive files</li>
-<li>Added support for decompressed ZIP file</li>
+  <li>Added support for decompressed OLE file</li>
+  <li>Added support for scanning the exploit code for Hangul Word Processor (HWP) file</li>
 </ul>
 
-<h3>0.20b (June 1, 2013)</h3>
+<h3 id="june-11-2013">0.21 (June 11, 2013)</h3>
 
 <ul>
-<li>Added support for command line : k2.py</li>
+  <li>Added support for command option for archive files</li>
+  <li>Added support for decompressed ZIP file</li>
 </ul>
 
-<h3>0.20 (May 27, 2013)</h3>
+<h3 id="b-june-1-2013">0.20b (June 1, 2013)</h3>
 
 <ul>
-<li>Redesigned Plug-in architectures</li>
+  <li>Added support for command line : k2.py</li>
 </ul>
 
-<h3>0.10 (May 8, 2013)</h3>
+<h3 id="may-27-2013">0.20 (May 27, 2013)</h3>
 
 <ul>
-<li>Initial release</li>
+  <li>Redesigned Plug-in architectures</li>
+</ul>
+
+<h3 id="may-8-2013">0.10 (May 8, 2013)</h3>
+
+<ul>
+  <li>Initial release</li>
 </ul>
 
     </div>

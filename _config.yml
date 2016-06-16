@@ -51,24 +51,14 @@ baseurl: ""
 # !! You don't need to change any of the configuration flags below !!
 #
 
-markdown: redcarpet
+future: true
+markdown: kramdown
 encoding: utf-8
-highlighter: pygments
+highlighter: rouge
 permalink: /:title/
 
-redcarpet:
-    extensions: 
-      - no_intra_emphasis
-      - fenced_code_blocks
-      - tables
-      - strikethrough
-      - superscript
-      - autolink
-      - hard_wrap
-      - footnotes
-
 # The release of Jekyll Now that you're using
-version: v1.0.0
+version: v3.0.2
 
 # Set the Sass partials directory, as we're using @imports
 sass:
@@ -77,9 +67,9 @@ sass:
 
 # Use the following plug-ins
 gems:
-  - jemoji # Emoji please!
   - jekyll-sitemap # Create a sitemap using the official Jekyll sitemap gem
   - jekyll-redirect-from
+  - jekyll-paginate
 
 # Exclude these files from your production _site
 exclude:
