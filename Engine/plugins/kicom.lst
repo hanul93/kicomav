@@ -1,5 +1,6 @@
 kernel.kmd
 kavutil.kmd
+pdf.kmd
 ole.kmd
 pefile.kmd
 emalware.kmd
@@ -8,8 +9,14 @@ macro.kmd
 hwp.kmd
 dummy.kmd
 eicar.kmd
+script.kmd
 upx.kmd
+pyz.kmd
+apk.kmd
 zip.kmd
 egg.kmd
 alz.kmd
 attach.kmd
+olenative.kmd
+embeded.kmd
+base1.kmd

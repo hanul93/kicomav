@@ -1,9 +1,33 @@
 # -*- coding:utf-8 -*-
-# Made by Kei Choi(hanul93@gmail.com)
+
+"""
+Copyright (C) 2013 Nurilab.
+
+Author: Kei Choi(hanul93@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
+"""
+
+__revision__ = '$LastChangedRevision: 2 $'
+__author__   = 'Kei Choi'
+__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
+__contact__  = 'hanul93@gmail.com'
+
 
 import os # 파일 삭제를 위해 import
 import zipfile
-import tempfile
 import kernel
 
 #---------------------------------------------------------------------
@@ -48,7 +72,7 @@ class KavMain :
             fformat = {} # 포맷 정보를 담을 공간
 
             mm = mmhandle
-            if mm[0:2] == 'PK' : # 헤더 체크
+            if mm[0:4] == 'PK\x03\x04' : # 헤더 체크
                 fformat['size'] = len(mm) # 포맷 주요 정보 저장
 
                 ret = {}
@@ -64,65 +88,42 @@ class KavMain :
     # arclist(self, scan_file_struct, format)
     # 포맷 분석기이다.
     #-----------------------------------------------------------------
-    def arclist(self, scan_file_struct, format) :
+    def arclist(self, filename, format) :
         file_scan_list = [] # 검사 대상 정보를 모두 가짐
-        deep_name = ''
+
+        try :
+            fformat = format['ff_apk'] # APK 포맷이 존재하나?
+            return ('', []) # APK 포맷이면 처리 할 필요 없음
+        except :
+            pass # APK 포맷이 없으면 ZIP 포맷 처리
 
         try :
             # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
             fformat = format['ff_zip']
-
-            filename = scan_file_struct['real_filename']
-            deep_name = scan_file_struct['deep_filename']
                 
             zfile = zipfile.ZipFile(filename)
             for name in zfile.namelist() :
-                file_info = {}  # 파일 한개의 정보
-
-                if len(deep_name) != 0 :
-                    dname = '%s/%s' % (deep_name, name)
-                else :
-                    dname = '%s' % (name)
-
-                file_info['is_arc'] = True # 압축 여부
-                file_info['arc_engine_name'] = 'arc_zip' # 압축 해제 가능 엔진 ID
-                file_info['arc_filename'] = filename # 실제 압축 파일
-                file_info['arc_in_name'] = name #압축해제 대상 파일
-                file_info['real_filename'] = '' # 검사 대상 파일
-                file_info['deep_filename'] = dname  # 압축 파일의 내부를 표현하기 위한 파일명
-                file_info['display_filename'] = scan_file_struct['display_filename'] # 출력용
-
-                file_scan_list.append(file_info)
+                file_scan_list.append(['arc_zip', name])
             zfile.close()
         except :
             pass
 
         return file_scan_list
 
-    def unarc(self, scan_file_struct) :
+    #-----------------------------------------------------------------
+    # unarc(self, scan_file_struct)
+    # 주어진 압축된 파일명으로 파일을 해제한다.
+    #-----------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, arc_in_name) :
         try :
-            if scan_file_struct['is_arc'] != True : 
+            if arc_engine_id != 'arc_zip' :
                 raise SystemError
-
-            if scan_file_struct['arc_engine_name'] != 'arc_zip' :
-                raise SystemError
-
-            arc_name = scan_file_struct['arc_filename']
-            filename = scan_file_struct['arc_in_name']
 
             zfile = zipfile.ZipFile(arc_name)
-            data = zfile.read(filename)
+            data = zfile.read(arc_in_name)
             zfile.close()
 
-            # 압축을 해제하여 임시 파일을 생성
-            rname = tempfile.mktemp(prefix='ktmp')
-            fp = open(rname, 'wb')
-            fp.write(data)
-            fp.close()
-
-            scan_file_struct['real_filename'] = rname
-
-            return scan_file_struct
+            return data
         except :
             pass
 

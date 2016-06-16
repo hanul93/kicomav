@@ -30,15 +30,15 @@ MA 02110-1301, USA.
 import sys
 import os
 import string
-import kavcore
+import kavcore.k2main as kavcore
 import hashlib
 import urllib
 import thread
 import time
 from optparse import OptionParser
 
-KAV_VERSION   = '0.25'
-KAV_BUILDDATE = 'July 18 2013'
+KAV_VERSION   = '0.26'
+KAV_BUILDDATE = 'Jun 16 2016'
 KAV_LASTYEAR  = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_EngineInit = 0
@@ -476,10 +476,10 @@ def scan_callback(ret_value) :
     real_name = ret_value['real_filename']
     scan_info = ret_value['scan_info']
 
-    if len(scan_info['deep_filename']) != 0 :
-        disp_name = '%s (%s)' % (scan_info['display_filename'], scan_info['deep_filename'])
+    if len(scan_info.GetDeepFilename()) != 0 :
+        disp_name = '%s (%s)' % (scan_info.GetMasterFilename(), scan_info.GetDeepFilename())
     else :
-        disp_name = '%s' % (scan_info['display_filename'])
+        disp_name = '%s' % (scan_info.GetMasterFilename())
 
     message_color = None
 
@@ -628,7 +628,8 @@ def main() :
                 scan_path = os.path.abspath(scan_path)
 
                 if os.path.exists(scan_path) : # 폴더 혹은 파일가 존재하는가?
-                    kav1.scan(scan_path, scan_callback)
+                    if kav1.scan(scan_path, scan_callback) != 0 : # 키보드로 종료
+                        raise KeyboardInterrupt
                 else :
                     PrintError('Invalid path: \'%s\'' % scan_path)
                     # print 'Error: Invalid path: \'%s\'' % scan_path
@@ -638,10 +639,15 @@ def main() :
             print_result(ret)
 
         kav1.uninit()
-    except :
+    except KeyboardInterrupt :
         cprint('\n[', FOREGROUND_GREY)
         cprint('Scan Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
+    #except :
+    #    pass
+    finally:
+        #import traceback
+        #print traceback.format_exc()
 
         if kav1 != None :
             kav1.uninit()

@@ -165,19 +165,14 @@ class KavMain :
     #        : format           - 미리 분석된 파일 포맷
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     #-----------------------------------------------------------------
-    def scan(self, mmhandle, scan_file_struct, format) :
+    def scan(self, mmhandle, filename, deepname, format) :
         ret = 0
         scan_state = kernel.NOT_FOUND
-        ret_value = {}
-        ret_value['result']     = False # 바이러스 발견 여부
-        ret_value['virus_name'] = ''    # 바이러스 이름
-        ret_value['scan_state'] = kernel.NOT_FOUND # 0:없음, 1:감염, 2:의심, 3:경고
-        ret_value['virus_id']   = -1    # 바이러스 ID
 
         try :
             # HWP Exploit은 주로 BodyText/SectionXX에 존재한다
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
-            section_name = scan_file_struct['deep_filename']
+            section_name = deepname
 
             if section_name.find(r'BodyText/Section') != -1 :
                 data = mmhandle[:] # 파일 전체 내용
@@ -199,16 +194,12 @@ class KavMain :
 
             if ret != 0 :
                 # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                ret_value['result']     = True # 바이러스 발견 여부
-                ret_value['virus_name'] = s    # 바이러스 이름
-                ret_value['scan_state'] = scan_state # 0:없음, 1:감염, 2:의심, 3:경고
-                ret_value['virus_id']   = 0    # 바이러스 ID
-                return ret_value            
+                return (True, s, 0, scan_state)           
         except :
             pass
 
         # 악성코드를 발견하지 못했음을 리턴한다.
-        return ret_value
+        return (False, '', -1, kernel.NOT_FOUND)
 
     #-----------------------------------------------------------------
     # disinfect(self, filename, malwareID)

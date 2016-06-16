@@ -29,7 +29,7 @@ def GetTimeValue(now) :
 
 
 def SigDB2PatBin(fname, sig_num) :
-    shutil.copy (fname, fname+'.bak') # bak íŒŒì¼ë¡œ ë³µì‚¬
+    shutil.copy (fname, fname+'.bak') # bak ÆÄÀÏ·Î º¹»ç
 
     # Compress
     fp = open(fname, 'rb')
@@ -93,7 +93,7 @@ def Paser_SigMDB(file, num) :
     fp = open(SIGDB_FILENAME)
 
     while 1: 
-        lines = fp.readlines(100000) #ë©”ëª¨ë¦¬ê°€ í—ˆìš©í•˜ëŠ” ì ë‹¹í•œ ì–‘ 
+        lines = fp.readlines(100000) #¸Ş¸ğ¸®°¡ Çã¿ëÇÏ´Â Àû´çÇÑ ¾ç 
         if not lines: 
             break 
         for line in lines: 
@@ -137,7 +137,7 @@ def convert(line, num) :
     except :
         id_pattern = {}
 
-    id_pattern[md5[0:6]] = [num, line_num] # íŒŒì¼ë²ˆí˜¸, ë°”ì´ëŸ¬ìŠ¤ëª… ID
+    id_pattern[md5[0:6]] = [num, line_num] # ÆÄÀÏ¹øÈ£, ¹ÙÀÌ·¯½º¸í ID
 
     db_size_pattern[fsize] = id_pattern
     line_num += 1

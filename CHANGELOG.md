@@ -1,3 +1,12 @@
+## v0.26 (June 16, 2016)
+* **File Formats :**
+  * BinData/BIN0001.OLE in HWP File
+* **Engine :**
+  * APK(Android) Engine
+  * OleNative Engine
+  * Embeded Engine
+  * Base1 Engine
+
 ## v0.25 (July 18, 2013)
 * **File Formats :**
   * UPX
