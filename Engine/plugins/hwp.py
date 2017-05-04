@@ -1,252 +1,235 @@
 # -*- coding:utf-8 -*-
-
-"""
-Copyright (C) 2013 Nurilab.
-
-Author: Kei Choi(hanul93@gmail.com)
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-MA 02110-1301, USA.
-"""
-
-__revision__ = '$LastChangedRevision: 2 $'
-__author__   = 'Kei Choi'
-__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
-__contact__  = 'hanul93@gmail.com'
+# Author: Kei Choi(hanul93@gmail.com)
 
 
-import os # 파일 삭제를 위해 import
+import os
+import re
 import zlib
-import struct, mmap
 import kernel
-
-class HWPTag :
-    fnTagID = {0x43:'self.HWPTAG_PARA_TEXT'}
-
-    def HWPTAG_PARA_TEXT(self, buf, lenbuf) :
-        ret = 0
-        pos = 0
-        ctrl_ch = False
-        str_txt = ''
-        old_ch = 0
-        ch_count = 0
-
-        while pos < lenbuf:
-            ch = self.GetWord(buf, pos)
-            # print ch, pos
-
-            if ch >= 1 and ch <= 9 : # 16바이트 제어문자
-                ctrl_ch = True
-                pos += 16
-            elif ch == 11 or ch == 12 : # 16바이트 제어문자
-                ctrl_ch = True
-                pos += 16
-            elif ch >= 14 and ch <= 23 : # 16바이트 제어문자
-                ctrl_ch = True
-                pos += 16
-            elif ch <= 31 :  # 2바이트 제어문자
-                ctrl_ch = True
-                pos += 2
-
-            # 문단에 포함된 문자
-            if ctrl_ch == False :
-                str_txt += unichr(ch)
-                pos += 2
-                # 해당 문자의 반복성을 체크해본다
-                if old_ch == ch :
-                    ch_count += 1
-                else :
-                    old_ch = ch
-                    ch_count = 0
-            else :
-                ctrl_ch = False
-
-            # 문자의 반복성이 심하면 Exploit 공격일 가능성이 크다
-            if ch_count > 4096 :
-                ret  = -1
-                break
-
-        # print str_txt.encode('utf-8')
-        return ret
+import kavutil
+import ole
 
 
-    def GetInfo(self, val) :
-        b = 0b1111111111
-        c = 0b111111111111
-        Size  = (val >> 20) & c
-        TagID = (val &b)
-        Level = ((val >> 10) & b)
+# -------------------------------------------------------------------------
+# get_hwp_recoard(val)
+# 입력된 4Byte 값을 HWP 레코드 구조에 맞게 변환하여 추출한다.
+# 입력값 : val - DWORD
+# 리턴값 : tag_id, level, size
+# -------------------------------------------------------------------------
+def get_hwp_recoard(val):
+    b = 0b1111111111
+    c = 0b111111111111
 
-        return TagID, Level, Size
+    tag_id = (val & b)
+    level = ((val >> 10) & b)
+    size = (val >> 20) & c
+
+    return tag_id, level, size
 
 
-    def GetDword(self, buf, off) :
-        return struct.unpack('<L', buf[off:off+4])[0]
+# -------------------------------------------------------------------------
+# scan_hwp_recoard(buf, lenbuf)
+# 주어진 버퍼를 HWP 레코드 구조로 해석한다.
+# 입력값 : buf - 버퍼
+#         lenbuf - 버퍼 크기
+# 리턴값 : True or False (HWP 레코드 추적 성공 여부)
+# -------------------------------------------------------------------------
+def scan_hwp_recoard(buf, lenbuf):
+    pos = 0
+
+    while pos < lenbuf:
+        extra_size = 4
+        val = kavutil.get_uint32(buf, pos)
+        tagid, level, size = get_hwp_recoard(val)
+
+        if size == 0xfff:
+            extra_size = 8
+            size = kavutil.get_uint32(buf, pos + 4)
+
+        pos += (size + extra_size)
+
+    if pos == lenbuf:
+        return True
+
+    return False
 
 
-    def GetWord(self, buf, off) :
-        return struct.unpack('<H', buf[off:off+2])[0]
-
-
-    def Check(self, buf, lenbuf, isCompressed) :
-        ret = -1
-        pos = 0
-
-        if isCompressed == 1 :
-            buf = zlib.decompress(buf, -15)
-            lenbuf = len(buf)
-
-        while pos < lenbuf :
-            extra_size = 4
-            val = self.GetDword(buf, pos)
-            tagid, level, size = self.GetInfo(val)
-
-            if size == 0xfff :
-                extra_size = 8
-                size = self.GetDword(buf, pos+4)
-
-            try :
-                '''
-                print
-                print 'tag : %02X' % tagid
-                print 'pos : %X (%s)' % (pos, self.fnTagID[tagid])
-                '''
-                fn = 'ret_tag = %s(buf[pos+extra_size:pos+size+extra_size], size)' % self.fnTagID[tagid]
-                exec(fn)
-
-                if ret_tag == -1 :
-                    return -1, tagid
-            except :
-                pass
-
-            pos += (size + extra_size)
-
-        if pos == lenbuf :
-            ret = 0
-
-        return ret, tagid
-
-#---------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # KavMain 클래스
-# 키콤백신 엔진 모듈임을 나타내는 클래스이다.
-# 이 클래스가 없으면 백신 엔진 커널 모듈에서 로딩하지 않는다.
-#---------------------------------------------------------------------
-class KavMain :
-    #-----------------------------------------------------------------
-    # init(self, plugins)
-    # 백신 엔진 모듈의 초기화 작업을 수행한다.
-    #-----------------------------------------------------------------
-    def init(self, plugins) : # 백신 모듈 초기화
-        return 0
+# -------------------------------------------------------------------------
+class KavMain:
+    # ---------------------------------------------------------------------
+    # init(self, plugins_path)
+    # 플러그인 엔진을 초기화 한다.
+    # 인력값 : plugins_path - 플러그인 엔진의 위치
+    #         verbose      - 디버그 모드 (True or False)
+    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # ---------------------------------------------------------------------
+    def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.hwp_ole = re.compile('bindata/bin\d+\.ole$', re.IGNORECASE)
+        return 0  # 플러그인 엔진 초기화 성공
 
-    #-----------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # uninit(self)
-    # 백신 엔진 모듈의 종료화 작업을 수행한다.
-    #-----------------------------------------------------------------
-    def uninit(self) : # 백신 모듈 종료화
-        return 0
-    
-    #-----------------------------------------------------------------
-    # scan(self, filehandle, filename)
-    # 악성코드를 검사한다.
-    # 인자값 : mmhandle         - 파일 mmap 핸들
-    #        : scan_file_struct - 파일 구조체
-    #        : format           - 미리 분석된 파일 포맷
-    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
-    #-----------------------------------------------------------------
-    def scan(self, mmhandle, filename, deepname, format) :
-        ret = 0
-        scan_state = kernel.NOT_FOUND
+    # 플러그인 엔진을 종료한다.
+    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # ---------------------------------------------------------------------
+    def uninit(self):  # 플러그인 엔진 종료
+        return 0  # 플러그인 엔진 종료 성공
 
-        try :
-            # HWP Exploit은 주로 BodyText/SectionXX에 존재한다
-            # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
-            section_name = deepname
-
-            if section_name.find(r'BodyText/Section') != -1 :
-                data = mmhandle[:] # 파일 전체 내용
-
-                # HWP의 잘못된 태그를 체크한다.
-                h = HWPTag()
-                ret, tagid = h.Check(data, len(data), 1)
-                if tagid == 0x5A or tagid == 0x42: # Tagid가 0x5A, 0x42인것은 악성코드 확실
-                    scan_state = kernel.INFECTED # 감염
-                else :
-                    scan_state = kernel.SUSPECT  # 의심
-
-                if ret != 0 : # 악성코드 발견
-                    s = 'Exploit.HWP.Generic.%2X' % tagid
-            elif section_name.find(r'BodyText/') != -1 : # BodyText 폴더인데.. SectionXXX은 아니라는 의미
-                ret = 1 # 악성코드 발견
-                s = 'Exploit.HWP.Generic.EX'
-                scan_state = kernel.SUSPECT
-
-            if ret != 0 :
-                # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                return (True, s, 0, scan_state)           
-        except :
-            pass
-
-        # 악성코드를 발견하지 못했음을 리턴한다.
-        return (False, '', -1, kernel.NOT_FOUND)
-
-    #-----------------------------------------------------------------
-    # disinfect(self, filename, malwareID)
-    # 악성코드를 치료한다.
-    # 인자값 : filename   - 파일 이름
-    #        : malwareID  - 치료할 악성코드 ID
-    # 리턴값 : 악성코드 치료 여부
-    #-----------------------------------------------------------------
-    def disinfect(self, filename, malwareID) : # 악성코드 치료
-        try :
-            '''
-            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
-            if malwareID == 0 : 
-                os.remove(filename) # 파일 삭제
-                return True # 치료 완료 리턴
-            '''
-        except :
-            pass
-
-        return False # 치료 실패 리턴
-
-    #-----------------------------------------------------------------
-    # listvirus(self)
-    # 진단/치료 가능한 악성코드의 목록을 알려준다.
-    #-----------------------------------------------------------------
-    def listvirus(self) : # 진단 가능한 악성코드 목록
-        vlist = [] # 리스트형 변수 선언
-        vlist.append('Exploit.HWP.Generic.42') 
-        vlist.append('Exploit.HWP.Generic.43') 
-        vlist.append('Exploit.HWP.Generic.5A')
-        vlist.append('Exploit.HWP.Generic.EX')
-        return vlist
-
-    #-----------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # getinfo(self)
-    # 백신 엔진 모듈의 주요 정보를 알려준다. (버전, 제작자...)
-    #-----------------------------------------------------------------
-    def getinfo(self) :
-        info = {} # 사전형 변수 선언
-        info['author'] = __author__          # 제작자
-        info['version'] = __version__        # 버전
-        info['title'] = 'HWP Exploit Engine' # 엔진 설명
-        info['kmd_name'] = 'hwp'             # 엔진 파일명
+    # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
+    # 리턴값 : 플러그인 엔진 정보
+    # ---------------------------------------------------------------------
+    def getinfo(self):  # 플러그인 엔진의 주요 정보
+        info = dict()  # 사전형 변수 선언
 
-        # 패턴 생성날짜와 시간은 없다면 빌드 시간으로 자동 설정
-        info['date']    = 0   # 패턴 생성 날짜 
-        info['time']    = 0   # 패턴 생성 시간 
-        info['sig_num'] = 4 # 패턴 수
+        info['author'] = 'Kei Choi'  # 제작자
+        info['version'] = '1.0'  # 버전
+        info['title'] = 'HWP Engine'  # 엔진 설명
+        info['kmd_name'] = 'hwp'  # 엔진 파일 이름
+        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료는 삭제로...
+        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
+
         return info
 
+    # ---------------------------------------------------------------------
+    # listvirus(self)
+    # 진단/치료 가능한 악성코드의 리스트를 알려준다.
+    # 리턴값 : 악성코드 리스트
+    # ---------------------------------------------------------------------
+    def listvirus(self):  # 진단 가능한 악성코드 리스트
+        vlist = list()  # 리스트형 변수 선언
+
+        vlist.append('Exploit.HWP.Generic')  # 진단/치료하는 악성코드 이름 등록
+
+        return vlist
+
+    # ---------------------------------------------------------------------
+    # format(self, filehandle, filename, filename_ex)
+    # 파일 포맷을 분석한다.
+    # 입력값 : filehandle - 파일 핸들
+    #          filename   - 파일 이름
+    #          filename_ex - 압축 파일 내부 파일 이름
+    # 리턴값 : {파일 포맷 분석 정보} or None
+    # ---------------------------------------------------------------------
+    def format(self, filehandle, filename, filename_ex):
+        fileformat = {}  # 포맷 정보를 담을 공간
+        ret = {}
+
+        mm = filehandle
+
+        if mm[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':  # OLE 헤더와 동일
+            o = None
+            try:
+                o = ole.OleFile(filename)
+                pics = o.openstream('FileHeader')
+                data = pics.read()
+                if data[:0x11] == 'HWP Document File':
+                    ret['ff_hwp'] = 'HWP'
+            except ole.Error:
+                pass
+
+            if o:
+                o.close()
+
+        # HWP 파일 내부에 첨부된 OLE 파일인가?
+        if self.hwp_ole.search(filename_ex):
+            ret['ff_hwp_ole'] = 'HWP_OLE'
+
+        return ret
+
+    # ---------------------------------------------------------------------
+    # arclist(self, filename, fileformat)
+    # 압축 파일 내부의 파일 목록을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    #          fileformat - 파일 포맷 분석 정보
+    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # ---------------------------------------------------------------------
+    def arclist(self, filename, fileformat):
+        file_scan_list = []  # 검사 대상 정보를 모두 가짐
+
+        # 미리 분석된 파일 포맷중에 HWP 파일 포맷이 있는가?
+        if 'ff_hwp' in fileformat:
+            # OLE Stream 목록 추출하기
+            o = ole.OleFile(filename)
+            for name in o.listdir():
+                file_scan_list.append(['arc_hwp', name])
+            o.close()
+        elif 'ff_hwp_ole' in fileformat:  # HWP 파일 내부에 포함된 OLE 파일?
+            file_scan_list.append(['arc_hwp_ole', 'Embedded'])
+
+        return file_scan_list
+
+    # ---------------------------------------------------------------------
+    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    #          fname_in_arc   - 압축 해제할 파일 이름
+    # 리턴값 : 압축 해제된 내용 or None
+    # ---------------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
+        data = None
+
+        if arc_engine_id == 'arc_hwp':
+            o = ole.OleFile(arc_name)
+            fp = o.openstream(fname_in_arc)
+            data = fp.read()
+            o.close()
+        elif arc_engine_id == 'arc_hwp_ole':
+            with open(arc_name, 'rb') as fp:
+                buf = fp.read()
+
+            try:
+                buf = zlib.decompress(buf, -15)
+            except zlib.error:
+                pass
+
+            if kavutil.get_uint32(buf, 0) == len(buf[4:]):
+                data = buf[4:]
+
+        return data
+
+    # ---------------------------------------------------------------------
+    # scan(self, filehandle, filename, fileformat)
+    # 악성코드를 검사한다.
+    # 입력값 : filehandle  - 파일 핸들
+    #         filename    - 파일 이름
+    #         fileformat  - 파일 포맷
+    #         filename_ex - 파일 이름 (압축 내부 파일 이름)
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
+    # ---------------------------------------------------------------------
+    def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
+        mm = filehandle
+
+        if filename_ex.lower().find('bodytext/section') >= 0:
+            buf = mm[:]
+            try:
+                buf = zlib.decompress(buf, -15)
+            except zlib.error:
+                pass
+
+            if scan_hwp_recoard(buf, len(buf)) is False:  # 레코드 추적 실패
+                return True, 'Exploit.HWP.Generic', 0, kernel.SUSPECT
+
+        # 악성코드를 발견하지 못했음을 리턴한다.
+        return False, '', -1, kernel.NOT_FOUND
+
+    # ---------------------------------------------------------------------
+    # disinfect(self, filename, malware_id)
+    # 악성코드를 치료한다.
+    # 입력값 : filename    - 파일 이름
+    #        : malware_id - 치료할 악성코드 ID
+    # 리턴값 : 악성코드 치료 여부
+    # ---------------------------------------------------------------------
+    def disinfect(self, filename, malware_id):  # 악성코드 치료
+        try:
+            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
+            if malware_id == 0:
+                os.remove(filename)  # 파일 삭제
+                return True  # 치료 완료 리턴
+        except IOError:
+            pass
+
+        return False  # 치료 실패 리턴

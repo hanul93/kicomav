@@ -1,3 +1,7 @@
+## v0.27 (May 4, 2017)
+* **Engine :**
+  * Redesigned **Plug-in** architecture
+
 ## v0.26 (June 16, 2016)
 * **File Formats :**
   * BinData/BIN0001.OLE in HWP File
