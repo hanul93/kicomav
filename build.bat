@@ -9,9 +9,8 @@
 
 if "%1" == "erase"    goto START
 if "%1" == "build"    goto START
-if "%1" == "unittest" goto START
 
-@echo Usage : builder.bat [build][erase][unittest]
+@echo Usage : builder.bat [build][erase]
 goto END
 
 :START
@@ -57,17 +56,5 @@ for %%f in (*.py) do (
 
 @cd ..
 @echo [*] Build Success
-
-if "%1" == "unittest" (
-    @echo [*] Start Unittest
-    @copy ..\Test\* . > nul
-    @c:\python27\python.exe -m unittest discover
-)
-
-goto END
-
-:KEY_NOT_FOUND
-@echo     Key files not Found!!!
-goto END
 
 :END
