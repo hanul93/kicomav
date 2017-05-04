@@ -21,7 +21,7 @@ Three quick start options are available:
 
 * [Download the latest release](https://github.com/hanul93/kicomav/archive/master.zip) and unzip it.
 * Clone the repo: `git clone git://github.com/hanul93/kicomav.git`.
-* Build KicomAV Engine & Plugins modules : `build.sh` or `build.bat build`
+* Build KicomAV Engine & Plugins modules : `build.sh build` or `build.bat build`
 * You can see `Release` Directory. 
 * [Download the latest signature file](https://github.com/hanul93/kicomav-db/raw/master/update/main.zip) and unzip it to `Release/plugins`.
 * Change the `Release` directory and run `k2.py`.
