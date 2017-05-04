@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+﻿# -*- coding:utf-8 -*-
 # Author: Kei Choi(hanul93@gmail.com)
 
 
@@ -9,8 +9,8 @@ s = os.path.dirname(
     os.path.dirname(
         os.path.abspath(__file__)
     )
-) + os.sep + 'engine' + os.sep + 'kavcore'
-
+) + os.sep + 'Engine' + os.sep + 'kavcore'
+print s
 sys.path.append(s)
 
 import k2rsa
