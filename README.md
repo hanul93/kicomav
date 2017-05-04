@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-linux-lightgrey.svg)
 ![Platform](https://img.shields.io/badge/platform-mac-lightgrey.svg)
 
-KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
+KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://www.hanul93.com).
 
 
 ## Requirements
@@ -22,7 +22,9 @@ Three quick start options are available:
 * [Download the latest release](https://github.com/hanul93/kicomav/archive/master.zip) and unzip it.
 * Clone the repo: `git clone git://github.com/hanul93/kicomav.git`.
 * Build KicomAV Engine & Plugins modules : `build.sh` or `build.bat build`
-* You can see `Release` Directory. Change the `Release` directory and run `k2.py`.
+* You can see `Release` Directory. 
+* [Download the latest signature file](https://github.com/hanul93/kicomav-db/raw/master/update/main.zip) and unzip it to `Release/plugins`.
+* Change the `Release` directory and run `k2.py`.
 
 
 
@@ -166,3 +168,6 @@ C:\kicomav\Release> _
 + [http://facebook.com/hanul93](http://facebook.com/hanul93)
 + [http://github.com/hanul93](http://github.com/hanul93)
 
+## Supporters
+
+![Supporters](http://www.kicomav.com/images/support.png)
