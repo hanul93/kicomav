@@ -1,9 +1,13 @@
-<img src="https://dl.dropboxusercontent.com/u/5806441/safe_image.png">
+<img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/kicomav.jpg">
 
+# KicomAV v0.27
 
-# KicomAV v0.26
+[![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-linux-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-mac-lightgrey.svg)
 
-KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://twitter.com/hanul93).
+KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://www.hanul93.com).
 
 
 ## Requirements
@@ -17,8 +21,10 @@ Three quick start options are available:
 
 * [Download the latest release](https://github.com/hanul93/kicomav/archive/master.zip) and unzip it.
 * Clone the repo: `git clone git://github.com/hanul93/kicomav.git`.
-* Build KicomAV Engine & Plugins modules : `build.sh` or `build.bat build`
-* You can see `Release` Directory. Change the `Release` directory and run `k2.py`.
+* Build KicomAV Engine & Plugins modules : `build.sh build` or `build.bat build`
+* You can see `Release` Directory. 
+* [Download the latest signature file](https://github.com/hanul93/kicomav-db/raw/master/update/main.zip) and unzip it to `Release/plugins`.
+* Change the `Release` directory and run `k2.py`.
 
 
 
@@ -33,22 +39,31 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
-Copyright (C) 1995-2016 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Usage: k2.py path[s] [options]
 Options:
         -f,  --files           scan files *
         -r,  --arc             scan archives
+        -G,  --log=file        create log file
         -I,  --list            display all files
+        -e,  --app             append to log file
+        -F,  --infp=path       set infected quarantine folder
+        -R,  --nor             do not recurse into folders
         -V,  --vlist           display virus list
+        -p,  --prompt          prompt for action
+        -d,  --dis             disinfect files
+        -l,  --del             delete infected files
+             --no-color        don't print with color
+             --move            move infected files in quarantine folder
              --update          update
-             --sigtool         create a malware signature
-             --no-color        not print color
+             --verbose         enabling verbose mode
+             --sigtool         make files for malware signatures
         -?,  --help            this help
                                * = default option
-
+			       
 C:\kicomav\Release> _
 ```
 
@@ -57,25 +72,26 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
-Copyright (C) 1995-2016 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jun 16 05:09:56 2016 UTC
-Signature number: 10
+Last updated Thu May  4 01:59:44 2017 UTC
+Signature number: 1635
 
-Z:\Dropbox\?? ?? ... \org\k2\dummy.txt infected : Dummy-Test-File (not a virus)
-Z:\Dropbox\?? ?? ... \org\k2\eicar.txt infected : EICAR-Test-File (not a virus)
+C:\kicomav\Relea ... 08ecba90d0cd778  infected : Trojan-Ransom.Win32.Snocry.cxu
+C:\kicomav\Release\ ... 218e8a8d7eb93df1003  infected : Trojan.Win32.Agent.icgh
 
 
 Results:
-Folders           :2
-Files             :15
+Folders           :4
+Files             :37
 Packed            :0
 Infected files    :2
 Suspect files     :0
 Warnings          :0
 Identified viruses:2
 I/O errors        :0
+
 
 C:\kicomav\Release> _
 ```
@@ -85,54 +101,26 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
-Copyright (C) 1995-2016 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jun 16 05:09:56 2016 UTC
-Signature number: 10
+Last updated Thu May  4 05:13:44 2017 UTC
+Signature number: 1638
 
-c:\temp ok
-c:\temp\1.zip ok
-c:\temp\1.zip (eicar.txt) infected : EICAR-Test-File (not a virus)
-c:\temp\1.zip (test.zip) ok
-c:\temp\1.zip (test.zip/dummy.txt) infected : Dummy-Test-File (not a virus)
-c:\temp\1.zip (test.zip/eicar.txt) infected : EICAR-Test-File (not a virus)
-c:\temp\CSS2013.docx ok
-c:\temp\CSS2013.docx ([Content_Types].xml) ok
-c:\temp\CSS2013.docx (_rels/.rels) ok
-c:\temp\CSS2013.docx (word/_rels/document.xml.rels) ok
-c:\temp\CSS2013.docx (word/document.xml) ok
-c:\temp\CSS2013.docx (word/endnotes.xml) ok
-c:\temp\CSS2013.docx (word/footnotes.xml) ok
-c:\temp\CSS2013.docx (word/footer1.xml) ok
-c:\temp\CSS2013.docx (word/_rels/footer1.xml.rels) ok
-c:\temp\CSS2013.docx (word/_rels/header1.xml.rels) ok
-c:\temp\CSS2013.docx (word/header1.xml) ok
-c:\temp\CSS2013.docx (word/media/image2.jpeg) ok
-c:\temp\CSS2013.docx (word/theme/theme1.xml) ok
-c:\temp\CSS2013.docx (word/media/image1.png) ok
-c:\temp\CSS2013.docx (word/settings.xml) ok
-c:\temp\CSS2013.docx (word/styles.xml) ok
-c:\temp\CSS2013.docx (customXml/itemProps1.xml) ok
-c:\temp\CSS2013.docx (word/numbering.xml) ok
-c:\temp\CSS2013.docx (customXml/_rels/item1.xml.rels) ok
-c:\temp\CSS2013.docx (customXml/item1.xml) ok
-c:\temp\CSS2013.docx (docProps/core.xml) ok
-c:\temp\CSS2013.docx (word/fontTable.xml) ok
-c:\temp\CSS2013.docx (word/webSettings.xml) ok
-c:\temp\CSS2013.docx (word/stylesWithEffects.xml) ok
-c:\temp\CSS2013.docx (docProps/app.xml) ok
+C:\kicomav\Release\sample\test.zip  ok
+C:\kicomav\Relea ... .zip (dummy.txt)  infected : Dummy-Test-File (not a virus)
 
 
 Results:
-Folders           :1
-Files             :30
-Packed            :0
-Infected files    :3
+Folders           :0
+Files             :2
+Packed            :1
+Infected files    :1
 Suspect files     :0
 Warnings          :0
-Identified viruses:2
+Identified viruses:1
 I/O errors        :0
+
 
 C:\kicomav\Release> _
 ```
@@ -142,21 +130,31 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py c:\temp -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.26 (Jun 16 2016)
-Copyright (C) 1995-2016 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jun 16 05:09:56 2016 UTC
-Signature number: 10
+Last updated Thu May  4 05:13:44 2017 UTC
+Signature number: 1638
 
-Virus.MSExcel.Laroux.A                             [macro.kmd]
-Exploit.HWP.Generic.42                             [hwp.kmd]
-Exploit.HWP.Generic.43                             [hwp.kmd]
-Exploit.HWP.Generic.5A                             [hwp.kmd]
-Exploit.HWP.Generic.EX                             [hwp.kmd]
 Dummy-Test-File (not a virus)                      [dummy.kmd]
-EICAR Test                                         [eicar.kmd]
-Exploit.Android.MasterKey.A                        [apk.kmd]
-Exploit.OLE.CVE-2014-4114                          [base1.kmd]
+EICAR-Test-File (not a virus)                      [eicar.kmd]
+Backdoor.Linux.Mirai.a.gen                         [emalware.kmd]
+Trojan-Ransom.NSIS.MyxaH.niz                       [emalware.kmd]
+Trojan-Ransom.NSIS.Onion.afvz                      [emalware.kmd]
+Trojan-Ransom.Win32.Agent.aagy                     [emalware.kmd]
+Trojan-Ransom.Win32.Agent.aahp                     [emalware.kmd]
+
+...
+
+Trojan.Win32.Inject.adnta                          [emalware.kmd]
+Trojan.Win32.Inject.wnfq                           [emalware.kmd]
+Trojan.Win32.Invader                               [emalware.kmd]
+Trojan.Win32.KillDisk.gen                          [emalware.kmd]
+Trojan.Win32.Menti.gen                             [emalware.kmd]
+Worm.Script.Generic                                [emalware.kmd]
+Virus.MSExcel.Laroux.Gen                           [macro.kmd]
+Exploit.HWP.Generic                                [hwp.kmd]
+
 
 C:\kicomav\Release> _
 ```
@@ -165,6 +163,11 @@ C:\kicomav\Release> _
 
 **Kei Choi**
 
++ [http://www.hanul93.com](http://www.hanul93.com)
 + [http://twitter.com/hanul93](http://twitter.com/hanul93)
 + [http://facebook.com/hanul93](http://facebook.com/hanul93)
 + [http://github.com/hanul93](http://github.com/hanul93)
+
+## Supporters
+
+![Supporters](http://www.kicomav.com/images/support.png)

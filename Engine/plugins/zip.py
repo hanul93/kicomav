@@ -1,130 +1,132 @@
-# -*- coding:utf-8 -*-
-
-"""
-Copyright (C) 2013 Nurilab.
-
-Author: Kei Choi(hanul93@gmail.com)
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-MA 02110-1301, USA.
-"""
-
-__revision__ = '$LastChangedRevision: 2 $'
-__author__   = 'Kei Choi'
-__version__  = '1.0.0.%d' % int( __revision__[21:-2] )
-__contact__  = 'hanul93@gmail.com'
+﻿# -*- coding:utf-8 -*-
+# Author: Kei Choi(hanul93@gmail.com)
 
 
-import os # 파일 삭제를 위해 import
 import zipfile
 import kernel
 
-#---------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # KavMain 클래스
-# 키콤백신 엔진 모듈임을 나타내는 클래스이다.
-# 이 클래스가 없으면 백신 엔진 커널 모듈에서 로딩하지 않는다.
-#---------------------------------------------------------------------
-class KavMain :
-    #-----------------------------------------------------------------
-    # init(self, plugins)
-    # 백신 엔진 모듈의 초기화 작업을 수행한다.
-    #-----------------------------------------------------------------
-    def init(self, plugins) : # 백신 모듈 초기화
-        return 0
+# -------------------------------------------------------------------------
+class KavMain:
+    # ---------------------------------------------------------------------
+    # init(self, plugins_path)
+    # 플러그인 엔진을 초기화 한다.
+    # 인력값 : plugins_path - 플러그인 엔진의 위치
+    #         verbose      - 디버그 모드 (True or False)
+    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # ---------------------------------------------------------------------
+    def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        return 0  # 플러그인 엔진 초기화 성공
 
-    #-----------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # uninit(self)
-    # 백신 엔진 모듈의 종료화 작업을 수행한다.
-    #-----------------------------------------------------------------
-    def uninit(self) : # 백신 모듈 종료화
-        return 0
-    
-    #-----------------------------------------------------------------
+    # 플러그인 엔진을 종료한다.
+    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # ---------------------------------------------------------------------
+    def uninit(self):  # 플러그인 엔진 종료
+        return 0  # 플러그인 엔진 종료 성공
+
+    # ---------------------------------------------------------------------
     # getinfo(self)
-    # 백신 엔진 모듈의 주요 정보를 알려준다. (버전, 제작자...)
-    #-----------------------------------------------------------------
-    def getinfo(self) :
-        info = {} # 사전형 변수 선언
-        info['author'] = 'Kei Choi' # 제작자
-        info['version'] = '1.0'     # 버전
-        info['title'] = 'Zip Engine' # 엔진 설명
-        info['kmd_name'] = 'zip' # 엔진 파일명
-        info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
+    # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
+    # 리턴값 : 플러그인 엔진 정보
+    # ---------------------------------------------------------------------
+    def getinfo(self):  # 플러그인 엔진의 주요 정보
+        info = dict()  # 사전형 변수 선언
+
+        info['author'] = 'Kei Choi'  # 제작자
+        info['version'] = '1.0'  # 버전
+        info['title'] = 'Zip Archive Engine'  # 엔진 설명
+        info['kmd_name'] = 'zip'  # 엔진 파일 이름
+        info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+
         return info
 
-    #-----------------------------------------------------------------
-    # format(self, mmhandle, filename)
-    # 포맷 분석기이다.
-    #-----------------------------------------------------------------
-    def format(self, mmhandle, filename) :
-        try :
-            fformat = {} # 포맷 정보를 담을 공간
+    # ---------------------------------------------------------------------
+    # format(self, filehandle, filename, filename_ex)
+    # 파일 포맷을 분석한다.
+    # 입력값 : filehandle - 파일 핸들
+    #          filename   - 파일 이름
+    #          filename_ex - 압축 파일 내부 파일 이름
+    # 리턴값 : {파일 포맷 분석 정보} or None
+    # ---------------------------------------------------------------------
+    def format(self, filehandle, filename, filename_ex):
+        fileformat = {}  # 포맷 정보를 담을 공간
 
-            mm = mmhandle
-            if mm[0:4] == 'PK\x03\x04' : # 헤더 체크
-                fformat['size'] = len(mm) # 포맷 주요 정보 저장
+        mm = filehandle
+        if mm[0:4] == 'PK\x03\x04':  # 헤더 체크
+            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
 
-                ret = {}
-                ret['ff_zip'] = fformat
-
-                return ret
-        except :
-            pass
+            ret = {'ff_zip': fileformat}
+            return ret
 
         return None
 
-    #-----------------------------------------------------------------
-    # arclist(self, scan_file_struct, format)
-    # 포맷 분석기이다.
-    #-----------------------------------------------------------------
-    def arclist(self, filename, format) :
-        file_scan_list = [] # 검사 대상 정보를 모두 가짐
+    # ---------------------------------------------------------------------
+    # arclist(self, filename, fileformat)
+    # 압축 파일 내부의 파일 목록을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    #          fileformat - 파일 포맷 분석 정보
+    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # ---------------------------------------------------------------------
+    def arclist(self, filename, fileformat):
+        file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        try :
-            fformat = format['ff_apk'] # APK 포맷이 존재하나?
-            return ('', []) # APK 포맷이면 처리 할 필요 없음
-        except :
-            pass # APK 포맷이 없으면 ZIP 포맷 처리
-
-        try :
-            # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
-            fformat = format['ff_zip']
-                
+        # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
+        if 'ff_zip' in fileformat:
             zfile = zipfile.ZipFile(filename)
-            for name in zfile.namelist() :
+            for name in zfile.namelist():
                 file_scan_list.append(['arc_zip', name])
             zfile.close()
-        except :
-            pass
 
         return file_scan_list
 
-    #-----------------------------------------------------------------
-    # unarc(self, scan_file_struct)
-    # 주어진 압축된 파일명으로 파일을 해제한다.
-    #-----------------------------------------------------------------
-    def unarc(self, arc_engine_id, arc_name, arc_in_name) :
-        try :
-            if arc_engine_id != 'arc_zip' :
-                raise SystemError
-
+    # ---------------------------------------------------------------------
+    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    #          fname_in_arc   - 압축 해제할 파일 이름
+    # 리턴값 : 압축 해제된 내용 or None
+    # ---------------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
+        if arc_engine_id == 'arc_zip':
             zfile = zipfile.ZipFile(arc_name)
-            data = zfile.read(arc_in_name)
+            data = zfile.read(fname_in_arc)
             zfile.close()
 
             return data
-        except :
-            pass
 
         return None
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_zip':
+            zfile = zipfile.ZipFile(arc_name, 'w')
+            # print '[-] zip :', arc_name
+
+            for file_info in file_infos:
+                rname = file_info.get_filename()
+                try:
+                    with open(rname, 'rb') as fp:
+                        buf = fp.read()
+                        # print '[-] filename :', rname, len(buf)
+                        # print '[-] rname :',
+                        a_name = file_info.get_filename_in_archive()
+                        zfile.writestr(a_name, buf)
+                except IOError:
+                    # print file_info.get_filename_in_archive()
+                    pass
+
+            zfile.close()
+            # print '[-] close()\n'
+            return True
+
+        return False
