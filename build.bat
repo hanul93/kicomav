@@ -32,9 +32,8 @@ if "%1" == "erase" (
 @echo [*] Engine file copy to the Release folder...
 @xcopy Engine\* Release\ /e > nul
 
-@python.exe Tools\mkkey.py 
-if not exist "key.pkr" goto KEY_NOT_FOUND
-if not exist "key.skr" goto KEY_NOT_FOUND
+if not exist "key.pkr" @python.exe Tools\mkkey.py 
+if not exist "key.skr" @python.exe Tools\mkkey.py 
 
 @copy key.* Release\plugins > nul
 @rem copy Tools\kmake.py Release\plugins > nul

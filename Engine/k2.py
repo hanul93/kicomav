@@ -11,8 +11,6 @@ import csv
 import xml.etree.cElementTree as ET
 import json
 import email
-import pylzma
-from ctypes import wintypes
 
 # -------------------------------------------------------------------------
 # 실제 임포트 모듈
@@ -28,6 +26,9 @@ from optparse import OptionParser
 import kavcore.k2engine
 import kavcore.k2const
 
+if os.name == 'nt':
+    import pylzma
+    from ctypes import wintypes
 
 # -------------------------------------------------------------------------
 # 주요 상수

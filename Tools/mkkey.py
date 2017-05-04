@@ -10,7 +10,7 @@ s = os.path.dirname(
         os.path.abspath(__file__)
     )
 ) + os.sep + 'Engine' + os.sep + 'kavcore'
-print s
+
 sys.path.append(s)
 
 import k2rsa
