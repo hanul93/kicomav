@@ -21,11 +21,3 @@
 ..\..\tools\kmake.py nsis.py
 ..\..\tools\kmake.py kicom.lst
 
-del eicar.kmd
-del dummy.kmd
-del hwp.kmd
-del elf.kmd
-del pdf.kmd
-del alz.kmd
-del cab.kmd
-del nsis.kmd
