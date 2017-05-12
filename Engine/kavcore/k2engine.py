@@ -756,12 +756,14 @@ class EngineInstance:
                 fp.close()
 
             return ret, vname, mid, scan_state, eid
-        except IOError:
-            self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
         except EngineKnownError:
             pass
         except ValueError:
             pass
+        except KeyboardInterrupt:
+            pass
+        except:
+            self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
             mm.close()
