@@ -391,7 +391,7 @@ def update_kicomav():
     print
 
     try:
-        url = 'http://localhost/'  # 서버 주소를 나중에 바꿔야 한다.
+        url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
         down_list = get_download_list(url)
