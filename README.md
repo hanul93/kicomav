@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/kicomav.jpg">
 
-# KicomAV v0.27
+# KicomAV v0.27a
 
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
@@ -36,7 +36,7 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.27a (May 17 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -69,7 +69,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release>k2.py --update
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.27a (May 17 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -88,7 +88,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.27a (May 17 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 Last updated Thu May  4 01:59:44 2017 UTC
@@ -117,7 +117,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py sample\test.zip -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.27a (May 17 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 Last updated Thu May  4 05:13:44 2017 UTC
@@ -146,7 +146,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27 (May 4 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.27a (May 17 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 Last updated Thu May  4 05:13:44 2017 UTC
