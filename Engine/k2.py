@@ -33,8 +33,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.27'
-KAV_BUILDDATE = 'May 4 2017'
+KAV_VERSION = '0.27a'
+KAV_BUILDDATE = 'May 17 2017'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
