@@ -1,3 +1,7 @@
+## v0.27a (May 17, 2017)
+* **Interface :**
+  * Enabled update option (--update)
+
 ## v0.27 (May 4, 2017)
 * **Engine :**
   * Redesigned an architecture of KicomAV
