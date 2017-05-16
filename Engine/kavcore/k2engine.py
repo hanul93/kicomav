@@ -756,12 +756,14 @@ class EngineInstance:
                 fp.close()
 
             return ret, vname, mid, scan_state, eid
-        except IOError:
-            self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
         except EngineKnownError:
             pass
         except ValueError:
             pass
+        except KeyboardInterrupt:
+            pass
+        except:
+            self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
             mm.close()
@@ -813,6 +815,8 @@ class EngineInstance:
         except IOError:
             pass
         except EngineKnownError:
+            pass
+        except WindowsError:
             pass
 
         return False
@@ -899,6 +903,8 @@ class EngineInstance:
 
                             break  # 압축이 풀렸으면 종료
                     except AttributeError:
+                        continue
+                    except struct.error:
                         continue
                 else:  # end for
                     # 어떤 엔진도 압축 해제를 하지 못한 경우
@@ -1020,6 +1026,8 @@ class EngineInstance:
         except EngineKnownError:
             pass
         except ValueError:
+            pass
+        except WindowsError:
             pass
 
         if mm:
