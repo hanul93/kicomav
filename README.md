@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/kicomav.jpg">
 
-# KicomAV v0.27a
+# KicomAV v0.27b
 
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
