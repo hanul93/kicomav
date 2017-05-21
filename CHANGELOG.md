@@ -1,3 +1,8 @@
+
+## v0.27b (May 22, 2017)
+* **Engine :**
+  * Fixed for pylzma import error
+
 ## v0.27a (May 17, 2017)
 * **Interface :**
   * Enabled update option (--update)
