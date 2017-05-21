@@ -26,15 +26,19 @@ from optparse import OptionParser
 import kavcore.k2engine
 import kavcore.k2const
 
-if os.name == 'nt':
+try:
     import pylzma
+except ImportError:
+    pass
+
+if os.name == 'nt':
     from ctypes import wintypes
 
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.27a'
-KAV_BUILDDATE = 'May 17 2017'
+KAV_VERSION = '0.27b'
+KAV_BUILDDATE = 'May 22 2017'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션

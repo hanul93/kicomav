@@ -7,13 +7,20 @@ import mmap
 import struct
 import tempfile
 import zlib
-import pylzma
 import kernel
 import kavutil
 import cryptolib
 
 import datetime
 from ctypes import *
+
+try:
+    import pylzma
+
+    pylzma_version = pylzma.__version__
+except ImportError:
+    pylzma_version = None
+
 
 # ----------------------------------------------------------------------------
 # NSIS용 구조체
@@ -434,7 +441,11 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        if pylzma_version is None:  # pylzma 설치되지 않음
+            return -1               # 엔진 로딩 실패로 처리
+        
         self.verbose = verbose
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
