@@ -108,7 +108,8 @@ class PE:
 
                     for i in range(num_name + num_id):
                         rcdata_id = kavutil.get_uint32(mm, rsrc_off + 0x10 + (i*8))
-                        if rcdata_id == 0xA:  # RCDATA 발견?
+
+                        if rcdata_id & 0x80000000 == 0x80000000 or rcdata_id == 0xA:  # 사용자가 정의한 이름 or RCDATA?
                             rcdata_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i*8))
                             rcdata_entry_off = (rcdata_off & 0x7FFFFFFF) + rsrc_off
 
@@ -121,21 +122,25 @@ class PE:
                                 string_name = mm[string_off+2:string_off+2+(len_name * 2):2]
                                 # print string_name
 
-                                if string_name == 'CABINET':
-                                    rcdata_lang_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x14 + (j * 8))
-                                    rcdata_lang_off = (rcdata_lang_off & 0x7FFFFFFF) + rsrc_off
+                                rcdata_lang_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x14 + (j * 8))
+                                rcdata_lang_off = (rcdata_lang_off & 0x7FFFFFFF) + rsrc_off
 
-                                    rdata_entry_off = kavutil.get_uint32(mm, rcdata_lang_off + 0x14) + rsrc_off
-                                    rcdata_rva = kavutil.get_uint32(mm, rdata_entry_off)
-                                    rcdata_data_off, _ = self.rva_to_off(rcdata_rva)
-                                    rcdata_data_size = kavutil.get_uint32(mm, rdata_entry_off+4)
+                                rdata_entry_off = kavutil.get_uint32(mm, rcdata_lang_off + 0x14) + rsrc_off
+                                rcdata_rva = kavutil.get_uint32(mm, rdata_entry_off)
+                                rcdata_data_off, _ = self.rva_to_off(rcdata_rva)
+                                rcdata_data_size = kavutil.get_uint32(mm, rdata_entry_off + 4)
 
-                                    # print hex(rcdata_data_off), hex(rcdata_data_size)
-                                    pe_format['CABINET_Offset'] = rcdata_data_off
-                                    pe_format['CABINET_Size'] = rcdata_data_size
-                                    break
+                                # print hex(rcdata_data_off), hex(rcdata_data_size)
+                                if rcdata_data_size > 8192:  # 최소 8K 이상인 리소스만 데이터로 추출
+                                    if 'Resource_UserData' in pe_format:
+                                        pe_format['Resource_UserData'][string_name] = (rcdata_data_off, rcdata_data_size)
+                                    else:
+                                        pe_format['Resource_UserData'] = {string_name: (rcdata_data_off, rcdata_data_size)}
                 except struct.error:
                     pass
+
+                # if 'Resource_UserData' in pe_format:
+                #     print pe_format['Resource_UserData']
 
             # Import API 분석
             imp_rva = kavutil.get_uint32(mm, pe_pos + 0x80)  # Import API 위치(RVA)
