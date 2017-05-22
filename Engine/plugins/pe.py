@@ -362,11 +362,10 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 첨부 파일 포맷이 있는가?
         if 'ff_pe' in fileformat:
-            if 'CABINET_Offset' in fileformat['ff_pe']['pe']:
-                off = fileformat['ff_pe']['pe']['CABINET_Offset']
-                size = fileformat['ff_pe']['pe']['CABINET_Size']
-
-                file_scan_list.append(['arc_pe_cab:%d:%d' % (off, size), 'CABINET'])
+            if 'Resource_UserData' in fileformat['ff_pe']['pe']:
+                for key in fileformat['ff_pe']['pe']['Resource_UserData'].keys():
+                    off, size = fileformat['ff_pe']['pe']['Resource_UserData'][key]
+                    file_scan_list.append(['arc_pe_rcdata:%d:%d' % (off, size), key])
 
         return file_scan_list
 
@@ -378,7 +377,7 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id.find('arc_pe_cab:') != -1:
+        if arc_engine_id.find('arc_pe_rcdata:') != -1:
             t = arc_engine_id.split(':')
             off = int(t[1])
             size = int(t[2])
