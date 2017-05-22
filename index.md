@@ -18,6 +18,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 ### Requirements
 
 * Python 2.7
+* [pylzma](https://github.com/fancycode/pylzma)
 
 
 ### Quick start
@@ -32,6 +33,10 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 ## 2. Releases
 
 ***
+
+### 0.27b (May 22, 2017)
+
+* Fixed for pylzma import error
 
 ### 0.27a (May 17, 2017)
 
