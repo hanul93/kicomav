@@ -93,11 +93,7 @@ class KavMain:
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
         if arc_engine_id == 'arc_zip':
             zfile = zipfile.ZipFile(arc_name)
-            try:
-                data = zfile.read(fname_in_arc)
-            except RuntimeError:  # 암호가 설정된 파일
-                data = ''
-                
+            data = zfile.read(fname_in_arc)
             zfile.close()
 
             return data

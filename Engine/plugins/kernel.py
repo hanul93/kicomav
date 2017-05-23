@@ -7,6 +7,7 @@ NOT_FOUND = 0  # 악성코드 찾지 못함
 INFECTED = 1  # 감염
 SUSPECT = 2  # 의심
 WARNING = 3  # 경고
+ERROR = 99  # 에러 메시지 처리
 
 
 # 악성코드 치료 방법

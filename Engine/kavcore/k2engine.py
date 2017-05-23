@@ -11,6 +11,7 @@ import glob
 import tempfile
 import shutil
 import struct
+import zipfile
 
 import k2timelib
 import k2kmdfile
@@ -365,6 +366,8 @@ class EngineInstance:
     #         -1 - 콜백 함수가 너무 많음
     # ---------------------------------------------------------------------
     def scan(self, filename, *callback):
+        import kernel
+
         scan_callback_fn = None  # 악성코드 검사 콜백 함수
 
         move_master_file = False  # 마스터 파일 격리 필요 여부
@@ -434,9 +437,24 @@ class EngineInstance:
 
                     # 압축된 파일이면 해제하기
                     if real_name == '':  # 이미 실제 파일명이 존재하지 않으면 압축 파일임
-                        ret = self.unarc(t_file_info)
+                        ret, ret_fi = self.unarc(t_file_info)
                         if ret:
-                            t_file_info = ret  # 압축 결과물이 존재하면 파일 정보 교체
+                            t_file_info = ret_fi  # 압축 결과물이 존재하면 파일 정보 교체
+                        else:  # 압축 해제 오류 발생
+                            if ret_fi:  # 오류 메시지가 존재하는가?
+                                # 콜백 호출 또는 검사 리턴값 생성
+                                ret_value['result'] = ret  # 악성코드 발견 여부
+                                ret_value['engine_id'] = -1  # 엔진 ID
+                                ret_value['virus_name'] = ret_fi  # 에러 메시지로 대체
+                                ret_value['virus_id'] = -1  # 악성코드 ID
+                                ret_value['scan_state'] = kernel.ERROR  # 악성코드 검사 상태
+                                ret_value['file_struct'] = t_file_info  # 검사 파일 이름
+
+                                if self.options['opt_list']:  # 모든 리스트 출력인가?
+                                    if isinstance(scan_callback_fn, types.FunctionType):
+                                        scan_callback_fn(ret_value)
+
+                                continue
 
                     # 2. 포맷 분석
                     ff = self.format(t_file_info)
@@ -447,8 +465,6 @@ class EngineInstance:
                         self.__feature_file(t_file_info, ff, self.options['opt_feature'])
 
                     if ret:  # 악성코드 진단 개수 카운트
-                        import kernel
-
                         if scan_state == kernel.INFECTED:
                             self.result['Infected_files'] += 1
                         elif scan_state == kernel.SUSPECT:
@@ -510,9 +526,12 @@ class EngineInstance:
                         # 이미 해당 파일이 악성코드라고 판명되었다면
                         # 그 파일을 압축해제해서 내부를 볼 필요는 없다.
                         # 압축 파일이면 검사대상 리스트에 추가
-                        arc_file_list = self.arclist(t_file_info, ff)
-                        if len(arc_file_list):
-                            file_scan_list = arc_file_list + file_scan_list
+                        try:
+                            arc_file_list = self.arclist(t_file_info, ff)
+                            if len(arc_file_list):
+                                file_scan_list = arc_file_list + file_scan_list
+                        except zipfile.BadZipfile:  # zip 헤더 오류
+                            pass
             except KeyboardInterrupt:
                 return 1  # 키보드 종료
 
@@ -851,7 +870,7 @@ class EngineInstance:
     # unarc(self, file_struct)
     # 플러그인 엔진에게 압축 해제를 요청한다.
     # 입력값 : file_struct - 압축 해제 대상 파일 정보
-    # 리턴값 : 압축 해제된 파일 정보 or None
+    # 리턴값 : (True, 압축 해제된 파일 정보) or (False, 오류 원인 메시지)
     # ---------------------------------------------------------------------
     def unarc(self, file_struct):
         import kernel
@@ -906,6 +925,8 @@ class EngineInstance:
                         continue
                     except struct.error:
                         continue
+                    except RuntimeError:  # 암호가 설정된 zip 파일
+                        return False, 'password protected'
                 else:  # end for
                     # 어떤 엔진도 압축 해제를 하지 못한 경우
                     # 임시 파일만 생성한 뒤 종료
@@ -917,11 +938,11 @@ class EngineInstance:
                     rname_struct = file_struct
                     rname_struct.set_filename(rname)
                     rname_struct.set_can_archive(kernel.MASTER_IGNORE)
-                return rname_struct
+                return True, rname_struct
         except IOError:
             pass
 
-        return None
+        return False, None
 
     # ---------------------------------------------------------------------
     # arclist(self, file_struct, fileformat)
