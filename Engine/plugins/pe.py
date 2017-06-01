@@ -103,39 +103,63 @@ class PE:
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
                     rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
-                    num_name = kavutil.get_uint16(mm, rsrc_off+0xC)
-                    num_id = kavutil.get_uint16(mm, rsrc_off + 0xE)
 
-                    for i in range(num_name + num_id):
-                        rcdata_id = kavutil.get_uint32(mm, rsrc_off + 0x10 + (i*8))
+                    # Type 체크
+                    num_type_name = kavutil.get_uint16(mm, rsrc_off+0xC)
+                    num_type_id = kavutil.get_uint16(mm, rsrc_off + 0xE)
 
-                        if rcdata_id & 0x80000000 == 0x80000000 or rcdata_id == 0xA:  # 사용자가 정의한 이름 or RCDATA?
-                            rcdata_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i*8))
-                            rcdata_entry_off = (rcdata_off & 0x7FFFFFFF) + rsrc_off
+                    for i in range(num_type_name + num_type_id):
+                        type_id = kavutil.get_uint32(mm, rsrc_off + 0x10 + (i*8))
+                        name_id_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i * 8))
 
-                            num_rcdata_name = kavutil.get_uint16(mm, rcdata_entry_off + 0xC)
-
-                            for j in range(num_rcdata_name):
-                                rcdata_name_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x10 + (j * 8))
-                                string_off = (rcdata_name_off & 0x7FFFFFFF) + rsrc_off
+                        # Type이 사용자가 정의한 이름 or RCDATA?
+                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA:
+                            if type_id & 0x80000000 == 0x80000000:
+                                # 사용자가 정의한 이름 추출
+                                string_off = (type_id & 0x7FFFFFFF) + rsrc_off
                                 len_name = kavutil.get_uint16(mm, string_off)
-                                string_name = mm[string_off+2:string_off+2+(len_name * 2):2]
-                                # print string_name
+                                rsrc_type_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
+                            else:
+                                rsrc_type_name = 'RCDATA'
 
-                                rcdata_lang_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x14 + (j * 8))
-                                rcdata_lang_off = (rcdata_lang_off & 0x7FFFFFFF) + rsrc_off
+                            # Name ID
+                            name_id_off = (name_id_off & 0x7FFFFFFF) + rsrc_off
+                            num_name_id_name = kavutil.get_uint16(mm, name_id_off + 0xC)
+                            num_name_id_id = kavutil.get_uint16(mm, name_id_off + 0xE)
 
-                                rdata_entry_off = kavutil.get_uint32(mm, rcdata_lang_off + 0x14) + rsrc_off
-                                rcdata_rva = kavutil.get_uint32(mm, rdata_entry_off)
-                                rcdata_data_off, _ = self.rva_to_off(rcdata_rva)
-                                rcdata_data_size = kavutil.get_uint32(mm, rdata_entry_off + 4)
+                            for j in range(num_name_id_name + num_name_id_id):
+                                name_id_id = kavutil.get_uint32(mm, name_id_off + 0x10 + (j * 8))
+                                language_off = kavutil.get_uint32(mm, name_id_off + 0x14 + (j * 8))
 
-                                # print hex(rcdata_data_off), hex(rcdata_data_size)
-                                if rcdata_data_size > 8192:  # 최소 8K 이상인 리소스만 데이터로 추출
-                                    if 'Resource_UserData' in pe_format:
-                                        pe_format['Resource_UserData'][string_name] = (rcdata_data_off, rcdata_data_size)
-                                    else:
-                                        pe_format['Resource_UserData'] = {string_name: (rcdata_data_off, rcdata_data_size)}
+                                # 리소스 영역의 최종 이름 생성
+                                if name_id_id & 0x80000000 == 0x80000000:
+                                    string_off = (name_id_id & 0x7FFFFFFF) + rsrc_off
+                                    len_name = kavutil.get_uint16(mm, string_off)
+                                    rsrc_name_id_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
+                                    string_name = rsrc_type_name + '/' + rsrc_name_id_name
+                                else:
+                                    string_name = rsrc_type_name + '/' + hex(name_id_id).upper()[2:]
+
+                                # Language
+                                language_off = (language_off & 0x7FFFFFFF) + rsrc_off
+                                num_language_name = kavutil.get_uint16(mm, language_off + 0xC)
+                                num_language_id = kavutil.get_uint16(mm, language_off + 0xE)
+
+                                for k in range(num_language_name + num_language_id):
+                                    # language_id = kavutil.get_uint32(mm, language_off + 0x10 + (k * 8))
+                                    data_entry_off = kavutil.get_uint32(mm, language_off + 0x14 + (k * 8))
+
+                                    data_entry_off = (data_entry_off & 0x7FFFFFFF) + rsrc_off
+
+                                    data_rva = kavutil.get_uint32(mm, data_entry_off)
+                                    data_off, _ = self.rva_to_off(data_rva)
+                                    data_size = kavutil.get_uint32(mm, data_entry_off + 4)
+
+                                    if data_size > 8192:  # 최소 8K 이상인 리소스만 데이터로 추출
+                                        if 'Resource_UserData' in pe_format:
+                                            pe_format['Resource_UserData'][string_name] = (data_off, data_size)
+                                        else:
+                                            pe_format['Resource_UserData'] = {string_name: (data_off, data_size)}
                 except struct.error:
                     pass
 

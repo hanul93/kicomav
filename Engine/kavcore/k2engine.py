@@ -412,6 +412,7 @@ class EngineInstance:
                     ret_value['result'] = False  # 폴더이므로 악성코드 없음
                     ret_value['filename'] = real_name  # 검사 파일 이름
                     ret_value['file_struct'] = t_file_info  # 검사 파일 이름
+                    ret_value['scan_state'] = kernel.NOT_FOUND  # 악성코드 없음
 
                     self.result['Folders'] += 1  # 폴더 개수 카운트
 
