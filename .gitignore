@@ -1,2 +1,7 @@
 .sass-cache/
 _site
+.idea
+/Engine/kavcore/*.pyc
+Release
+/key.pkr
+/key.skr
