@@ -609,7 +609,8 @@ class EngineInstance:
                         immediately_flag = True
 
         # 압축 파일 정보를 이용해 즉시 압축하여 최종 마스터 파일로 재조립한다.
-        if immediately_flag and len(self.update_info) > 1:
+        if immediately_flag:
+            if len(self.update_info) > 1:  # 최종 재조립시 1개 이상이면 압축 파일이라는 의미
                 ret_file_info = None
 
                 while len(self.update_info):
@@ -623,6 +624,9 @@ class EngineInstance:
                     self.update_callback_fn(ret_file_info)
 
                 self.update_info = [file_struct]
+
+            if len(self.update_info) == 1:  # 최종 재조립시 1개면 일반 파일
+                self.update_info = []
 
     # ---------------------------------------------------------------------
     # __update_arc_file_struct(self, p_file_info)
