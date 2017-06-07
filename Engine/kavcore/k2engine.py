@@ -368,6 +368,8 @@ class EngineInstance:
     def scan(self, filename, *callback):
         import kernel
 
+        # 파일을 한 개씩 검사 요청할 경우 압축으로 인해 self.update_info 정보가 누적 된 경우
+        self.update_info = []
         scan_callback_fn = None  # 악성코드 검사 콜백 함수
 
         move_master_file = False  # 마스터 파일 격리 필요 여부
@@ -456,6 +458,18 @@ class EngineInstance:
                                         scan_callback_fn(ret_value)
 
                                 continue
+
+                    # 비정상 종료의 파일을 찾기 위해 추가된 모드
+                    if self.options['opt_debug']:  # 디버깅 모드인가?
+                        ret_value['result'] = False  # 악성코드 발견 여부
+                        ret_value['engine_id'] = -1  # 엔진 ID
+                        ret_value['virus_name'] = 'debug'  # 에러 메시지로 대체
+                        ret_value['virus_id'] = -1  # 악성코드 ID
+                        ret_value['scan_state'] = kernel.ERROR  # 악성코드 검사 상태
+                        ret_value['file_struct'] = t_file_info  # 검사 파일 이름
+
+                        if isinstance(scan_callback_fn, types.FunctionType):
+                            scan_callback_fn(ret_value)
 
                     # 2. 포맷 분석
                     ff = self.format(t_file_info)
@@ -625,8 +639,8 @@ class EngineInstance:
 
                 self.update_info = [file_struct]
 
-            if len(self.update_info) == 1:  # 최종 재조립시 1개면 일반 파일
-                self.update_info = []
+            # if len(self.update_info) == 1:  # 최종 재조립시 1개면 일반 파일
+            #    self.update_info = [file_struct]
 
     # ---------------------------------------------------------------------
     # __update_arc_file_struct(self, p_file_info)
