@@ -36,8 +36,6 @@ class PE:
             if mm[0:2] != 'MZ':  # MZ로 시작하나?
                 raise ValueError
 
-            pe_format['File_MD5'] = cryptolib.md5(mm[:])
-
             # PE 표식자 위치 알아내기
             pe_pos = kavutil.get_uint32(mm, 0x3C)
 
@@ -234,7 +232,7 @@ class PE:
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'pe.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
-                kavutil.vprint(None, 'MD5', pe_format['File_MD5'])
+                kavutil.vprint(None, 'MD5', cryptolib.md5(mm[:]))
 
                 print
                 kavutil.vprint('PE')
