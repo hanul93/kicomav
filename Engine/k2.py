@@ -315,6 +315,9 @@ def define_options():
     parser.add_option("", "--sigtool",
                       action="store_true", dest="opt_sigtool",
                       default=False)
+    parser.add_option("", "--debug",
+                      action="store_true", dest="opt_debug",
+                      default=False)
     parser.add_option("-?", "--help",
                       action="store_true", dest="opt_help",
                       default=False)

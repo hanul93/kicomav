@@ -1100,6 +1100,7 @@ class EngineInstance:
             self.options['infp_path'] = options.infp_path
             self.options['opt_verbose'] = options.opt_verbose
             self.options['opt_sigtool'] = options.opt_sigtool
+            self.options['opt_debug'] = options.opt_debug
             self.options['opt_feature'] = options.opt_feature
         else:  # 기본값 설정
             self.options['opt_arc'] = False
@@ -1110,6 +1111,7 @@ class EngineInstance:
             self.options['infp_path'] = None
             self.options['opt_verbose'] = False
             self.options['opt_sigtool'] = False
+            self.options['opt_debug'] = False
             self.options['opt_feature'] = 0xffffffff
         return True
 
