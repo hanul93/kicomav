@@ -67,6 +67,8 @@ class Engine:
                     os.remove(name)
                 except IOError:
                     pass
+                except WindowsError:  # 기타 삭제 오류 처리
+                    pass
 
     # ---------------------------------------------------------------------
     # set_plugins(self, plugins_path)
