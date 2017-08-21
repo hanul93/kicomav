@@ -64,7 +64,8 @@ class KavMain:
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
         ret = self.rules.match(filename)
         if len(ret):
-            return True, ret[0], 0, kernel.INFECTED
+            vname = ret[0].meta.get('KicomAV', ret[0].rule)  # KicomAV meta 정보 확인
+            return True, vname, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
