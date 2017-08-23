@@ -11,6 +11,7 @@ import csv
 import xml.etree.cElementTree as ET
 import json
 import email
+import yara
 
 # -------------------------------------------------------------------------
 # 실제 임포트 모듈
