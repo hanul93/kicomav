@@ -32,10 +32,11 @@ def get_hwp_recoard(val):
 # 주어진 버퍼를 HWP 레코드 구조로 해석한다.
 # 입력값 : buf - 버퍼
 #         lenbuf - 버퍼 크기
-# 리턴값 : True or False (HWP 레코드 추적 성공 여부)
+# 리턴값 : True or False (HWP 레코드 추적 성공 여부) 및 문제의 tagid
 # -------------------------------------------------------------------------
 def scan_hwp_recoard(buf, lenbuf):
     pos = 0
+    tagid = 0
 
     while pos < lenbuf:
         extra_size = 4
@@ -49,9 +50,9 @@ def scan_hwp_recoard(buf, lenbuf):
         pos += (size + extra_size)
 
     if pos == lenbuf:
-        return True
+        return True, -1
 
-    return False
+    return False, tagid
 
 
 # -------------------------------------------------------------------------
@@ -203,15 +204,22 @@ class KavMain:
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
         mm = filehandle
 
-        if filename_ex.lower().find('bodytext/section') >= 0:
+        if filename_ex.lower().find('bodytext/section') >= 0 or filename_ex.lower().find('docinfo') >= 0:
             buf = mm[:]
+            '''
             try:
                 buf = zlib.decompress(buf, -15)
             except zlib.error:
                 pass
+            '''
+            val = kavutil.get_uint32(buf, 0)
+            tagid, level, size = get_hwp_recoard(val)
 
-            if scan_hwp_recoard(buf, len(buf)) is False:  # 레코드 추적 실패
-                return True, 'Exploit.HWP.Generic', 0, kernel.SUSPECT
+            # 문서의 첫번째 tag가 문서 헤더(0x42), 문서 속성(0x10) 일때만 추적 진행
+            if tagid == 0x42 or tagid == 0x10:
+                ret, tagid = scan_hwp_recoard(buf, len(buf))
+                if ret is False:  # 레코드 추적 실패
+                    return True, 'Exploit.HWP.Generic.%02X' % tagid, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
