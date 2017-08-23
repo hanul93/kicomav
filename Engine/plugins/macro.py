@@ -26,6 +26,7 @@ MALWARE_ID_EXCEL95 = 2
 MALWARE_ID_EXCEL97 = 3
 MALWARE_ID_EXCEL_FORMULA95 = 4
 MALWARE_ID_EXCEL_FORMULA97 = 5
+MALWARE_ID_OLE = 99
 
 
 # -------------------------------------------------------------------------
@@ -771,6 +772,14 @@ class KavMain:
             # 미리 분석된 파일 포맷중에 OLE 포맷이 있는가?
             if 'ff_ole' in fileformat:
                 o = ole.OleFile(filename)
+
+                # 취약점 공격인가?
+                if o.cve_2003_0820 is True:
+                    if o:
+                        o.close()
+
+                    return True, 'Exploit.OLE.CVE-2003-0820', MALWARE_ID_OLE, kernel.INFECTED
+
                 ole_lists = o.listdir()
 
                 for pps_name in ole_lists:
@@ -838,6 +847,8 @@ class KavMain:
                                     # Heuristic 검사
                                     for macro_crc in self.word97_macro_crcs:
                                         if macro_crc.issubset(vba_keyword_crc32):
+                                            if o:
+                                                o.close()
                                             return True, 'Virus.MSWord.Generic', MALWARE_ID_WORD97, kernel.SUSPECT
 
         except IOError:
@@ -859,6 +870,14 @@ class KavMain:
     # 리턴값 : 악성코드 치료 여부
     # ---------------------------------------------------------------------
     def disinfect(self, filename, malware_id):  # 악성코드 치료
+        # OLE 취약점이면 바로 삭제
+        if malware_id == MALWARE_ID_OLE:
+            try:
+                os.remove(filename)
+                return True  # 치료 성공
+            except IOError:
+                return False
+
         # 치료 실패를 위해 임시 파일 생성
         t_name = tempfile.mktemp('k2ole')
         shutil.copy(filename, t_name)

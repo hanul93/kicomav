@@ -505,7 +505,10 @@ class OleFile:
         self.__deep = 0
         self.__full_list = []
 
-        self.__get_pps_path()
+        try:
+            self.__get_pps_path()
+        except IndexError:  # OLE 파일 PPS 추적 방해 코드 (CVE-2003-0820)
+            pass
 
         # small block link 얻기
         self.small_block = get_block_link(self.pps[0]['Start'], self.bbd)
@@ -522,6 +525,9 @@ class OleFile:
             pps_name = ''
             name = prefix + pps_name
         else:
+            if (node & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
+                self.cve_2003_0820 = True
+
             pps_name = self.pps[node]['Name'].encode('cp949', 'ignore')
             name = prefix + '/' + pps_name
             # print ("%02d : %d %s") % (node, self.deep, name)
