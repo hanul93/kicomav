@@ -588,6 +588,9 @@ class EngineInstance:
         except shutil.Error:
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
                 self.quarantine_callback_fn(filename, False)
+        except WindowsError:
+            if isinstance(self.quarantine_callback_fn, types.FunctionType):
+                self.quarantine_callback_fn(filename, False)
 
     # ---------------------------------------------------------------------
     # __update_process(self, file_struct, immediately_flag=False)
