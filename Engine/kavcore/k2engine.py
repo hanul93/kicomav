@@ -8,6 +8,7 @@ import datetime
 import types
 import mmap
 import glob
+import re
 import tempfile
 import shutil
 import struct
@@ -222,6 +223,8 @@ class EngineInstance:
         self.update_callback_fn = None  # 악성코드 압축 최종 치료 콜백 함수
         self.quarantine_callback_fn = None  # 악성코드 격리 콜백 함수
 
+        self.disable_path = re.compile(r'/<\w+>')  # 검사 결과 출력시 제외할 파일 이름
+
     # ---------------------------------------------------------------------
     # create(self, kmd_modules)
     # 백신 엔진의 인스턴스를 생성한다.
@@ -421,8 +424,7 @@ class EngineInstance:
                     self.result['Folders'] += 1  # 폴더 개수 카운트
 
                     if self.options['opt_list']:  # 옵션 내용 중 모든 리스트 출력인가?
-                        if isinstance(scan_callback_fn, types.FunctionType):  # 콜백 함수가 존재하는가?
-                            scan_callback_fn(ret_value)  # 콜백 함수 호출
+                        self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                     if is_sub_dir_scan:
                         # 폴더 안의 파일들을 검사대상 리스트에 추가
@@ -456,8 +458,7 @@ class EngineInstance:
                                 ret_value['file_struct'] = t_file_info  # 검사 파일 이름
 
                                 if self.options['opt_list']:  # 모든 리스트 출력인가?
-                                    if isinstance(scan_callback_fn, types.FunctionType):
-                                        scan_callback_fn(ret_value)
+                                    self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                                 continue
 
@@ -470,8 +471,7 @@ class EngineInstance:
                         ret_value['scan_state'] = kernel.ERROR  # 악성코드 검사 상태
                         ret_value['file_struct'] = t_file_info  # 검사 파일 이름
 
-                        if isinstance(scan_callback_fn, types.FunctionType):
-                            scan_callback_fn(ret_value)
+                        self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                     # 2. 포맷 분석
                     ff = self.format(t_file_info)
@@ -507,38 +507,35 @@ class EngineInstance:
                             move_master_file = False
 
                     if ret_value['result']:  # 악성코드 발견인가?
-                        if isinstance(scan_callback_fn, types.FunctionType):
-                            action_type = scan_callback_fn(ret_value)
+                        action_type = self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
-                            if self.options['opt_move']:
-                                if t_file_info.get_additional_filename() == '':
-                                    # print 'move 1 :', t_file_info.get_master_filename()
-                                    self.__quarantine_file(t_file_info.get_master_filename())
-                                    move_master_file = False
+                        if self.options['opt_move']:
+                            if t_file_info.get_additional_filename() == '':
+                                # print 'move 1 :', t_file_info.get_master_filename()
+                                self.__quarantine_file(t_file_info.get_master_filename())
+                                move_master_file = False
+                            else:
+                                move_master_file = True
+                                t_master_file = t_file_info.get_master_filename()
+                        else:  # 격리 옵션이 치료 옵션보다 우선 적용
+                            if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
+                                return 0
+
+                            self.__disinfect_process(ret_value, action_type)
+
+                            # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
+                            if self.options['opt_dis'] or \
+                               (action_type == k2const.K2_ACTION_DISINFECT or action_type == k2const.K2_ACTION_DELETE):
+                               # 치료 옵션이 존재할때에만... 실행
+                                if os.path.exists(t_file_info.get_filename()):
+                                    t_file_info.set_modify(True)
+                                    file_scan_list = [t_file_info] + file_scan_list
                                 else:
-                                    move_master_file = True
-                                    t_master_file = t_file_info.get_master_filename()
-                            else:  # 격리 옵션이 치료 옵션보다 우선 적용
-                                if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
-                                    return 0
-
-                                self.__disinfect_process(ret_value, action_type)
-
-                                # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
-                                if self.options['opt_dis'] or \
-                                   (action_type == k2const.K2_ACTION_DISINFECT or action_type == k2const.K2_ACTION_DELETE):
-                                   # 치료 옵션이 존재할때에만... 실행
-                                    if os.path.exists(t_file_info.get_filename()):
-                                        t_file_info.set_modify(True)
-                                        file_scan_list = [t_file_info] + file_scan_list
-                                    else:
-                                        # 압축 파일 최종 치료 처리
-                                        self.__update_process(t_file_info)
+                                    # 압축 파일 최종 치료 처리
+                                    self.__update_process(t_file_info)
                     else:
-                        if self.options['opt_list']:  # 모든 리스트 출력인가?
-                            if isinstance(scan_callback_fn, types.FunctionType):
-                                scan_callback_fn(ret_value)
-
+                        display_scan_result = True  # 검사 결과 출력하기
+                        
                         # 압축 파일 최종 치료 처리
                         self.__update_process(t_file_info)
 
@@ -549,8 +546,18 @@ class EngineInstance:
                             arc_file_list = self.arclist(t_file_info, ff)
                             if len(arc_file_list):
                                 file_scan_list = arc_file_list + file_scan_list
+
+                            # 한 개의 정보가 추가되는 것 중에 /<...> 형태로 입력되는 파일이면 리스트 출력을 잠시 보류한다.
+                            if len(arc_file_list) == 1 and \
+                               self.disable_path.search(arc_file_list[0].get_additional_filename()):
+                                display_scan_result = False
                         except zipfile.BadZipfile:  # zip 헤더 오류
                             pass
+
+                        # 검사 결과 출력하기
+                        if self.options['opt_list']:  # 모든 리스트 출력인가?
+                            if display_scan_result:
+                                self.call_scan_callback_fn(scan_callback_fn, ret_value)
             except KeyboardInterrupt:
                 return 1  # 키보드 종료
 
@@ -563,6 +570,22 @@ class EngineInstance:
             move_master_file = False
 
         return 0  # 정상적으로 검사 종료
+
+    # ---------------------------------------------------------------------
+    # call_scan_callback_fn(self, a_scan_callback_fn, ret_value)
+    # 악성코드 검사 결과 출력 시 /<...> 표시는 제외하고 출력한다.
+    # 입력값 : a_scan_callback_fn - 콜백 함수
+    #         ret_value : 출력 대상
+    # 리턴값 : scan 콜백 함수의 리턴값
+    # ---------------------------------------------------------------------
+    def call_scan_callback_fn(self, a_scan_callback_fn, ret_value):
+        if isinstance(a_scan_callback_fn, types.FunctionType):
+            fs = ret_value['file_struct']  # 출력할 파일 정보
+            rep_path = self.disable_path.sub('', fs.get_additional_filename())
+            fs.set_additional_filename(rep_path)
+            ret_value['file_struct'] = fs
+
+            return a_scan_callback_fn(ret_value)
 
     # ---------------------------------------------------------------------
     # __quarantine_file(self, filename)
