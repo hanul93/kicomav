@@ -736,9 +736,11 @@ class EngineInstance:
             t_fname = tmp.get_filename()
             # 플러그인 엔진에 의해 파일이 치료(삭제) 되었을 수 있음
             if os.path.exists(t_fname):
-                os.remove(t_fname)
-                # print '[*] Remove :', t_fname
-
+                try:
+                    os.remove(t_fname)
+                    # print '[*] Remove :', t_fname
+                except WindowsError:
+                    pass
         return ret_file_info
 
     # ---------------------------------------------------------------------
