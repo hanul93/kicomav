@@ -525,7 +525,8 @@ class EngineInstance:
                                 self.__disinfect_process(ret_value, action_type)
 
                                 # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
-                                if self.options['opt_dis']:  # 치료 옵션이 존재할때에만... 실행
+                                if self.options['opt_dis'] or \
+                                   action_type != k2const.K2_ACTION_QUIT:  # 치료 옵션이 존재할때에만... 실행
                                     if os.path.exists(t_file_info.get_filename()):
                                         t_file_info.set_modify(True)
                                         file_scan_list = [t_file_info] + file_scan_list
