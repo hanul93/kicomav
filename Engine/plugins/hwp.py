@@ -67,6 +67,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.handle = {}
         self.hwp_ole = re.compile('bindata/bin\d+\.ole$', re.IGNORECASE)
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -106,6 +107,21 @@ class KavMain:
         vlist.append('Exploit.HWP.Generic')  # 진단/치료하는 악성코드 이름 등록
 
         return vlist
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = zipfile.ZipFile(filename)  # zip 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
@@ -154,10 +170,11 @@ class KavMain:
         # 미리 분석된 파일 포맷중에 HWP 파일 포맷이 있는가?
         if 'ff_hwp' in fileformat:
             # OLE Stream 목록 추출하기
-            o = ole.OleFile(filename)
+            # o = ole.OleFile(filename)
+            o = self.__get_handle(filename)
             for name in o.listdir():
                 file_scan_list.append(['arc_hwp', name])
-            o.close()
+            # o.close()
         elif 'ff_hwp_ole' in fileformat:  # HWP 파일 내부에 포함된 OLE 파일?
             file_scan_list.append(['arc_hwp_ole', 'Embedded'])
 
@@ -174,10 +191,11 @@ class KavMain:
         data = None
 
         if arc_engine_id == 'arc_hwp':
-            o = ole.OleFile(arc_name)
+            # o = ole.OleFile(arc_name)
+            o = self.__get_handle(arc_name)
             fp = o.openstream(fname_in_arc)
             data = fp.read()
-            o.close()
+            # o.close()
         elif arc_engine_id == 'arc_hwp_ole':
             with open(arc_name, 'rb') as fp:
                 buf = fp.read()
@@ -191,6 +209,22 @@ class KavMain:
                 data = buf[4:]
 
         return data
+
+    # ---------------------------------------------------------------------
+    # arcclose(self, arc_engine_id, arc_name)
+    # 압축 파일 핸들을 닫는다.
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    # 리턴값 : 성공 여부 (성공 : True)
+    # ---------------------------------------------------------------------
+    def arcclose(self, arc_name):
+        zfile = self.handle.get(arc_name, None)
+        if zfile:
+            zfile.close()
+            self.handle.pop(arc_name)
+            return True
+
+        return False
 
     # ---------------------------------------------------------------------
     # scan(self, filehandle, filename, fileformat)
