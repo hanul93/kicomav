@@ -223,7 +223,7 @@ class EngineInstance:
         self.update_callback_fn = None  # 악성코드 압축 최종 치료 콜백 함수
         self.quarantine_callback_fn = None  # 악성코드 격리 콜백 함수
 
-        self.disable_path = re.compile(r'/<\w+>')  # 검사 결과 출력시 제외할 파일 이름
+        self.disable_path = re.compile(r'/<\w+>')
 
     # ---------------------------------------------------------------------
     # create(self, kmd_modules)
@@ -535,7 +535,7 @@ class EngineInstance:
                                     self.__update_process(t_file_info)
                     else:
                         display_scan_result = True  # 검사 결과 출력하기
-                        
+
                         # 압축 파일 최종 치료 처리
                         self.__update_process(t_file_info)
 
@@ -654,6 +654,11 @@ class EngineInstance:
 
         # 압축 파일 정보를 이용해 즉시 압축하여 최종 마스터 파일로 재조립한다.
         if immediately_flag:
+            # 재조립해야 할 압축 파일의 핸들을 모두 닫는다.
+            for update_info in self.update_info:
+                self.__arcclose(update_info.get_archive_filename())
+                self.__arcclose(update_info.get_filename())
+
             if len(self.update_info) > 1:  # 최종 재조립시 1개 이상이면 압축 파일이라는 의미
                 ret_file_info = None
 
@@ -735,6 +740,20 @@ class EngineInstance:
                 # print '[*] Remove :', t_fname
 
         return ret_file_info
+
+    # ---------------------------------------------------------------------
+    # __arcclose(self, filename)
+    # 열려진 모든 압축 파일 핸들을 닫는다.
+    # 입력값 : filename - 열려진 압축 파일 이름
+    # ---------------------------------------------------------------------
+    def __arcclose(self, filename):
+        if os.path.exists(filename):
+            for i, inst in enumerate(self.kavmain_inst):
+                try:
+                    if inst.arcclose(filename):
+                        break
+                except AttributeError:
+                    pass
 
     # ---------------------------------------------------------------------
     # __disinfect_process(self, ret_value, action_type)
