@@ -507,7 +507,10 @@ def listvirus_callback(plugin_name, vnames):
 def convert_display_filename(real_filename):
     # 출력용 이름
     fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+    if isinstance(real_filename, types.UnicodeType):
+        display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
+    else:
+        display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
     return display_filename
 
 
