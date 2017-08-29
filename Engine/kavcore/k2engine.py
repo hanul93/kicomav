@@ -3,6 +3,7 @@
 
 
 import os
+import imp
 import StringIO
 import datetime
 import types
@@ -37,12 +38,12 @@ class EngineKnownError(Exception):
 # -------------------------------------------------------------------------
 class Engine:
     # ---------------------------------------------------------------------
-    # __init__(self, debug=False)
+    # __init__(self, verbose=False)
     # 클래스를 초기화 한다.
-    # 인자값 : debug - 디버그 여부
+    # 인자값 : verbose - 디버그 여부
     # ---------------------------------------------------------------------
-    def __init__(self, debug=False):
-        self.debug = debug  # 디버깅 여부
+    def __init__(self, verbose=False):
+        self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = None  # 플러그인 경로
         self.kmdfiles = []  # 우선순위가 기록된 kmd 리스트
@@ -81,26 +82,38 @@ class Engine:
         # 플러그인 경로를 저장한다.
         self.plugins_path = plugins_path
 
-        # 공개키를 로딩한다.
-        pu = k2rsa.read_key(plugins_path + os.sep + 'key.pkr')
-        if not pu:
-            return False
-
         # 우선순위를 알아낸다.
-        ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.kmd', pu)
+        if k2const.K2DEBUG:
+            pu = None
+            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.lst', pu)
+        else:
+            # 공개키를 로딩한다.
+            pu = k2rsa.read_key(plugins_path + os.sep + 'key.pkr')
+            if not pu:
+                return False
+
+            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.kmd', pu)
+
         if not ret:  # 로딩할 KMD 파일이 없다.
             return False
 
-        if self.debug:
-            print '[*] kicom.kmd :'
+        if self.verbose:
+            print '[*] kicom.%s :' % ('lst' if k2const.K2DEBUG else 'kmd')
             print '   ', self.kmdfiles
 
         # 우선순위대로 KMD 파일을 로딩한다.
         for kmd_name in self.kmdfiles:
             kmd_path = plugins_path + os.sep + kmd_name
             try:
-                k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
-                module = k2kmdfile.load(kmd_name.split('.')[0], k.body)
+                name = kmd_name.split('.')[0]
+                if k2const.K2DEBUG:
+                    k = None
+                    module = imp.load_source(name, kmd_path.rsplit('.')[0] + '.py')
+                else:
+                    k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
+                    data = k.body
+                    module = k2kmdfile.load(name, data)
+
                 if module:  # 메모리 로딩 성공
                     self.kmd_modules.append(module)
                     # 메모리 로딩에 성공한 KMD에서 플러그 엔진의 시간 값 읽기
@@ -127,7 +140,7 @@ class Engine:
             except IOError:
                 pass
 
-        if self.debug:
+        if self.verbose:
             print '[*] kmd_modules :'
             print '   ', self.kmd_modules
             print '[*] Last updated %s UTC' % self.max_datetime.ctime()
@@ -139,7 +152,7 @@ class Engine:
     # 백신 엔진의 인스턴스를 생성한다.
     # ---------------------------------------------------------------------
     def create_instance(self):
-        ei = EngineInstance(self.plugins_path, self.max_datetime, self.debug)
+        ei = EngineInstance(self.plugins_path, self.max_datetime, self.verbose)
         if ei.create(self.kmd_modules):
             return ei
         else:
@@ -151,9 +164,13 @@ class Engine:
     # 입력값 : kmd_info - 복호화 된 플러그인 엔진 정보
     # ---------------------------------------------------------------------
     def __get_last_kmd_build_time(self, kmd_info):
-        d_y, d_m, d_d = kmd_info.date
-        t_h, t_m, t_s = kmd_info.time
-        t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+        if k2const.K2DEBUG:
+            t_datetime = datetime.datetime.utcnow()
+        else:
+            d_y, d_m, d_d = kmd_info.date
+            t_h, t_m, t_s = kmd_info.time
+
+            t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
 
         if self.max_datetime < t_datetime:
             self.max_datetime = t_datetime
@@ -168,10 +185,14 @@ class Engine:
     def __get_kmd_list(self, kicom_kmd_file, pu):
         kmdfiles = []  # 우선순위 목록
 
-        k = k2kmdfile.KMD(kicom_kmd_file, pu)  # kicom.kmd 파일을 복호화한다.
+        if k2const.K2DEBUG:  # 디버깅에서는 복호화 없이 파일을 읽는다.
+            lst_data = open(kicom_kmd_file, 'rb').read()
+        else:
+            k = k2kmdfile.KMD(kicom_kmd_file, pu)  # kicom.kmd 파일을 복호화한다.
+            lst_data = k.body
 
-        if k.body:  # kicom.kmd 읽혔는가?
-            msg = StringIO.StringIO(k.body)
+        if lst_data:  # kicom.kmd 읽혔는가?
+            msg = StringIO.StringIO(lst_data)
 
             while True:
                 # 버퍼 한 줄을 읽어 엔터키 제거
@@ -196,14 +217,14 @@ class Engine:
 # -------------------------------------------------------------------------
 class EngineInstance:
     # ---------------------------------------------------------------------
-    # __init__(self, plugins_path, max_datetime, debug=False)
+    # __init__(self, plugins_path, max_datetime, verbose=False)
     # 클래스를 초기화 한다.
     # 인자값 : plugins_path - 플러그인 엔진 경로
     #         max_datetime - 플러그인 엔진의 최신 시간 값
-    #         debug        - 디버그 여부
+    #         verbose      - 디버그 여부
     # ---------------------------------------------------------------------
-    def __init__(self, plugins_path, max_datetime, debug=False):
-        self.debug = debug  # 디버깅 여부
+    def __init__(self, plugins_path, max_datetime, verbose=False):
+        self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = plugins_path  # 플러그인 경로
         self.max_datetime = max_datetime  # 플러그 엔진의 가장 최신 시간 값
@@ -240,7 +261,7 @@ class EngineInstance:
                 continue
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
-            if self.debug:
+            if self.verbose:
                 print '[*] Count of KavMain : %d' % (len(self.kavmain_inst))
             return True
         else:
@@ -256,7 +277,7 @@ class EngineInstance:
         # init 초기화 명령어를 실행해서 정상인 플러그인만 최종 등록해야 한다.
         t_kavmain_inst = []  # 최종 인스턴스 리스트
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.init() :'
 
         for inst in self.kavmain_inst:
@@ -266,7 +287,7 @@ class EngineInstance:
                 if not ret:  # 성공
                     t_kavmain_inst.append(inst)
 
-                    if self.debug:
+                    if self.verbose:
                         print '    [-] %s.init() : %d' % (inst.__module__, ret)
             except AttributeError:
                 continue
@@ -274,7 +295,7 @@ class EngineInstance:
         self.kavmain_inst = t_kavmain_inst  # 최종 KavMain 인스턴스 등록
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
-            if self.debug:
+            if self.verbose:
                 print '[*] Count of KavMain.init() : %d' % (len(self.kavmain_inst))
             return True
         else:
@@ -285,13 +306,13 @@ class EngineInstance:
     # 플러그인 엔진 전체를 종료한다.
     # ---------------------------------------------------------------------
     def uninit(self):
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.uninit() :'
 
         for inst in self.kavmain_inst:
             try:
                 ret = inst.uninit()
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.uninit() : %d' % (inst.__module__, ret)
             except AttributeError:
                 continue
@@ -304,7 +325,7 @@ class EngineInstance:
     def getinfo(self):
         ginfo = []  # 플러그인 엔진 정보를 담는다.
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.getinfo() :'
 
         for inst in self.kavmain_inst:
@@ -312,7 +333,7 @@ class EngineInstance:
                 ret = inst.getinfo()
                 ginfo.append(ret)
 
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.getinfo() :' % inst.__module__
                     for key in ret.keys():
                         print '        - %-10s : %s' % (key, ret[key])
@@ -339,7 +360,7 @@ class EngineInstance:
         else:  # 인자가 너무 많으면 에러
             return []
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.listvirus() :'
 
         for inst in self.kavmain_inst:
@@ -352,7 +373,7 @@ class EngineInstance:
                 else:  # callback 함수가 없으면 악성코드 목록을 누적하여 리턴
                     vlist += ret
 
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.listvirus() :' % inst.__module__
                     for vname in ret:
                         print '        - %s' % vname
@@ -802,7 +823,7 @@ class EngineInstance:
     def __scan_file(self, file_struct, fileformat):
         import kernel
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.__scan_file() :'
 
         fp = None
@@ -831,7 +852,7 @@ class EngineInstance:
                     if ret:  # 악성코드 발견하면 추가 악성코드 검사를 중단한다.
                         eid = i  # 악성코드를 발견한 플러그인 엔진 ID
 
-                        if self.debug:
+                        if self.verbose:
                             print '    [-] %s.__scan_file() : %s' % (inst.__module__, vname)
 
                         break
@@ -871,7 +892,7 @@ class EngineInstance:
     # 리턴값 : Feature 성공 여부 (True or False)
     # ---------------------------------------------------------------------
     def __feature_file(self, file_struct, fileformat, malware_id):
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.__feature_file() :'
 
         try:
@@ -921,7 +942,7 @@ class EngineInstance:
     def disinfect(self, filename, malware_id, engine_id):
         ret = False
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.disinfect() :'
 
         try:
@@ -929,7 +950,7 @@ class EngineInstance:
             inst = self.kavmain_inst[engine_id]
             ret = inst.disinfect(filename, malware_id)
 
-            if self.debug:
+            if self.verbose:
                 print '    [-] %s.disinfect() : %s' % (inst.__module__, ret)
         except AttributeError:
             pass
