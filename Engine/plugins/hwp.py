@@ -118,7 +118,7 @@ class KavMain:
         if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
             zfile = self.handle.get(filename, None)
         else:
-            zfile = zipfile.ZipFile(filename)  # zip 파일 열기
+            zfile = ole.OleFile(filename)  # zip 파일 열기
             self.handle[filename] = zfile
 
         return zfile
