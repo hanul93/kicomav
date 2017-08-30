@@ -109,124 +109,6 @@ class KavMain:
         return vlist
 
     # ---------------------------------------------------------------------
-    # __get_handle(self, filename)
-    # 압축 파일의 핸들을 얻는다.
-    # 입력값 : filename   - 파일 이름
-    # 리턴값 : 압축 파일 핸들
-    # ---------------------------------------------------------------------
-    def __get_handle(self, filename):
-        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
-            zfile = self.handle.get(filename, None)
-        else:
-            zfile = ole.OleFile(filename)  # zip 파일 열기
-            self.handle[filename] = zfile
-
-        return zfile
-
-    # ---------------------------------------------------------------------
-    # format(self, filehandle, filename, filename_ex)
-    # 파일 포맷을 분석한다.
-    # 입력값 : filehandle - 파일 핸들
-    #          filename   - 파일 이름
-    #          filename_ex - 압축 파일 내부 파일 이름
-    # 리턴값 : {파일 포맷 분석 정보} or None
-    # ---------------------------------------------------------------------
-    def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
-        ret = {}
-
-        mm = filehandle
-
-        if mm[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':  # OLE 헤더와 동일
-            o = None
-            try:
-                o = ole.OleFile(filename)
-                pics = o.openstream('FileHeader')
-                data = pics.read()
-                if data[:0x11] == 'HWP Document File':
-                    ret['ff_hwp'] = 'HWP'
-            except ole.Error:
-                pass
-
-            if o:
-                o.close()
-
-        # HWP 파일 내부에 첨부된 OLE 파일인가?
-        if self.hwp_ole.search(filename_ex):
-            ret['ff_hwp_ole'] = 'HWP_OLE'
-
-        return ret
-
-    # ---------------------------------------------------------------------
-    # arclist(self, filename, fileformat)
-    # 압축 파일 내부의 파일 목록을 얻는다.
-    # 입력값 : filename   - 파일 이름
-    #          fileformat - 파일 포맷 분석 정보
-    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
-    # ---------------------------------------------------------------------
-    def arclist(self, filename, fileformat):
-        file_scan_list = []  # 검사 대상 정보를 모두 가짐
-
-        # 미리 분석된 파일 포맷중에 HWP 파일 포맷이 있는가?
-        if 'ff_hwp' in fileformat:
-            # OLE Stream 목록 추출하기
-            # o = ole.OleFile(filename)
-            o = self.__get_handle(filename)
-            for name in o.listdir():
-                file_scan_list.append(['arc_hwp', name])
-            # o.close()
-        elif 'ff_hwp_ole' in fileformat:  # HWP 파일 내부에 포함된 OLE 파일?
-            file_scan_list.append(['arc_hwp_ole', 'Embedded'])
-
-        return file_scan_list
-
-    # ---------------------------------------------------------------------
-    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
-    # 입력값 : arc_engine_id - 압축 엔진 ID
-    #          arc_name      - 압축 파일
-    #          fname_in_arc   - 압축 해제할 파일 이름
-    # 리턴값 : 압축 해제된 내용 or None
-    # ---------------------------------------------------------------------
-    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        data = None
-
-        if arc_engine_id == 'arc_hwp':
-            # o = ole.OleFile(arc_name)
-            o = self.__get_handle(arc_name)
-            fp = o.openstream(fname_in_arc)
-            data = fp.read()
-            # o.close()
-        elif arc_engine_id == 'arc_hwp_ole':
-            with open(arc_name, 'rb') as fp:
-                buf = fp.read()
-
-            try:
-                buf = zlib.decompress(buf, -15)
-            except zlib.error:
-                pass
-
-            if kavutil.get_uint32(buf, 0) == len(buf[4:]):
-                data = buf[4:]
-
-        return data
-
-    # ---------------------------------------------------------------------
-    # arcclose(self, arc_engine_id, arc_name)
-    # 압축 파일 핸들을 닫는다.
-    # 입력값 : arc_engine_id - 압축 엔진 ID
-    #          arc_name      - 압축 파일
-    # 리턴값 : 성공 여부 (성공 : True)
-    # ---------------------------------------------------------------------
-    def arcclose(self, arc_name):
-        zfile = self.handle.get(arc_name, None)
-        if zfile:
-            zfile.close()
-            self.handle.pop(arc_name)
-            return True
-
-        return False
-
-    # ---------------------------------------------------------------------
     # scan(self, filehandle, filename, fileformat)
     # 악성코드를 검사한다.
     # 입력값 : filehandle  - 파일 핸들
@@ -239,19 +121,12 @@ class KavMain:
         mm = filehandle
 
         if filename_ex.lower().find('bodytext/section') >= 0 or filename_ex.lower().find('docinfo') >= 0:
-            buf = mm[:]
-            '''
-            try:
-                buf = zlib.decompress(buf, -15)
-            except zlib.error:
-                pass
-            '''
-            val = kavutil.get_uint32(buf, 0)
+            val = kavutil.get_uint32(mm, 0)
             tagid, level, size = get_hwp_recoard(val)
 
             # 문서의 첫번째 tag가 문서 헤더(0x42), 문서 속성(0x10) 일때만 추적 진행
             if tagid == 0x42 or tagid == 0x10:
-                ret, tagid = scan_hwp_recoard(buf, len(buf))
+                ret, tagid = scan_hwp_recoard(mm, len(mm))
                 if ret is False:  # 레코드 추적 실패
                     return True, 'Exploit.HWP.Generic.%02X' % tagid, 0, kernel.INFECTED
 

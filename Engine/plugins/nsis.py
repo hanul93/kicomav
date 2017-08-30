@@ -629,17 +629,11 @@ class KavMain:
         return False
 
     # ---------------------------------------------------------------------
-    # arcclose(self, arc_engine_id, arc_name)
+    # arcclose(self)
     # 압축 파일 핸들을 닫는다.
-    # 입력값 : arc_engine_id - 압축 엔진 ID
-    #          arc_name      - 압축 파일
-    # 리턴값 : 성공 여부 (성공 : True)
     # ---------------------------------------------------------------------
-    def arcclose(self, arc_name):
-        zfile = self.handle.get(arc_name, None)
-        if zfile:
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
             zfile.close()
-            self.handle.pop(arc_name)
-            return True
-
-        return False
+            self.handle.pop(fname)
