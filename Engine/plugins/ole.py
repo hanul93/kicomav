@@ -587,6 +587,36 @@ class OleFile:
 
                 # print self.parent.verbose
 
+            # 연속된 숫자 값을 리턴한다.
+            # TODO : 임시로 작성한거라 최적화 필요함
+            def get_liner_value(self, num_list):
+                start = None
+                end = None
+
+                if not start:
+                    start = num_list.pop(0)
+
+                e = start
+                loop = False
+
+                for x in num_list:
+                    if e + 1 == x:
+                        e = x
+                        loop = True
+                        continue
+                    else:
+                        while loop:
+                            if e == num_list.pop(0):
+                                break
+                        end = e
+                        break
+                else:
+                    for i in range(len(num_list)):
+                        num_list.pop(0)
+                    end = e
+
+                return start, end
+
             def read(self):
                 pps = self.parent.pps[self.node]
                 sb = pps['Start']
@@ -603,9 +633,15 @@ class OleFile:
 
                 data = ''
                 if size >= 0x1000:
-                    for n in list_array:
-                        off = (n+1) * self.read_size
-                        data += self.parent.mm[off:off+self.read_size]
+                    t_list = list(list_array)
+                    while len(t_list):
+                        s, e = self.get_liner_value(t_list)
+                        off = (s + 1) * self.read_size
+                        data += self.parent.mm[off:off + self.read_size * (e - s + 1)]
+
+                    # for n in list_array:
+                    #     off = (n+1) * self.read_size
+                    #     data += self.parent.mm[off:off+self.read_size]
                 else:
                     for n in list_array:
                         div_n = self.parent.bsize / self.parent.ssize
