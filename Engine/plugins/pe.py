@@ -420,14 +420,11 @@ class KavMain:
         return None
 
     # ---------------------------------------------------------------------
-    # arcclose(self, arc_engine_id, arc_name)
+    # arcclose(self)
     # 압축 파일 핸들을 닫는다.
-    # 입력값 : arc_engine_id - 압축 엔진 ID
-    #          arc_name      - 압축 파일
-    # 리턴값 : 성공 여부 (성공 : True)
     # ---------------------------------------------------------------------
-    def arcclose(self, arc_name):
-        return True
+    def arcclose(self):
+        pass
 
     # ---------------------------------------------------------------------
     # feature(self, filehandle, filename, fileformat, malware_id)

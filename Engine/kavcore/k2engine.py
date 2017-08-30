@@ -524,6 +524,7 @@ class EngineInstance:
                     if move_master_file:
                         if t_master_file != t_file_info.get_master_filename():
                             # print 'move 2 :', t_master_file
+                            self.__arcclose()
                             self.__quarantine_file(t_master_file)
                             move_master_file = False
 
@@ -533,6 +534,7 @@ class EngineInstance:
                         if self.options['opt_move']:
                             if t_file_info.get_additional_filename() == '':
                                 # print 'move 1 :', t_file_info.get_master_filename()
+                                self.__arcclose()
                                 self.__quarantine_file(t_file_info.get_master_filename())
                                 move_master_file = False
                             else:
@@ -587,6 +589,7 @@ class EngineInstance:
         # 격리 시점 체크하기?
         if move_master_file:
             # print 'move 3 :', t_master_file
+            self.__arcclose()
             self.__quarantine_file(t_master_file)
             move_master_file = False
 
@@ -669,6 +672,7 @@ class EngineInstance:
                 else:
                     # 새로운 파일이 시작되므로 self.update_info 내부 모두 정리
                     if len(self.update_info) == 1:  # 정리 시점이나 정리 대상이 없다면 다음 파일로
+                        self.__arcclose()
                         self.update_info = [file_struct]
                     else:
                         immediately_flag = True
@@ -676,9 +680,7 @@ class EngineInstance:
         # 압축 파일 정보를 이용해 즉시 압축하여 최종 마스터 파일로 재조립한다.
         if immediately_flag:
             # 재조립해야 할 압축 파일의 핸들을 모두 닫는다.
-            for update_info in self.update_info:
-                self.__arcclose(update_info.get_archive_filename())
-                self.__arcclose(update_info.get_filename())
+            self.__arcclose()
 
             if len(self.update_info) > 1:  # 최종 재조립시 1개 이상이면 압축 파일이라는 의미
                 ret_file_info = None
@@ -765,18 +767,15 @@ class EngineInstance:
         return ret_file_info
 
     # ---------------------------------------------------------------------
-    # __arcclose(self, filename)
+    # __arcclose(self)
     # 열려진 모든 압축 파일 핸들을 닫는다.
-    # 입력값 : filename - 열려진 압축 파일 이름
     # ---------------------------------------------------------------------
-    def __arcclose(self, filename):
-        if os.path.exists(filename):
-            for i, inst in enumerate(self.kavmain_inst):
-                try:
-                    if inst.arcclose(filename):
-                        break
-                except AttributeError:
-                    pass
+    def __arcclose(self):
+        for i, inst in enumerate(self.kavmain_inst):
+            try:
+                inst.arcclose()
+            except AttributeError:
+                pass
 
     # ---------------------------------------------------------------------
     # __disinfect_process(self, ret_value, action_type)

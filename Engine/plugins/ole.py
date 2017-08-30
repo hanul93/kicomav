@@ -297,9 +297,7 @@ def get_bbd_list_index_to_offset(buf, idx):
 # ---------------------------------------------------------------------
 def is_olefile(filename):
     try:
-        fp = open(filename, 'rb')
-        buf = fp.read(8)
-        fp.close()
+        buf = open(filename, 'rb').read(8)
 
         if buf == 'D0CF11E0A1B11AE1'.decode('hex'):
             return True
@@ -342,6 +340,7 @@ class OleFile:
         self.pps = None
         self.small_block = None
         self.root_list_array = None
+        self.cve_2003_0820 = False  # 취약점 존재 여부
 
         # 임시 변수
         self.__deep = None
@@ -1454,6 +1453,8 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.handle = {}
+        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -1488,10 +1489,71 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
         ret = {}
 
-        if is_olefile(filename):  # OLE 헤더와 동일
+        # OLE 헤더와 동일
+        if filehandle[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':
             ret['ff_ole'] = 'OLE'
 
         return ret
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = OleFile(filename, verbose=self.verbose)  # ole 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
+
+    # ---------------------------------------------------------------------
+    # arclist(self, filename, fileformat)
+    # 압축 파일 내부의 파일 목록을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    #          fileformat - 파일 포맷 분석 정보
+    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # ---------------------------------------------------------------------
+    def arclist(self, filename, fileformat):
+        file_scan_list = []  # 검사 대상 정보를 모두 가짐
+
+        # 미리 분석된 파일 포맷중에 OLE 파일 포맷이 있는가?
+        if 'ff_ole' in fileformat:
+            # OLE Stream 목록 추출하기
+            o = self.__get_handle(filename)
+            for name in o.listdir():
+                file_scan_list.append(['arc_ole', name])
+
+        return file_scan_list
+
+    # ---------------------------------------------------------------------
+    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    #          fname_in_arc   - 압축 해제할 파일 이름
+    # 리턴값 : 압축 해제된 내용 or None
+    # ---------------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
+        data = None
+
+        if arc_engine_id == 'arc_ole':
+            o = self.__get_handle(arc_name)
+            fp = o.openstream(fname_in_arc)
+            data = fp.read()
+
+        return data
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
+            zfile.close()
+            self.handle.pop(fname)
