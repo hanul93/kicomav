@@ -109,6 +109,7 @@ class Engine:
                 if k2const.K2DEBUG:
                     k = None
                     module = imp.load_source(name, kmd_path.rsplit('.')[0] + '.py')
+                    os.remove(kmd_path.rsplit('.')[0] + '.pyc')
                 else:
                     k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
                     data = k.body
