@@ -609,9 +609,15 @@ class OleFile:
                         data += self.parent.mm[off:off+self.read_size]
                 else:
                     for n in list_array:
-                        off = (self.parent.small_block[n / 8] + 1) * self.parent.bsize
-                        off += (n % 8) * self.parent.ssize
+                        div_n = self.parent.bsize / self.parent.ssize
+                        off = (self.parent.small_block[n / div_n] + 1) * self.parent.bsize
+                        off += (n % div_n) * self.parent.ssize
                         data += self.parent.mm[off:off + self.read_size]
+
+                if self.parent.verbose:
+                    print
+                    vprint(pps['Name'])
+                    HexDump.buffer(data, 0, size)
 
                 return data[:size]
 
