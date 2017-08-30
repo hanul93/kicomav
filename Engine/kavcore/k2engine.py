@@ -109,7 +109,10 @@ class Engine:
                 if k2const.K2DEBUG:
                     k = None
                     module = imp.load_source(name, kmd_path.rsplit('.')[0] + '.py')
-                    os.remove(kmd_path.rsplit('.')[0] + '.pyc')
+                    try:
+                        os.remove(kmd_path.rsplit('.')[0] + '.pyc')
+                    except WindowsError:
+                        pass
                 else:
                     k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
                     data = k.body
@@ -1018,6 +1021,8 @@ class EngineInstance:
                         continue
                     except RuntimeError:  # 암호가 설정된 zip 파일
                         return False, 'password protected'
+                    except MemoryError:
+                        return False, None
                 else:  # end for
                     # 어떤 엔진도 압축 해제를 하지 못한 경우
                     # 임시 파일만 생성한 뒤 종료
