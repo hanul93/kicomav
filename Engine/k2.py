@@ -315,6 +315,9 @@ def define_options():
     parser.add_option("", "--sigtool",
                       action="store_true", dest="opt_sigtool",
                       default=False)
+    parser.add_option("", "--debug",
+                      action="store_true", dest="opt_debug",
+                      default=False)
     parser.add_option("-?", "--help",
                       action="store_true", dest="opt_help",
                       default=False)
@@ -560,8 +563,12 @@ def scan_callback(ret_value):
         message = '%s : %s' % (state, vname)
         message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else:
-        message = 'ok'
-        message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
+        if ret_value['scan_state'] == kernel.ERROR:
+            message = ret_value['virus_name']
+            message_color = FOREGROUND_CYAN | FOREGROUND_INTENSITY
+        else:
+            message = 'ok'
+            message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color)
     log_print('%s\t%s\n' % (disp_name, message))
