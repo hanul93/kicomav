@@ -3,11 +3,13 @@
 
 
 import os
+import imp
 import StringIO
 import datetime
 import types
 import mmap
 import glob
+import re
 import tempfile
 import shutil
 import struct
@@ -36,12 +38,12 @@ class EngineKnownError(Exception):
 # -------------------------------------------------------------------------
 class Engine:
     # ---------------------------------------------------------------------
-    # __init__(self, debug=False)
+    # __init__(self, verbose=False)
     # 클래스를 초기화 한다.
-    # 인자값 : debug - 디버그 여부
+    # 인자값 : verbose - 디버그 여부
     # ---------------------------------------------------------------------
-    def __init__(self, debug=False):
-        self.debug = debug  # 디버깅 여부
+    def __init__(self, verbose=False):
+        self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = None  # 플러그인 경로
         self.kmdfiles = []  # 우선순위가 기록된 kmd 리스트
@@ -67,6 +69,8 @@ class Engine:
                     os.remove(name)
                 except IOError:
                     pass
+                except WindowsError:  # 기타 삭제 오류 처리
+                    pass
 
     # ---------------------------------------------------------------------
     # set_plugins(self, plugins_path)
@@ -78,26 +82,42 @@ class Engine:
         # 플러그인 경로를 저장한다.
         self.plugins_path = plugins_path
 
-        # 공개키를 로딩한다.
-        pu = k2rsa.read_key(plugins_path + os.sep + 'key.pkr')
-        if not pu:
-            return False
-
         # 우선순위를 알아낸다.
-        ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.kmd', pu)
+        if k2const.K2DEBUG:
+            pu = None
+            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.lst', pu)
+        else:
+            # 공개키를 로딩한다.
+            pu = k2rsa.read_key(plugins_path + os.sep + 'key.pkr')
+            if not pu:
+                return False
+
+            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.kmd', pu)
+
         if not ret:  # 로딩할 KMD 파일이 없다.
             return False
 
-        if self.debug:
-            print '[*] kicom.kmd :'
+        if self.verbose:
+            print '[*] kicom.%s :' % ('lst' if k2const.K2DEBUG else 'kmd')
             print '   ', self.kmdfiles
 
         # 우선순위대로 KMD 파일을 로딩한다.
         for kmd_name in self.kmdfiles:
             kmd_path = plugins_path + os.sep + kmd_name
             try:
-                k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
-                module = k2kmdfile.load(kmd_name.split('.')[0], k.body)
+                name = kmd_name.split('.')[0]
+                if k2const.K2DEBUG:
+                    k = None
+                    module = imp.load_source(name, kmd_path.rsplit('.')[0] + '.py')
+                    try:
+                        os.remove(kmd_path.rsplit('.')[0] + '.pyc')
+                    except WindowsError:
+                        pass
+                else:
+                    k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
+                    data = k.body
+                    module = k2kmdfile.load(name, data)
+
                 if module:  # 메모리 로딩 성공
                     self.kmd_modules.append(module)
                     # 메모리 로딩에 성공한 KMD에서 플러그 엔진의 시간 값 읽기
@@ -124,7 +144,7 @@ class Engine:
             except IOError:
                 pass
 
-        if self.debug:
+        if self.verbose:
             print '[*] kmd_modules :'
             print '   ', self.kmd_modules
             print '[*] Last updated %s UTC' % self.max_datetime.ctime()
@@ -136,7 +156,7 @@ class Engine:
     # 백신 엔진의 인스턴스를 생성한다.
     # ---------------------------------------------------------------------
     def create_instance(self):
-        ei = EngineInstance(self.plugins_path, self.max_datetime, self.debug)
+        ei = EngineInstance(self.plugins_path, self.max_datetime, self.verbose)
         if ei.create(self.kmd_modules):
             return ei
         else:
@@ -148,9 +168,13 @@ class Engine:
     # 입력값 : kmd_info - 복호화 된 플러그인 엔진 정보
     # ---------------------------------------------------------------------
     def __get_last_kmd_build_time(self, kmd_info):
-        d_y, d_m, d_d = kmd_info.date
-        t_h, t_m, t_s = kmd_info.time
-        t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
+        if k2const.K2DEBUG:
+            t_datetime = datetime.datetime.utcnow()
+        else:
+            d_y, d_m, d_d = kmd_info.date
+            t_h, t_m, t_s = kmd_info.time
+
+            t_datetime = datetime.datetime(d_y, d_m, d_d, t_h, t_m, t_s)
 
         if self.max_datetime < t_datetime:
             self.max_datetime = t_datetime
@@ -165,10 +189,14 @@ class Engine:
     def __get_kmd_list(self, kicom_kmd_file, pu):
         kmdfiles = []  # 우선순위 목록
 
-        k = k2kmdfile.KMD(kicom_kmd_file, pu)  # kicom.kmd 파일을 복호화한다.
+        if k2const.K2DEBUG:  # 디버깅에서는 복호화 없이 파일을 읽는다.
+            lst_data = open(kicom_kmd_file, 'rb').read()
+        else:
+            k = k2kmdfile.KMD(kicom_kmd_file, pu)  # kicom.kmd 파일을 복호화한다.
+            lst_data = k.body
 
-        if k.body:  # kicom.kmd 읽혔는가?
-            msg = StringIO.StringIO(k.body)
+        if lst_data:  # kicom.kmd 읽혔는가?
+            msg = StringIO.StringIO(lst_data)
 
             while True:
                 # 버퍼 한 줄을 읽어 엔터키 제거
@@ -193,14 +221,14 @@ class Engine:
 # -------------------------------------------------------------------------
 class EngineInstance:
     # ---------------------------------------------------------------------
-    # __init__(self, plugins_path, max_datetime, debug=False)
+    # __init__(self, plugins_path, max_datetime, verbose=False)
     # 클래스를 초기화 한다.
     # 인자값 : plugins_path - 플러그인 엔진 경로
     #         max_datetime - 플러그인 엔진의 최신 시간 값
-    #         debug        - 디버그 여부
+    #         verbose      - 디버그 여부
     # ---------------------------------------------------------------------
-    def __init__(self, plugins_path, max_datetime, debug=False):
-        self.debug = debug  # 디버깅 여부
+    def __init__(self, plugins_path, max_datetime, verbose=False):
+        self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = plugins_path  # 플러그인 경로
         self.max_datetime = max_datetime  # 플러그 엔진의 가장 최신 시간 값
@@ -220,6 +248,8 @@ class EngineInstance:
         self.update_callback_fn = None  # 악성코드 압축 최종 치료 콜백 함수
         self.quarantine_callback_fn = None  # 악성코드 격리 콜백 함수
 
+        self.disable_path = re.compile(r'/<\w+>')
+
     # ---------------------------------------------------------------------
     # create(self, kmd_modules)
     # 백신 엔진의 인스턴스를 생성한다.
@@ -235,7 +265,7 @@ class EngineInstance:
                 continue
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
-            if self.debug:
+            if self.verbose:
                 print '[*] Count of KavMain : %d' % (len(self.kavmain_inst))
             return True
         else:
@@ -251,7 +281,7 @@ class EngineInstance:
         # init 초기화 명령어를 실행해서 정상인 플러그인만 최종 등록해야 한다.
         t_kavmain_inst = []  # 최종 인스턴스 리스트
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.init() :'
 
         for inst in self.kavmain_inst:
@@ -261,7 +291,7 @@ class EngineInstance:
                 if not ret:  # 성공
                     t_kavmain_inst.append(inst)
 
-                    if self.debug:
+                    if self.verbose:
                         print '    [-] %s.init() : %d' % (inst.__module__, ret)
             except AttributeError:
                 continue
@@ -269,7 +299,7 @@ class EngineInstance:
         self.kavmain_inst = t_kavmain_inst  # 최종 KavMain 인스턴스 등록
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
-            if self.debug:
+            if self.verbose:
                 print '[*] Count of KavMain.init() : %d' % (len(self.kavmain_inst))
             return True
         else:
@@ -280,13 +310,13 @@ class EngineInstance:
     # 플러그인 엔진 전체를 종료한다.
     # ---------------------------------------------------------------------
     def uninit(self):
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.uninit() :'
 
         for inst in self.kavmain_inst:
             try:
                 ret = inst.uninit()
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.uninit() : %d' % (inst.__module__, ret)
             except AttributeError:
                 continue
@@ -299,7 +329,7 @@ class EngineInstance:
     def getinfo(self):
         ginfo = []  # 플러그인 엔진 정보를 담는다.
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.getinfo() :'
 
         for inst in self.kavmain_inst:
@@ -307,7 +337,7 @@ class EngineInstance:
                 ret = inst.getinfo()
                 ginfo.append(ret)
 
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.getinfo() :' % inst.__module__
                     for key in ret.keys():
                         print '        - %-10s : %s' % (key, ret[key])
@@ -334,7 +364,7 @@ class EngineInstance:
         else:  # 인자가 너무 많으면 에러
             return []
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.listvirus() :'
 
         for inst in self.kavmain_inst:
@@ -347,7 +377,7 @@ class EngineInstance:
                 else:  # callback 함수가 없으면 악성코드 목록을 누적하여 리턴
                     vlist += ret
 
-                if self.debug:
+                if self.verbose:
                     print '    [-] %s.listvirus() :' % inst.__module__
                     for vname in ret:
                         print '        - %s' % vname
@@ -419,8 +449,7 @@ class EngineInstance:
                     self.result['Folders'] += 1  # 폴더 개수 카운트
 
                     if self.options['opt_list']:  # 옵션 내용 중 모든 리스트 출력인가?
-                        if isinstance(scan_callback_fn, types.FunctionType):  # 콜백 함수가 존재하는가?
-                            scan_callback_fn(ret_value)  # 콜백 함수 호출
+                        self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                     if is_sub_dir_scan:
                         # 폴더 안의 파일들을 검사대상 리스트에 추가
@@ -454,8 +483,7 @@ class EngineInstance:
                                 ret_value['file_struct'] = t_file_info  # 검사 파일 이름
 
                                 if self.options['opt_list']:  # 모든 리스트 출력인가?
-                                    if isinstance(scan_callback_fn, types.FunctionType):
-                                        scan_callback_fn(ret_value)
+                                    self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                                 continue
 
@@ -468,8 +496,7 @@ class EngineInstance:
                         ret_value['scan_state'] = kernel.ERROR  # 악성코드 검사 상태
                         ret_value['file_struct'] = t_file_info  # 검사 파일 이름
 
-                        if isinstance(scan_callback_fn, types.FunctionType):
-                            scan_callback_fn(ret_value)
+                        self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
                     # 2. 포맷 분석
                     ff = self.format(t_file_info)
@@ -501,39 +528,40 @@ class EngineInstance:
                     if move_master_file:
                         if t_master_file != t_file_info.get_master_filename():
                             # print 'move 2 :', t_master_file
+                            self.__arcclose()
                             self.__quarantine_file(t_master_file)
                             move_master_file = False
 
                     if ret_value['result']:  # 악성코드 발견인가?
-                        if isinstance(scan_callback_fn, types.FunctionType):
-                            action_type = scan_callback_fn(ret_value)
+                        action_type = self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
-                            if self.options['opt_move']:
-                                if t_file_info.get_additional_filename() == '':
-                                    # print 'move 1 :', t_file_info.get_master_filename()
-                                    self.__quarantine_file(t_file_info.get_master_filename())
-                                    move_master_file = False
+                        if self.options['opt_move']:
+                            if t_file_info.get_additional_filename() == '':
+                                # print 'move 1 :', t_file_info.get_master_filename()
+                                self.__arcclose()
+                                self.__quarantine_file(t_file_info.get_master_filename())
+                                move_master_file = False
+                            else:
+                                move_master_file = True
+                                t_master_file = t_file_info.get_master_filename()
+                        else:  # 격리 옵션이 치료 옵션보다 우선 적용
+                            if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
+                                return 0
+
+                            self.__disinfect_process(ret_value, action_type)
+
+                            # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
+                            if self.options['opt_dis'] or \
+                               (action_type == k2const.K2_ACTION_DISINFECT or action_type == k2const.K2_ACTION_DELETE):
+                               # 치료 옵션이 존재할때에만... 실행
+                                if os.path.exists(t_file_info.get_filename()):
+                                    t_file_info.set_modify(True)
+                                    file_scan_list = [t_file_info] + file_scan_list
                                 else:
-                                    move_master_file = True
-                                    t_master_file = t_file_info.get_master_filename()
-                            else:  # 격리 옵션이 치료 옵션보다 우선 적용
-                                if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
-                                    return 0
-
-                                self.__disinfect_process(ret_value, action_type)
-
-                                # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
-                                if self.options['opt_dis']:  # 치료 옵션이 존재할때에만... 실행
-                                    if os.path.exists(t_file_info.get_filename()):
-                                        t_file_info.set_modify(True)
-                                        file_scan_list = [t_file_info] + file_scan_list
-                                    else:
-                                        # 압축 파일 최종 치료 처리
-                                        self.__update_process(t_file_info)
+                                    # 압축 파일 최종 치료 처리
+                                    self.__update_process(t_file_info)
                     else:
-                        if self.options['opt_list']:  # 모든 리스트 출력인가?
-                            if isinstance(scan_callback_fn, types.FunctionType):
-                                scan_callback_fn(ret_value)
+                        display_scan_result = True  # 검사 결과 출력하기
 
                         # 압축 파일 최종 치료 처리
                         self.__update_process(t_file_info)
@@ -545,8 +573,18 @@ class EngineInstance:
                             arc_file_list = self.arclist(t_file_info, ff)
                             if len(arc_file_list):
                                 file_scan_list = arc_file_list + file_scan_list
+
+                            # 한 개의 정보가 추가되는 것 중에 /<...> 형태로 입력되는 파일이면 리스트 출력을 잠시 보류한다.
+                            if len(arc_file_list) == 1 and \
+                               self.disable_path.search(arc_file_list[0].get_additional_filename()):
+                                display_scan_result = False
                         except zipfile.BadZipfile:  # zip 헤더 오류
                             pass
+
+                        # 검사 결과 출력하기
+                        if self.options['opt_list']:  # 모든 리스트 출력인가?
+                            if display_scan_result:
+                                self.call_scan_callback_fn(scan_callback_fn, ret_value)
             except KeyboardInterrupt:
                 return 1  # 키보드 종료
 
@@ -555,10 +593,27 @@ class EngineInstance:
         # 격리 시점 체크하기?
         if move_master_file:
             # print 'move 3 :', t_master_file
+            self.__arcclose()
             self.__quarantine_file(t_master_file)
             move_master_file = False
 
         return 0  # 정상적으로 검사 종료
+
+    # ---------------------------------------------------------------------
+    # call_scan_callback_fn(self, a_scan_callback_fn, ret_value)
+    # 악성코드 검사 결과 출력 시 /<...> 표시는 제외하고 출력한다.
+    # 입력값 : a_scan_callback_fn - 콜백 함수
+    #         ret_value : 출력 대상
+    # 리턴값 : scan 콜백 함수의 리턴값
+    # ---------------------------------------------------------------------
+    def call_scan_callback_fn(self, a_scan_callback_fn, ret_value):
+        if isinstance(a_scan_callback_fn, types.FunctionType):
+            fs = ret_value['file_struct']  # 출력할 파일 정보
+            rep_path = self.disable_path.sub('', fs.get_additional_filename())
+            fs.set_additional_filename(rep_path)
+            ret_value['file_struct'] = fs
+
+            return a_scan_callback_fn(ret_value)
 
     # ---------------------------------------------------------------------
     # __quarantine_file(self, filename)
@@ -584,6 +639,9 @@ class EngineInstance:
                 if isinstance(self.quarantine_callback_fn, types.FunctionType):
                     self.quarantine_callback_fn(filename, True)
         except shutil.Error:
+            if isinstance(self.quarantine_callback_fn, types.FunctionType):
+                self.quarantine_callback_fn(filename, False)
+        except WindowsError:
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
                 self.quarantine_callback_fn(filename, False)
 
@@ -618,12 +676,16 @@ class EngineInstance:
                 else:
                     # 새로운 파일이 시작되므로 self.update_info 내부 모두 정리
                     if len(self.update_info) == 1:  # 정리 시점이나 정리 대상이 없다면 다음 파일로
+                        self.__arcclose()
                         self.update_info = [file_struct]
                     else:
                         immediately_flag = True
 
         # 압축 파일 정보를 이용해 즉시 압축하여 최종 마스터 파일로 재조립한다.
         if immediately_flag:
+            # 재조립해야 할 압축 파일의 핸들을 모두 닫는다.
+            self.__arcclose()
+
             if len(self.update_info) > 1:  # 최종 재조립시 1개 이상이면 압축 파일이라는 의미
                 ret_file_info = None
 
@@ -701,10 +763,23 @@ class EngineInstance:
             t_fname = tmp.get_filename()
             # 플러그인 엔진에 의해 파일이 치료(삭제) 되었을 수 있음
             if os.path.exists(t_fname):
-                os.remove(t_fname)
-                # print '[*] Remove :', t_fname
-
+                try:
+                    os.remove(t_fname)
+                    # print '[*] Remove :', t_fname
+                except WindowsError:
+                    pass
         return ret_file_info
+
+    # ---------------------------------------------------------------------
+    # __arcclose(self)
+    # 열려진 모든 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def __arcclose(self):
+        for i, inst in enumerate(self.kavmain_inst):
+            try:
+                inst.arcclose()
+            except AttributeError:
+                pass
 
     # ---------------------------------------------------------------------
     # __disinfect_process(self, ret_value, action_type)
@@ -751,7 +826,7 @@ class EngineInstance:
     def __scan_file(self, file_struct, fileformat):
         import kernel
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.__scan_file() :'
 
         fp = None
@@ -780,7 +855,7 @@ class EngineInstance:
                     if ret:  # 악성코드 발견하면 추가 악성코드 검사를 중단한다.
                         eid = i  # 악성코드를 발견한 플러그인 엔진 ID
 
-                        if self.debug:
+                        if self.verbose:
                             print '    [-] %s.__scan_file() : %s' % (inst.__module__, vname)
 
                         break
@@ -820,7 +895,7 @@ class EngineInstance:
     # 리턴값 : Feature 성공 여부 (True or False)
     # ---------------------------------------------------------------------
     def __feature_file(self, file_struct, fileformat, malware_id):
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.__feature_file() :'
 
         try:
@@ -870,7 +945,7 @@ class EngineInstance:
     def disinfect(self, filename, malware_id, engine_id):
         ret = False
 
-        if self.debug:
+        if self.verbose:
             print '[*] KavMain.disinfect() :'
 
         try:
@@ -878,7 +953,7 @@ class EngineInstance:
             inst = self.kavmain_inst[engine_id]
             ret = inst.disinfect(filename, malware_id)
 
-            if self.debug:
+            if self.verbose:
                 print '    [-] %s.disinfect() : %s' % (inst.__module__, ret)
         except AttributeError:
             pass
@@ -946,6 +1021,8 @@ class EngineInstance:
                         continue
                     except RuntimeError:  # 암호가 설정된 zip 파일
                         return False, 'password protected'
+                    except MemoryError:
+                        return False, None
                 else:  # end for
                     # 어떤 엔진도 압축 해제를 하지 못한 경우
                     # 임시 파일만 생성한 뒤 종료

@@ -340,7 +340,11 @@ class KavMain:
         ret = {}
 
         pe = PE(filehandle, self.verbose, filename)
-        pe_format = pe.parse()  # PE 파일 분석
+        try:
+            pe_format = pe.parse()  # PE 파일 분석
+        except MemoryError:
+            pe_format = None
+
         if pe_format is None:
             return None
 
@@ -414,6 +418,13 @@ class KavMain:
             return data
 
         return None
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        pass
 
     # ---------------------------------------------------------------------
     # feature(self, filehandle, filename, fileformat, malware_id)

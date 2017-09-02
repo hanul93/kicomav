@@ -11,6 +11,7 @@ import csv
 import xml.etree.cElementTree as ET
 import json
 import email
+import yara
 
 # -------------------------------------------------------------------------
 # 실제 임포트 모듈
@@ -21,6 +22,7 @@ import types
 import hashlib
 import urllib
 import time
+import struct
 import datetime
 from optparse import OptionParser
 import kavcore.k2engine
@@ -503,23 +505,74 @@ def listvirus_callback(plugin_name, vnames):
 # -------------------------------------------------------------------------
 # 악성코드 결과를 한줄에 출력하기 위한 함수
 # -------------------------------------------------------------------------
+def get_terminal_sizex():
+    default_sizex = 80
+
+    # 출처 : https://gist.github.com/jtriley/1108174
+    if os.name == 'nt':
+        try:
+            from ctypes import windll, create_string_buffer
+            h = windll.kernel32.GetStdHandle(-12)
+            csbi = create_string_buffer(22)
+            res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
+            if res:
+                (bufx, bufy, curx, cury, wattr,
+                 left, top, right, bottom,
+                 maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+                sizex = right - left + 1
+                # sizey = bottom - top + 1
+                return sizex
+        except:
+            pass
+    else:
+        def ioctl_GWINSZ(fd):
+            try:
+                import fcntl
+                import termios
+                cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+                return cr
+            except:
+                pass
+
+        cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+        if not cr:
+            try:
+                fd = os.open(os.ctermid(), os.O_RDONLY)
+                cr = ioctl_GWINSZ(fd)
+                os.close(fd)
+            except:
+                pass
+        if not cr:
+            try:
+                cr = (os.environ['LINES'], os.environ['COLUMNS'])
+            except:
+                return default_sizex
+        return int(cr[1])  # , int(cr[0])
+
+    return default_sizex  # default
+
+
 def convert_display_filename(real_filename):
     # 출력용 이름
     fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+    if isinstance(real_filename, types.UnicodeType):
+        display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
+    else:
+        display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
     return display_filename
 
 
 def display_line(filename, message, message_color):
+    max_sizex = get_terminal_sizex() - 1
     filename += ' '
     filename = convert_display_filename(filename)
     len_fname = len(filename)
     len_msg = len(message)
 
-    if len_fname + 1 + len_msg < 79:
+    if len_fname + 1 + len_msg < max_sizex:
         fname = '%s' % filename
     else:
-        able_size = 79 - len_msg
+        able_size = max_sizex - len_msg
         able_size -= 5  # ...
         min_size = able_size / 2
         if able_size % 2 == 0:

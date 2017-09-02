@@ -445,6 +445,7 @@ class KavMain:
             return -1               # 엔진 로딩 실패로 처리
         
         self.verbose = verbose
+        self.handle = {}
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -470,6 +471,24 @@ class KavMain:
         info['kmd_name'] = 'nsis'  # 엔진 파일 이름
 
         return info
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = NSIS(filename, self.verbose)  # nsis 파일 열기
+            if zfile.parse():
+                self.handle[filename] = zfile
+            else:
+                None
+
+        return zfile
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
@@ -500,11 +519,11 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 ff_nsis 포맷이 있는가?
         if 'ff_nsis' in fileformat:
-            n = NSIS(filename, self.verbose)
-            if n.parse():
-                for name in n.namelist():
-                    file_scan_list.append(['arc_nsis', name])
-                n.close()
+            zfile = self.__get_handle(filename)
+
+            for name in zfile.namelist():
+                file_scan_list.append(['arc_nsis', name])
+
         return file_scan_list
 
     # ---------------------------------------------------------------------
@@ -516,11 +535,12 @@ class KavMain:
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
         if arc_engine_id == 'arc_nsis':
-            n = NSIS(arc_name, False)
-            if n.parse():
-                data = n.read(fname_in_arc)
-                n.close()
-                return data
+            # n = NSIS(arc_name, False)
+            zfile = self.__get_handle(arc_name)
+
+            data = zfile.read(fname_in_arc)
+            #  n.close()
+            return data
 
         return None
 
@@ -607,3 +627,13 @@ class KavMain:
 
         # Feature 추출 실패했음을 리턴한다.
         return False
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
+            zfile.close()
+            self.handle.pop(fname)

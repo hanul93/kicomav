@@ -2,9 +2,8 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
-import os
-import kavutil
-
+import zlib
+import kernel
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -18,7 +17,6 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -39,10 +37,32 @@ class KavMain:
 
         info['author'] = 'Kei Choi'  # 제작자
         info['version'] = '1.0'  # 버전
-        info['title'] = 'Attach Engine'  # 엔진 설명
-        info['kmd_name'] = 'attach'  # 엔진 파일 이름
+        info['title'] = 'Unpack Engine'  # 엔진 설명
+        info['kmd_name'] = 'unpack'  # 엔진 파일 이름
+        # info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
+        # info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
+
+    # ---------------------------------------------------------------------
+    # format(self, filehandle, filename, filename_ex)
+    # 파일 포맷을 분석한다.
+    # 입력값 : filehandle - 파일 핸들
+    #          filename   - 파일 이름
+    #          filename_ex - 압축 파일 내부 파일 이름
+    # 리턴값 : {파일 포맷 분석 정보} or None
+    # ---------------------------------------------------------------------
+    def format(self, filehandle, filename, filename_ex):
+        fileformat = {}  # 포맷 정보를 담을 공간
+
+        mm = filehandle
+        try:
+            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
+            zlib.decompress(mm, -15)
+            ret = {'ff_zlib': fileformat}
+            return ret
+        except zlib.error:
+            return None
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
@@ -54,28 +74,9 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 첨부 파일 포맷이 있는가?
-        if 'ff_attach' in fileformat:
-            pos = fileformat['ff_attach']['Attached_Pos']
-            file_scan_list.append(['arc_attach:%d' % pos, 'Attached'])
-
-            if self.verbose:
-                print '-' * 79
-                kavutil.vprint('Engine')
-                kavutil.vprint(None, 'Engine', 'attach.kmd')
-                kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
-                kavutil.vprint(None, 'Attach Point', '0x%08X' % pos)
-
-                with open(filename, 'rb') as fp:
-                    fp.seek(pos)
-                    buf = fp.read(0x80)
-
-                    print
-                    kavutil.vprint('Attach Point (Raw)')
-                    print
-                    kavutil.HexDump().Buffer(buf, 0, 0x80)
-
-                print
+        # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
+        if 'ff_zlib' in fileformat:
+            file_scan_list.append(['arc_zlib', '<ZLIB>'])
 
         return file_scan_list
 
@@ -87,18 +88,13 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id.find('arc_attach:') != -1:
-            pos = int(arc_engine_id[len('arc_attach:'):])
-
+        if arc_engine_id == 'arc_zlib':
             try:
-                with open(arc_name, 'rb') as fp:
-                    fp.seek(pos)
-                    data = fp.read()
-                    # print data
-            except IOError:
-                return None
-
-            return data
+                buf = open(arc_name, 'rb').read()
+                data = zlib.decompress(buf, -15)
+                return data
+            except zlib.error:
+                pass
 
         return None
 

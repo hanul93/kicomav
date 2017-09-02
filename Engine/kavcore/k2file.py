@@ -101,6 +101,13 @@ class FileStruct:
         return self.__fs['additional_filename']
 
     # ---------------------------------------------------------------------
+    # set_additional_filename(self, filename)
+    # 압축 파일 내부를 표현하기 위한 파일 이름을 셋팅한다.
+    # ---------------------------------------------------------------------
+    def set_additional_filename(self, filename):
+        self.__fs['additional_filename'] = filename
+
+    # ---------------------------------------------------------------------
     # is_modify(self)
     # 악성코드 치료로 인해 파일이 수정됨 여부를 확인한다.
     # 리턴값 : True or False
