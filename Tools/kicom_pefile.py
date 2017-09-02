@@ -148,7 +148,7 @@ def make_virus_db(file_path, virus_list):
             vt.scan_name = vt.scan_name.split(':')[-1]
 
         # 파일사이즈 : md5 : 바이러스 이름
-        virus_db_data = f_size.__str__() + ':' + md5 + ':' + vt.scan_name
+        virus_db_data = f_size.__str__() + ':' + md5 + ':' + vt.scan_name + '\t# ' + vt.basename
 
         logger.info('[WRITE_DB] : %s' % virus_db_data)
 
