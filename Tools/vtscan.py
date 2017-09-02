@@ -20,7 +20,8 @@ class Virustotal(object):
     def __init__(self, file_path):
         self.basename = os.path.basename(file_path)
         self.params = {'apikey': API_KEY}
-        self.files = {'file': (self.basename, open(file_path), 'rb')}
+        self.abspath = os.path.abspath(file_path)
+        self.files = {'file': (self.basename, open(self.abspath, 'rb'))}
         self.headers = {
             'Accept-Encoding': 'gzip, deflate',
             'User-Agent': 'gzip, pck886'
@@ -70,12 +71,12 @@ class Virustotal(object):
         self.params.update({'resource': self.resource})
         res = requests.get(REPORT_URL, params=self.params, headers=self.headers)
 
-        logger.info('[REPORT_RESPONSE] : %s' % res.status_code, level='DEBUG')
+        logger.info('[REPORT_RESPONSE] : %s' % res.status_code)
 
         if res.status_code == 200:
             self.json_report = json.loads(res.text)
 
-            if self.json_report:
+            if self.json_report['response_code'] == 1:
                 kaspersky = self.json_report['scans'].get('Kaspersky')
                 self.scan_info = kaspersky
                 self.scan_name = kaspersky['result']

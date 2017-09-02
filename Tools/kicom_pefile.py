@@ -102,7 +102,7 @@ def copy_unknown(file_path):
     copyfile(file_path, copy_path + os.sep + file_name)
 
 
-def make_virus_db():
+def make_virus_db(file_path, virus_list):
     scan_folder_result = False
 
     # Entry Point Section의 md5 추출
@@ -159,7 +159,7 @@ def make_virus_db():
         fp.close()
         scan_folder_result = True
     else:
-        logger.info('[PASS] : %s' % file_path, level='DEBUG')
+        logger.info('[PASS] : %s' % file_path)
 
     return scan_folder_result
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         for file_path in flist:
 
             try:
-                make_virus_db()
+                make_virus_db(file_path, virus_list)
             except pefile.PEFormatError:
                 copy_unknown(file_path)
                 continue
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         logger.info('=============START FILE SEARCH=============')
 
         try:
-            make_virus_db()
+            make_virus_db(file_name, virus_list)
         except pefile.PEFormatError:
 
             copy_unknown(file_name)
