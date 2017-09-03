@@ -56,6 +56,7 @@ def scan_section(file_name):
 
     return md5
 
+
 def read_virus_db(debug=False):
     re_fp = open(VIRUS_DB_NAME, 'rb')
 
@@ -88,6 +89,16 @@ def compare_list_str(v_list, cmp_str):
     return False
 
 
+def compare_unknown_file(file_name):
+    flist = glob.glob('./unknown' + os.sep + '*')
+
+    for file_path in flist:
+        if file_name in file_path:
+            return True
+
+    return False
+
+
 def copy_unknown(file_path):
     # 각종 오류 파일 및 스캔 대상이 아닌 파일을 unknown 폴더로 복사
     logger.info('[EXCEPT_UNKNOWN] : %s' % file_path)
@@ -112,7 +123,7 @@ def make_virus_db(file_path, virus_list):
     f_size = os.path.getsize(file_path)
 
     # 해당 파일이 이미 DB에 입력되어 있는가?
-    if not compare_list_str(virus_list, md5):
+    if (not compare_list_str(virus_list, md5)) and (not compare_unknown_file(os.path.basename(file_path))):
 
         # 해당 파일을 이어쓰기로 열기
         fp = open(VIRUS_DB_NAME, 'a')
@@ -147,7 +158,7 @@ def make_virus_db(file_path, virus_list):
         if vt.scan_name.find(':'):
             vt.scan_name = vt.scan_name.split(':')[-1]
 
-        # 파일사이즈 : md5 : 바이러스 이름
+        # 파일사이즈 : md5 : 바이러스 이름 # 바이러스 파일이름
         virus_db_data = f_size.__str__() + ':' + md5 + ':' + vt.scan_name + '\t# ' + vt.basename
 
         logger.info('[WRITE_DB] : %s' % virus_db_data)
@@ -167,7 +178,7 @@ def make_virus_db(file_path, virus_list):
 if __name__ == '__main__':
 
     if len(sys.argv) == 0:
-        logger.info('Usage : kicom_pefile [file]')
+        logger.info('Usage : kicom_pefile.py [file]')
 
     file_name = sys.argv[1]
 
