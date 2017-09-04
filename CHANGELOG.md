@@ -1,3 +1,11 @@
+## v0.28 (Sep 04, 2017)
+
+* **Engine :**
+  * Improved decompression speed of compressed files
+  * Added resource parsing function for PE file
+  * Added malware scanning function using YARA rule
+  * Fixed product hang when extracting ZIP files with errors
+  * Fixed errors when scanning ZIP and HWP files with passwords
 
 ## v0.27b (May 22, 2017)
 * **Engine :**
