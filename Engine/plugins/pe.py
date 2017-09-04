@@ -36,8 +36,6 @@ class PE:
             if mm[0:2] != 'MZ':  # MZ로 시작하나?
                 raise ValueError
 
-            pe_format['File_MD5'] = cryptolib.md5(mm[:])
-
             # PE 표식자 위치 알아내기
             pe_pos = kavutil.get_uint32(mm, 0x3C)
 
@@ -103,39 +101,68 @@ class PE:
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
                     rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
-                    num_name = kavutil.get_uint16(mm, rsrc_off+0xC)
-                    num_id = kavutil.get_uint16(mm, rsrc_off + 0xE)
 
-                    for i in range(num_name + num_id):
-                        rcdata_id = kavutil.get_uint32(mm, rsrc_off + 0x10 + (i*8))
-                        if rcdata_id == 0xA:  # RCDATA 발견?
-                            rcdata_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i*8))
-                            rcdata_entry_off = (rcdata_off & 0x7FFFFFFF) + rsrc_off
+                    # Type 체크
+                    num_type_name = kavutil.get_uint16(mm, rsrc_off+0xC)
+                    num_type_id = kavutil.get_uint16(mm, rsrc_off + 0xE)
 
-                            num_rcdata_name = kavutil.get_uint16(mm, rcdata_entry_off + 0xC)
+                    for i in range(num_type_name + num_type_id):
+                        type_id = kavutil.get_uint32(mm, rsrc_off + 0x10 + (i*8))
+                        name_id_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i * 8))
 
-                            for j in range(num_rcdata_name):
-                                rcdata_name_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x10 + (j * 8))
-                                string_off = (rcdata_name_off & 0x7FFFFFFF) + rsrc_off
+                        # Type이 사용자가 정의한 이름 or RCDATA?
+                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA:
+                            if type_id & 0x80000000 == 0x80000000:
+                                # 사용자가 정의한 이름 추출
+                                string_off = (type_id & 0x7FFFFFFF) + rsrc_off
                                 len_name = kavutil.get_uint16(mm, string_off)
-                                string_name = mm[string_off+2:string_off+2+(len_name * 2):2]
-                                # print string_name
+                                rsrc_type_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
+                            else:
+                                rsrc_type_name = 'RCDATA'
 
-                                if string_name == 'CABINET':
-                                    rcdata_lang_off = kavutil.get_uint32(mm, rcdata_entry_off + 0x14 + (j * 8))
-                                    rcdata_lang_off = (rcdata_lang_off & 0x7FFFFFFF) + rsrc_off
+                            # Name ID
+                            name_id_off = (name_id_off & 0x7FFFFFFF) + rsrc_off
+                            num_name_id_name = kavutil.get_uint16(mm, name_id_off + 0xC)
+                            num_name_id_id = kavutil.get_uint16(mm, name_id_off + 0xE)
 
-                                    rdata_entry_off = kavutil.get_uint32(mm, rcdata_lang_off + 0x14) + rsrc_off
-                                    rcdata_rva = kavutil.get_uint32(mm, rdata_entry_off)
-                                    rcdata_data_off, _ = self.rva_to_off(rcdata_rva)
-                                    rcdata_data_size = kavutil.get_uint32(mm, rdata_entry_off+4)
+                            for j in range(num_name_id_name + num_name_id_id):
+                                name_id_id = kavutil.get_uint32(mm, name_id_off + 0x10 + (j * 8))
+                                language_off = kavutil.get_uint32(mm, name_id_off + 0x14 + (j * 8))
 
-                                    # print hex(rcdata_data_off), hex(rcdata_data_size)
-                                    pe_format['CABINET_Offset'] = rcdata_data_off
-                                    pe_format['CABINET_Size'] = rcdata_data_size
-                                    break
+                                # 리소스 영역의 최종 이름 생성
+                                if name_id_id & 0x80000000 == 0x80000000:
+                                    string_off = (name_id_id & 0x7FFFFFFF) + rsrc_off
+                                    len_name = kavutil.get_uint16(mm, string_off)
+                                    rsrc_name_id_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
+                                    string_name = rsrc_type_name + '/' + rsrc_name_id_name
+                                else:
+                                    string_name = rsrc_type_name + '/' + hex(name_id_id).upper()[2:]
+
+                                # Language
+                                language_off = (language_off & 0x7FFFFFFF) + rsrc_off
+                                num_language_name = kavutil.get_uint16(mm, language_off + 0xC)
+                                num_language_id = kavutil.get_uint16(mm, language_off + 0xE)
+
+                                for k in range(num_language_name + num_language_id):
+                                    # language_id = kavutil.get_uint32(mm, language_off + 0x10 + (k * 8))
+                                    data_entry_off = kavutil.get_uint32(mm, language_off + 0x14 + (k * 8))
+
+                                    data_entry_off = (data_entry_off & 0x7FFFFFFF) + rsrc_off
+
+                                    data_rva = kavutil.get_uint32(mm, data_entry_off)
+                                    data_off, _ = self.rva_to_off(data_rva)
+                                    data_size = kavutil.get_uint32(mm, data_entry_off + 4)
+
+                                    if data_size > 8192:  # 최소 8K 이상인 리소스만 데이터로 추출
+                                        if 'Resource_UserData' in pe_format:
+                                            pe_format['Resource_UserData'][string_name] = (data_off, data_size)
+                                        else:
+                                            pe_format['Resource_UserData'] = {string_name: (data_off, data_size)}
                 except struct.error:
                     pass
+
+                # if 'Resource_UserData' in pe_format:
+                #     print pe_format['Resource_UserData']
 
             # Import API 분석
             imp_rva = kavutil.get_uint32(mm, pe_pos + 0x80)  # Import API 위치(RVA)
@@ -205,7 +232,7 @@ class PE:
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'pe.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
-                kavutil.vprint(None, 'MD5', pe_format['File_MD5'])
+                kavutil.vprint(None, 'MD5', cryptolib.md5(mm[:]))
 
                 print
                 kavutil.vprint('PE')
@@ -313,7 +340,11 @@ class KavMain:
         ret = {}
 
         pe = PE(filehandle, self.verbose, filename)
-        pe_format = pe.parse()  # PE 파일 분석
+        try:
+            pe_format = pe.parse()  # PE 파일 분석
+        except MemoryError:
+            pe_format = None
+
         if pe_format is None:
             return None
 
@@ -357,11 +388,10 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 첨부 파일 포맷이 있는가?
         if 'ff_pe' in fileformat:
-            if 'CABINET_Offset' in fileformat['ff_pe']['pe']:
-                off = fileformat['ff_pe']['pe']['CABINET_Offset']
-                size = fileformat['ff_pe']['pe']['CABINET_Size']
-
-                file_scan_list.append(['arc_pe_cab:%d:%d' % (off, size), 'CABINET'])
+            if 'Resource_UserData' in fileformat['ff_pe']['pe']:
+                for key in fileformat['ff_pe']['pe']['Resource_UserData'].keys():
+                    off, size = fileformat['ff_pe']['pe']['Resource_UserData'][key]
+                    file_scan_list.append(['arc_pe_rcdata:%d:%d' % (off, size), key])
 
         return file_scan_list
 
@@ -373,7 +403,7 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id.find('arc_pe_cab:') != -1:
+        if arc_engine_id.find('arc_pe_rcdata:') != -1:
             t = arc_engine_id.split(':')
             off = int(t[1])
             size = int(t[2])
@@ -388,6 +418,13 @@ class KavMain:
             return data
 
         return None
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        pass
 
     # ---------------------------------------------------------------------
     # feature(self, filehandle, filename, fileformat, malware_id)

@@ -201,10 +201,10 @@ def DecodeStreamName(name):
 # ---------------------------------------------------------------------
 # OLE 내부 링크 구하기
 # ---------------------------------------------------------------------
-def get_block_link(no, bbd_or_sbd):
+def get_block_link(no, bbd_or_sbd_fat):
     ret = []
 
-    data = bbd_or_sbd
+    fat = bbd_or_sbd_fat
 
     next_b = no
 
@@ -212,12 +212,13 @@ def get_block_link(no, bbd_or_sbd):
         ret.append(next_b)
 
         while True:
-            next_b = get_uint32(data, next_b * 4)
+            next_b = fat[next_b]
             if next_b == 0xfffffffe:
                 break
 
-            if ret.count(next_b) != 0:  # 이미 링크가 존재하면 종료
-                break
+            if len(ret) % 10000 == 0:
+                if next_b in ret:  # 이미 링크가 존재하면 종료
+                    break
 
             ret.append(next_b)
 
@@ -297,9 +298,7 @@ def get_bbd_list_index_to_offset(buf, idx):
 # ---------------------------------------------------------------------
 def is_olefile(filename):
     try:
-        fp = open(filename, 'rb')
-        buf = fp.read(8)
-        fp.close()
+        buf = open(filename, 'rb').read(8)
 
         if buf == 'D0CF11E0A1B11AE1'.decode('hex'):
             return True
@@ -337,11 +336,14 @@ class OleFile:
         self.ssize = None
         self.bbd_list_array = None
         self.bbd = None
+        self.bbd_fat = {}
         self.sbd = None
+        self.bbd_fat = {}
         self.root = None
         self.pps = None
         self.small_block = None
         self.root_list_array = None
+        self.cve_2003_0820 = False  # 취약점 존재 여부
 
         # 임시 변수
         self.__deep = None
@@ -411,6 +413,11 @@ class OleFile:
             no = get_uint32(self.bbd_list_array, i*4)
             self.bbd += get_bblock(self.mm, no, self.bsize)
 
+        self.bbd_fat = {}
+        for i in range(len(self.bbd) / 4):
+            n = get_uint32(self.bbd, i*4)
+            self.bbd_fat[i] = n
+
         if self.verbose:
             open('bbd.dmp', 'wb').write(self.bbd)
             print
@@ -420,7 +427,7 @@ class OleFile:
 
         # Root 읽기
         root_startblock = get_uint32(self.mm, 0x30)
-        root_list_array = get_block_link(root_startblock, self.bbd)
+        root_list_array = get_block_link(root_startblock, self.bbd_fat)
         self.root_list_array = root_list_array
 
         self.root = ''
@@ -438,11 +445,16 @@ class OleFile:
         # sbd 읽기
         sbd_startblock = get_uint32(self.mm, 0x3c)
         num_of_sbd_blocks = get_uint32(self.mm, 0x40)
-        sbd_list_array = get_block_link(sbd_startblock, self.bbd)
+        sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
         self.sbd = ''
         for no in sbd_list_array:
             self.sbd += get_bblock(self.mm, no, self.bsize)
+
+        self.sbd_fat = {}
+        for i in range(len(self.sbd) / 4):
+            n = get_uint32(self.sbd, i*4)
+            self.sbd_fat[i] = n
 
         if self.verbose:
             open('sbd.dmp', 'wb').write(self.sbd)
@@ -472,8 +484,12 @@ class OleFile:
             p['Dir'] = get_uint32(pps, 0x4c)
             p['Start'] = get_uint32(pps, 0x74)
             p['Size'] = get_uint32(pps, 0x78)
+            p['Valid'] = False
 
             self.pps.append(p)
+
+        # PPS Tree 검증
+        self.__valid_pps_tree()
 
         if self.verbose:
             print
@@ -493,6 +509,9 @@ class OleFile:
             print '    ' + ('-' * 74)
 
             for p in self.pps:
+                if p['Valid'] is False:  # 유효한 Tree가 아니면 다음
+                    continue
+
                 t = ''
                 t += '   - ' if p['Prev'] == 0xffffffff else '%4d ' % p['Prev']
                 t += '   - ' if p['Next'] == 0xffffffff else '%4d ' % p['Next']
@@ -505,14 +524,48 @@ class OleFile:
         self.__deep = 0
         self.__full_list = []
 
-        self.__get_pps_path()
+        try:
+            self.__get_pps_path()
+        except IndexError:
+            pass
 
         # small block link 얻기
-        self.small_block = get_block_link(self.pps[0]['Start'], self.bbd)
+        self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
         if self.verbose:
             print
             vprint('Small Blocks')
             print self.small_block
+
+    # ---------------------------------------------------------------------
+    # PPS Tree의 유효성을 체크한다. (내장)
+    # ---------------------------------------------------------------------
+    def __valid_pps_tree(self):
+        f = []
+
+        if self.pps[0]['Dir'] != 0xffffffff and self.pps[0]['Type'] == 5:
+            f.append(self.pps[0]['Dir'])
+            self.pps[0]['Valid'] = True
+
+        while len(f):
+            x = f.pop(0)
+
+            if (x & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
+                self.cve_2003_0820 = True
+                continue
+
+            if self.pps[x]['Type'] != 1 and self.pps[x]['Type'] != 2:
+                continue
+
+            self.pps[x]['Valid'] = True
+
+            if self.pps[x]['Prev'] != 0xffffffff:
+                f.append(self.pps[x]['Prev'])
+
+            if self.pps[x]['Next'] != 0xffffffff:
+                f.append(self.pps[x]['Next'])
+
+            if self.pps[x]['Dir'] != 0xffffffff:
+                f.append(self.pps[x]['Dir'])
 
     # ---------------------------------------------------------------------
     # PPS 전체 경로 구하기 (내장)
@@ -522,6 +575,9 @@ class OleFile:
             pps_name = ''
             name = prefix + pps_name
         else:
+            if (node & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
+                self.cve_2003_0820 = True
+
             pps_name = self.pps[node]['Name'].encode('cp949', 'ignore')
             name = prefix + '/' + pps_name
             # print ("%02d : %d %s") % (node, self.deep, name)
@@ -582,6 +638,36 @@ class OleFile:
 
                 # print self.parent.verbose
 
+            # 연속된 숫자 값을 리턴한다.
+            # TODO : 임시로 작성한거라 최적화 필요함
+            def get_liner_value(self, num_list):
+                start = None
+                end = None
+
+                if not start:
+                    start = num_list.pop(0)
+
+                e = start
+                loop = False
+
+                for x in num_list:
+                    if e + 1 == x:
+                        e = x
+                        loop = True
+                        continue
+                    else:
+                        while loop:
+                            if e == num_list.pop(0):
+                                break
+                        end = e
+                        break
+                else:
+                    for i in range(len(num_list)):
+                        num_list.pop(0)
+                    end = e
+
+                return start, end
+
             def read(self):
                 pps = self.parent.pps[self.node]
                 sb = pps['Start']
@@ -589,23 +675,31 @@ class OleFile:
 
                 if size >= 0x1000:
                     self.read_size = self.parent.bsize
-                    self.fat = self.parent.bbd
+                    self.fat = self.parent.bbd_fat
                 else:
                     self.read_size = self.parent.ssize
-                    self.fat = self.parent.sbd
+                    self.fat = self.parent.sbd_fat
 
                 list_array = get_block_link(sb, self.fat)
 
                 data = ''
                 if size >= 0x1000:
-                    for n in list_array:
-                        off = (n+1) * self.read_size
-                        data += self.parent.mm[off:off+self.read_size]
+                    t_list = list(list_array)
+                    while len(t_list):
+                        s, e = self.get_liner_value(t_list)  # 연속된 링크를 모두 수집해서 한꺼번에 파일로 읽기
+                        off = (s + 1) * self.read_size
+                        data += self.parent.mm[off:off + self.read_size * (e - s + 1)]
                 else:
                     for n in list_array:
-                        off = (self.parent.small_block[n / 8] + 1) * self.parent.bsize
-                        off += (n % 8) * self.parent.ssize
+                        div_n = self.parent.bsize / self.parent.ssize
+                        off = (self.parent.small_block[n / div_n] + 1) * self.parent.bsize
+                        off += (n % div_n) * self.parent.ssize
                         data += self.parent.mm[off:off + self.read_size]
+
+                if self.parent.verbose:
+                    print
+                    vprint(pps['Name'])
+                    HexDump.buffer(data, 0, size)
 
                 return data[:size]
 
@@ -642,7 +736,9 @@ class OleFile:
         # self.init(self.mm)
         # return
 
-        ow = OleWriteStream(self.mm, self.pps, self.bsize, self.ssize, self.bbd, self.sbd,
+        ow = OleWriteStream(self.mm, self.pps, self.bsize, self.ssize,
+                            self.bbd, self.bbd_fat,
+                            self.sbd, self.sbd_fat,
                             self.root_list_array, self.small_block, self.verbose)
         t = ow.write(no, data)
         if t:
@@ -674,7 +770,7 @@ class OleFile:
 # OleWriteStream 클래스
 # ---------------------------------------------------------------------
 class OleWriteStream:
-    def __init__(self, mm, pps, bsize, ssize, bbd, sbd, root_list_array, small_block, verbose):
+    def __init__(self, mm, pps, bsize, ssize, bbd, bbd_fat, sbd, sbd_fat, root_list_array, small_block, verbose):
         self.verbose = verbose
 
         self.mm = mm
@@ -682,7 +778,9 @@ class OleWriteStream:
         self.bsize = bsize
         self.ssize = ssize
         self.bbd = bbd
+        self.bbd_fat = bbd_fat
         self.sbd = sbd
+        self.sbd_fat = sbd_fat
         self.root_list_array = root_list_array
         self.small_block = small_block
 
@@ -767,7 +865,7 @@ class OleWriteStream:
                     n = (len(data) / self.bsize) + (1 if (len(data) % self.bsize) else 0)
                     t_data = data + ('\x00' * ((n * self.bsize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
+                    t_link = get_block_link(org_sb, self.bbd_fat)  # 이전 링크 수집하기
                     t_link = self.__decrease_bbd_link(t_link, n)  # 필요한 개수로 링크 줄이기
 
                     # Big block 영역에 bsize 만큼씩 Overwrite
@@ -781,7 +879,7 @@ class OleWriteStream:
                     n = (len(data) / self.bsize) + (1 if (len(data) % self.bsize) else 0)
                     t_data = data + ('\x00' * ((n * self.bsize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
+                    t_link = get_block_link(org_sb, self.bbd_fat)  # 이전 링크 수집하기
 
                     t_num = 0
                     if (len(t_link) * self.bsize) < len(t_data):  # 블록 추가해야 하나?
@@ -819,7 +917,8 @@ class OleWriteStream:
                 self.__set_pps_header(no, size=len(data), start=t_link[0])
 
                 # 이전 SBD의 링크는 모두 삭제한다.
-                t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
+                # t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
+                t_link = get_block_link(org_sb, self.sbd_fat)  # 이전 링크 수집하기
 
                 sbd = self.sbd
                 for no in t_link:
@@ -849,7 +948,7 @@ class OleWriteStream:
                     self.bbd += get_bblock(self.mm, n, self.bsize)
 
                 # 새로운 Small Block 링크가 필요하다
-                self.small_block = get_block_link(self.pps[0]['Start'], self.bbd)
+                self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
 
                 # Small block 영역에 ssize 만큼씩 Overwrite
                 self.__write_data_to_small_bolck(t_data, t_link)
@@ -858,7 +957,8 @@ class OleWriteStream:
                 self.__set_pps_header(no, size=len(data), start=t_link[0])
 
                 # 이전 BBD의 링크는 모두 삭제한다.
-                t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
+                # t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
+                t_link = get_block_link(org_sb, self.bbd_fat)  # 이전 링크 수집하기
 
                 bbd = self.bbd
                 for no in t_link:
@@ -873,7 +973,7 @@ class OleWriteStream:
                     n = (len(data) / self.ssize) + (1 if (len(data) % self.ssize) else 0)
                     t_data = data + ('\x00' * ((n*self.ssize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
+                    t_link = get_block_link(org_sb, self.sbd_fat)  # 이전 링크 수집하기
                     t_link = self.__decrease_sbd_link(t_link, n)  # 필요한 개수로 링크 줄이기
 
                     # Small block 영역에 ssize 만큼씩 Overwrite
@@ -887,7 +987,8 @@ class OleWriteStream:
                     n = (len(data) / self.ssize) + (1 if (len(data) % self.ssize) else 0)
                     t_data = data + ('\x00' * ((n*self.ssize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
+                    # t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
+                    t_link = get_block_link(org_sb, self.sbd_fat)  # 이전 링크 수집하기
 
                     t_num = 0
                     if (len(t_link) * self.ssize) < len(t_data):  # 블록 추가해야 하나?
@@ -1003,7 +1104,7 @@ class OleWriteStream:
 
             # self.mm에 SBD 적용하기
             sbd_startblock = get_uint32(self.mm, 0x3c)
-            sbd_list_array = get_block_link(sbd_startblock, self.bbd)
+            sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
             for i, n in enumerate(sbd_list_array):
                 self.__set_bblock(n, self.sbd[i*self.bsize:(i+1)*self.bsize])
@@ -1238,7 +1339,8 @@ class OleWriteStream:
 
             self.__add_big_block_num(add_big_num)  # Big Block 추가 요청
 
-            t_link = get_block_link(r_no, self.bbd)  # 이전 Small Block의 링크를 구함
+            # t_link = get_block_link(r_no, self.bbd)  # 이전 Small Block의 링크를 구함
+            t_link = get_block_link(r_no, self.bbd_fat)  # 이전 Small Block의 링크를 구함
             self.__modify_big_block_link(t_link, add_big_num)  # 이전 링크에 필요한 블록 수 추가하여 링크를 새롭게 생성
 
             # Root 크기 수정
@@ -1358,7 +1460,8 @@ class OleWriteStream:
     def __modify_sbd(self, sbd):
         # 원래 이미지에 SBD 덮어쓰기
         sbd_no = get_uint32(self.mm, 0x3c)
-        sbd_list_array = get_block_link(sbd_no, self.bbd)
+        # sbd_list_array = get_block_link(sbd_no, self.bbd)
+        sbd_list_array = get_block_link(sbd_no, self.bbd_fat)
         # print sbd_list_array
 
         for i, no in enumerate(sbd_list_array):
@@ -1442,6 +1545,8 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.handle = {}
+        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -1476,10 +1581,74 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
         ret = {}
 
-        if is_olefile(filename):  # OLE 헤더와 동일
+        # OLE 헤더와 동일
+        if filehandle[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':
             ret['ff_ole'] = 'OLE'
 
         return ret
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = OleFile(filename, verbose=self.verbose)  # ole 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
+
+    # ---------------------------------------------------------------------
+    # arclist(self, filename, fileformat)
+    # 압축 파일 내부의 파일 목록을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    #          fileformat - 파일 포맷 분석 정보
+    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # ---------------------------------------------------------------------
+    def arclist(self, filename, fileformat):
+        file_scan_list = []  # 검사 대상 정보를 모두 가짐
+
+        # 미리 분석된 파일 포맷중에 OLE 파일 포맷이 있는가?
+        if 'ff_ole' in fileformat:
+            # OLE Stream 목록 추출하기
+            o = self.__get_handle(filename)
+            for name in o.listdir():
+                file_scan_list.append(['arc_ole', name])
+
+        return file_scan_list
+
+    # ---------------------------------------------------------------------
+    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    #          fname_in_arc   - 압축 해제할 파일 이름
+    # 리턴값 : 압축 해제된 내용 or None
+    # ---------------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
+        data = None
+
+        if arc_engine_id == 'arc_ole':
+            o = self.__get_handle(arc_name)
+            fp = o.openstream(fname_in_arc)
+            try:
+                data = fp.read()
+            except:
+                data = None
+
+        return data
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
+            zfile.close()
+            self.handle.pop(fname)

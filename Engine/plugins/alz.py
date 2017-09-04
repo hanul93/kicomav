@@ -242,6 +242,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.handle = {}
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -267,6 +268,21 @@ class KavMain:
         info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
 
         return info
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = AlzFile(filename)  # alz 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
@@ -300,10 +316,10 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 ALZ 포맷이 있는가?
         if 'ff_alz' in fileformat:
-            afile = AlzFile(filename)
-            for name in afile.namelist():
+            zfile = self.__get_handle(filename)
+
+            for name in zfile.namelist():
                 file_scan_list.append(['arc_alz', name])
-            afile.close()
 
         return file_scan_list
 
@@ -316,10 +332,19 @@ class KavMain:
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
         if arc_engine_id == 'arc_alz':
-            afile = AlzFile(arc_name)
-            data = afile.read(fname_in_arc)
-            afile.close()
+            zfile = self.__get_handle(arc_name)
+            data = zfile.read(fname_in_arc)
 
             return data
 
         return None
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
+            zfile.close()
+            self.handle.pop(fname)

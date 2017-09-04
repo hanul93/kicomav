@@ -3,62 +3,8 @@
 
 
 import os
-import re
-import zlib
 import kernel
-import kavutil
-import ole
-
-
-# -------------------------------------------------------------------------
-# get_hwp_recoard(val)
-# 입력된 4Byte 값을 HWP 레코드 구조에 맞게 변환하여 추출한다.
-# 입력값 : val - DWORD
-# 리턴값 : tag_id, level, size
-# -------------------------------------------------------------------------
-def get_hwp_recoard(val):
-    b = 0b1111111111
-    c = 0b111111111111
-
-    tag_id = (val & b)
-    level = ((val >> 10) & b)
-    size = (val >> 20) & c
-
-    return tag_id, level, size
-
-
-# -------------------------------------------------------------------------
-# scan_hwp_recoard(buf, lenbuf)
-# 주어진 버퍼를 HWP 레코드 구조로 해석한다.
-# 입력값 : buf - 버퍼
-#         lenbuf - 버퍼 크기
-# 리턴값 : True or False (HWP 레코드 추적 성공 여부) 및 문제의 tagid
-# -------------------------------------------------------------------------
-def scan_hwp_recoard(buf, lenbuf):
-    pos = 0
-    tagid = 0
-
-    while pos < lenbuf:
-        extra_size = 4
-        val = kavutil.get_uint32(buf, pos)
-        tagid, level, size = get_hwp_recoard(val)
-
-        if size == 0xfff:
-            extra_size = 8
-            size = kavutil.get_uint32(buf, pos + 4)
-
-        if tagid == 0x43 and size > 4000:  # PARA_TEXT
-            t_buf = buf[pos:pos+size+extra_size]
-            d_buf = zlib.compress(t_buf)
-            if len(d_buf) / float(len(t_buf)) < 0.02:
-                return False, 0x43
-
-        pos += (size + extra_size)
-
-    if pos == lenbuf:
-        return True, -1
-
-    return False, tagid
+import yara
 
 
 # -------------------------------------------------------------------------
@@ -73,8 +19,14 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        self.handle = {}
-        self.hwp_ole = re.compile('bindata/bin\d+\.ole$', re.IGNORECASE)
+        self.verbose = verbose
+        try:
+            self.rules = yara.compile(plugins_path + os.sep + 'yaraex.yar')
+        except:
+            if self.verbose:
+                print '[*] ERROR : YARA Rule compile'
+            return -1
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -95,24 +47,10 @@ class KavMain:
 
         info['author'] = 'Kei Choi'  # 제작자
         info['version'] = '1.0'  # 버전
-        info['title'] = 'HWP Engine'  # 엔진 설명
-        info['kmd_name'] = 'hwp'  # 엔진 파일 이름
-        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료는 삭제로...
-        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
+        info['title'] = 'Yara Engine'  # 엔진 설명
+        info['kmd_name'] = 'yaraex'  # 엔진 파일 이름
 
         return info
-
-    # ---------------------------------------------------------------------
-    # listvirus(self)
-    # 진단/치료 가능한 악성코드의 리스트를 알려준다.
-    # 리턴값 : 악성코드 리스트
-    # ---------------------------------------------------------------------
-    def listvirus(self):  # 진단 가능한 악성코드 리스트
-        vlist = list()  # 리스트형 변수 선언
-
-        vlist.append('Exploit.HWP.Generic')  # 진단/치료하는 악성코드 이름 등록
-
-        return vlist
 
     # ---------------------------------------------------------------------
     # scan(self, filehandle, filename, fileformat)
@@ -124,17 +62,10 @@ class KavMain:
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     # ---------------------------------------------------------------------
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
-        mm = filehandle
-
-        if filename_ex.lower().find('bodytext/section') >= 0 or filename_ex.lower().find('docinfo') >= 0:
-            val = kavutil.get_uint32(mm, 0)
-            tagid, level, size = get_hwp_recoard(val)
-
-            # 문서의 첫번째 tag가 문서 헤더(0x42), 문서 속성(0x10) 일때만 추적 진행
-            if tagid == 0x42 or tagid == 0x10:
-                ret, tagid = scan_hwp_recoard(mm, len(mm))
-                if ret is False:  # 레코드 추적 실패
-                    return True, 'Exploit.HWP.Generic.%02X' % tagid, 0, kernel.INFECTED
+        ret = self.rules.match(filename)
+        if len(ret):
+            vname = ret[0].meta.get('KicomAV', ret[0].rule)  # KicomAV meta 정보 확인
+            return True, vname, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
@@ -156,3 +87,4 @@ class KavMain:
             pass
 
         return False  # 치료 실패 리턴
+
