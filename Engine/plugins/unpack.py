@@ -3,7 +3,8 @@
 
 
 import zlib
-import kernel
+import struct
+import kavutil
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -57,12 +58,20 @@ class KavMain:
 
         mm = filehandle
         try:
-            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
             zlib.decompress(mm, -15)
-            ret = {'ff_zlib': fileformat}
+            ret = {'ff_zlib': 'ZLIB'}
             return ret
         except zlib.error:
-            return None
+            pass
+
+        try:
+            if kavutil.get_uint32(mm, 0) == len(mm) - 4:
+                ret = {'ff_embed_ole': 'EMBED_OLE'}
+                return ret
+        except struct.error:
+            pass
+
+        return None
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
@@ -74,9 +83,11 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
+        # 미리 분석된 파일 포맷중에 특정 포맷이 있는가?
         if 'ff_zlib' in fileformat:
             file_scan_list.append(['arc_zlib', '<ZLIB>'])
+        elif 'ff_embed_ole' in fileformat:
+            file_scan_list.append(['arc_embed_ole', '<EMBED_OLE>'])
 
         return file_scan_list
 
@@ -95,6 +106,10 @@ class KavMain:
                 return data
             except zlib.error:
                 pass
+        elif arc_engine_id == 'arc_embed_ole':
+            buf = open(arc_name, 'rb').read()
+            data = buf[4:]
+            return data
 
         return None
 

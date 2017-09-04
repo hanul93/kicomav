@@ -17,52 +17,49 @@ def analysis_ole10native(mm, verbose=False):
     fileformat = {}
 
     try:
-        size = kavutil.get_uint32(mm, 0)
+        if mm[:2] == '\x02\x00':
+            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
 
-        if mm[4:6] == '\x02\x00':
-            if len(mm) == size + 4:
-                fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
+            label = mm[2:2 + MAX_PATH].split('\x00', 1)[0]
+            fileformat['label'] = label
 
-                label = mm[6:6 + MAX_PATH].split('\x00', 1)[0]
-                fileformat['label'] = label
+            off = 2 + len(label) + 1
+            fname = mm[off:off + MAX_PATH].split('\x00', 1)[0]
 
-                off = 6 + len(label) + 1
-                fname = mm[off:off + MAX_PATH].split('\x00', 1)[0]
+            off += len(fname) + 1
+            off += 2  # flag
 
-                off += len(fname) + 1
-                off += 2  # flag
+            unknown_size = ord(mm[off])
+            off += 1 + unknown_size + 2
 
-                unknown_size = ord(mm[off])
-                off += 1 + unknown_size + 2
+            command = mm[off:off + MAX_PATH].split('\x00', 1)[0]
+            off += len(command) + 1
 
-                command = mm[off:off + MAX_PATH].split('\x00', 1)[0]
-                off += len(command) + 1
+            data_size = kavutil.get_uint32(mm, off)
 
-                data_size = kavutil.get_uint32(mm, off)
+            fileformat['data_off'] = off + 4
+            fileformat['data_size'] = data_size
 
-                fileformat['data_off'] = off + 4
-                fileformat['data_size'] = data_size
+            if len(mm) < off + data_size:  # 오류
+                raise ValueError
 
-                if len(mm) < off + data_size:  # 오류
-                    raise ValueError
+            if verbose:
+                print
+                kavutil.vprint('Ole10Native Stream')
+                kavutil.vprint(None, 'Size', '0x%08X' % size)
+                kavutil.vprint(None, 'Label', label)
+                kavutil.vprint(None, 'File Name', fname)
+                kavutil.vprint(None, 'Command Line', command)
+                kavutil.vprint(None, 'Data Offset', '0x%08X' % (off + 4))
+                kavutil.vprint(None, 'Data Size', '0x%08X' % data_size)
 
-                if verbose:
-                    print
-                    kavutil.vprint('Ole10Native Stream')
-                    kavutil.vprint(None, 'Size', '0x%08X' % size)
-                    kavutil.vprint(None, 'Label', label)
-                    kavutil.vprint(None, 'File Name', fname)
-                    kavutil.vprint(None, 'Command Line', command)
-                    kavutil.vprint(None, 'Data Offset', '0x%08X' % (off + 4))
-                    kavutil.vprint(None, 'Data Size', '0x%08X' % data_size)
+                print
+                kavutil.vprint('Data Dump')
+                print
+                kavutil.HexDump().Buffer(mm[:], off + 4, 0x80)
+                print
 
-                    print
-                    kavutil.vprint('Data Dump')
-                    print
-                    kavutil.HexDump().Buffer(mm[:], off + 4, 0x80)
-                    print
-
-                return fileformat
+            return fileformat
     except ValueError:
         pass
     except struct.error:
@@ -122,28 +119,10 @@ class KavMain:
 
         mm = filehandle
 
-        if mm[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':  # OLE 헤더와 동일
-            o = None
-            try:
-                o = ole.OleFile(filename)
-                if '\x01Ole10Native' in o.listdir():
-                    pics = o.openstream('\x01Ole10Native')
-                    buf = pics.read()
-
-                    if self.verbose:
-                        print '-' * 79
-                        kavutil.vprint('Engine')
-                        kavutil.vprint(None, 'Engine', 'olenative.kmd')
-                        kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
-
-                    fileformat = analysis_ole10native(buf, self.verbose)
-                    if fileformat:
-                        ret = {'ff_ole10native': fileformat}
-            except ole.Error:
-                pass
-
-            if o:
-                o.close()
+        if mm[:2] == '\x02\x00' and filename_ex.find('\x01Ole10Native') != -1:
+            fileformat = analysis_ole10native(mm, self.verbose)
+            if fileformat:
+                ret = {'ff_ole10native': fileformat}
 
         return ret
 
@@ -157,7 +136,7 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
+        # 미리 분석된 파일 포맷중에 특정 포맷이 있는가?
         if 'ff_ole10native' in fileformat:
             fformat = fileformat['ff_ole10native']
             name = fformat['label']  # OLE 내부에 숨겨진 파일 명
@@ -183,20 +162,8 @@ class KavMain:
             off = int(val[1])
             size = int(val[2])
 
-            data = None
-            o = None
-            try:
-                o = ole.OleFile(arc_name)
-                if '\x01Ole10Native' in o.listdir():
-                    pics = o.openstream('\x01Ole10Native')
-                    buf = pics.read()
-
-                    data = buf[off:]
-            except ole.Error:
-                pass
-
-            if o:
-                o.close()
+            buf = open(arc_name, 'rb').read()
+            data = buf[off:]
 
             return data
 
