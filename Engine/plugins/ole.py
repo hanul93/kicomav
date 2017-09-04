@@ -484,8 +484,12 @@ class OleFile:
             p['Dir'] = get_uint32(pps, 0x4c)
             p['Start'] = get_uint32(pps, 0x74)
             p['Size'] = get_uint32(pps, 0x78)
+            p['Valid'] = False
 
             self.pps.append(p)
+
+        # PPS Tree 검증
+        self.__valid_pps_tree()
 
         if self.verbose:
             print
@@ -505,6 +509,9 @@ class OleFile:
             print '    ' + ('-' * 74)
 
             for p in self.pps:
+                if p['Valid'] is False:  # 유효한 Tree가 아니면 다음
+                    continue
+
                 t = ''
                 t += '   - ' if p['Prev'] == 0xffffffff else '%4d ' % p['Prev']
                 t += '   - ' if p['Next'] == 0xffffffff else '%4d ' % p['Next']
@@ -528,6 +535,33 @@ class OleFile:
             print
             vprint('Small Blocks')
             print self.small_block
+
+    # ---------------------------------------------------------------------
+    # PPS Tree의 유효성을 체크한다. (내장)
+    # ---------------------------------------------------------------------
+    def __valid_pps_tree(self):
+        f = []
+
+        if self.pps[0]['Dir'] != 0xffffffff and self.pps[0]['Type'] == 5:
+            f.append(self.pps[0]['Dir'])
+            self.pps[0]['Valid'] = True
+
+        while len(f):
+            x = f.pop(0)
+
+            if self.pps[x]['Type'] != 1 and self.pps[x]['Type'] != 2:
+                continue
+
+            self.pps[x]['Valid'] = True
+
+            if self.pps[x]['Prev'] != 0xffffffff:
+                f.append(self.pps[x]['Prev'])
+
+            if self.pps[x]['Next'] != 0xffffffff:
+                f.append(self.pps[x]['Next'])
+
+            if self.pps[x]['Dir'] != 0xffffffff:
+                f.append(self.pps[x]['Dir'])
 
     # ---------------------------------------------------------------------
     # PPS 전체 경로 구하기 (내장)
@@ -1598,7 +1632,10 @@ class KavMain:
         if arc_engine_id == 'arc_ole':
             o = self.__get_handle(arc_name)
             fp = o.openstream(fname_in_arc)
-            data = fp.read()
+            try:
+                data = fp.read()
+            except:
+                data = None
 
         return data
 
