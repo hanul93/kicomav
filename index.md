@@ -19,6 +19,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 
 * Python 2.7
 * [pylzma](https://github.com/fancycode/pylzma)
+* [yara](https://github.com/plusvic/yara)
 
 
 ### Quick start
@@ -33,6 +34,14 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 ## 2. Releases
 
 ***
+
+### 0.28 (Sep 4, 2017)
+
+* Improved decompression speed of compressed files
+* Added resource parsing function for PE file
+* Added malware scanning function using YARA rule
+* Fixed product hang when extracting ZIP files with errors
+* Fixed errors when scanning ZIP and HWP files with passwords
 
 ### 0.27b (May 22, 2017)
 
