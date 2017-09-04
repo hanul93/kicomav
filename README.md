@@ -1,6 +1,6 @@
-<img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/kicomav.jpg">
+<img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/k2_full_2.png">
 
-# KicomAV v0.27b
+# KicomAV v0.28
 
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
@@ -14,6 +14,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 
 * Python 2.7
 * [pylzma](https://github.com/fancycode/pylzma)
+* [yara](https://github.com/plusvic/yara)
 
 ## Quick start
 
@@ -36,7 +37,7 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27b (May 22 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -69,7 +70,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release>k2.py --update
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27b (May 22 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -88,10 +89,10 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27b (May 22 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu May  4 01:59:44 2017 UTC
+Last updated Mon Sep  4 01:33:12 2017 UTC
 Signature number: 1635
 
 C:\kicomav\Relea ... 08ecba90d0cd778  infected : Trojan-Ransom.Win32.Snocry.cxu
@@ -117,10 +118,10 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py sample\test.zip -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27b (May 22 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu May  4 05:13:44 2017 UTC
+Last updated Mon Sep  4 01:33:12 2017 UTC
 Signature number: 1638
 
 C:\kicomav\Release\sample\test.zip  ok
@@ -146,10 +147,10 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.27b (May 22 2017)
+KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
 Copyright (C) 1995-2017 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu May  4 05:13:44 2017 UTC
+Last updated Mon Sep  4 01:33:12 2017 UTC
 Signature number: 1638
 
 Dummy-Test-File (not a virus)                      [dummy.kmd]
