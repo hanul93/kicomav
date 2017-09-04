@@ -5,6 +5,7 @@
 import os
 import re
 import kernel
+import kavutil
 
 
 # -------------------------------------------------------------------------
@@ -76,9 +77,10 @@ class KavMain:
                     if len(t1) > int(val):
                         return True, 'Exploit.RTF.CVE-2014-1761', 0, kernel.INFECTED
         else:
-            t = self.prog_eps_dropper.search(mm)
-            if t:
-                return True, 'Trojan.PS.Agent', 0, kernel.INFECTED
+            if kavutil.is_textfile(mm[:4096]):
+                t = self.prog_eps_dropper.search(mm)
+                if t:
+                    return True, 'Trojan.PS.Agent', 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
