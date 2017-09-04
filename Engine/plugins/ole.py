@@ -416,7 +416,6 @@ class OleFile:
         self.bbd_fat = {}
         for i in range(len(self.bbd) / 4):
             n = get_uint32(self.bbd, i*4)
-            # self.bbd_fat.append(n)
             self.bbd_fat[i] = n
 
         if self.verbose:
@@ -428,7 +427,6 @@ class OleFile:
 
         # Root 읽기
         root_startblock = get_uint32(self.mm, 0x30)
-        # root_list_array = get_block_link(root_startblock, self.bbd)
         root_list_array = get_block_link(root_startblock, self.bbd_fat)
         self.root_list_array = root_list_array
 
@@ -447,7 +445,6 @@ class OleFile:
         # sbd 읽기
         sbd_startblock = get_uint32(self.mm, 0x3c)
         num_of_sbd_blocks = get_uint32(self.mm, 0x40)
-        # sbd_list_array = get_block_link(sbd_startblock, self.bbd)
         sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
         self.sbd = ''
@@ -457,7 +454,6 @@ class OleFile:
         self.sbd_fat = {}
         for i in range(len(self.sbd) / 4):
             n = get_uint32(self.sbd, i*4)
-            # self.sbd_fat.append(n)
             self.sbd_fat[i] = n
 
         if self.verbose:
@@ -527,7 +523,6 @@ class OleFile:
             pass
 
         # small block link 얻기
-        # self.small_block = get_block_link(self.pps[0]['Start'], self.bbd)
         self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
         if self.verbose:
             print
@@ -642,11 +637,9 @@ class OleFile:
 
                 if size >= 0x1000:
                     self.read_size = self.parent.bsize
-                    # self.fat = self.parent.bbd
                     self.fat = self.parent.bbd_fat
                 else:
                     self.read_size = self.parent.ssize
-                    # self.fat = self.parent.sbd
                     self.fat = self.parent.sbd_fat
 
                 list_array = get_block_link(sb, self.fat)
@@ -834,7 +827,6 @@ class OleWriteStream:
                     n = (len(data) / self.bsize) + (1 if (len(data) % self.bsize) else 0)
                     t_data = data + ('\x00' * ((n * self.bsize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    # t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
                     t_link = get_block_link(org_sb, self.bbd_fat)  # 이전 링크 수집하기
                     t_link = self.__decrease_bbd_link(t_link, n)  # 필요한 개수로 링크 줄이기
 
@@ -849,7 +841,6 @@ class OleWriteStream:
                     n = (len(data) / self.bsize) + (1 if (len(data) % self.bsize) else 0)
                     t_data = data + ('\x00' * ((n * self.bsize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    # t_link = get_block_link(org_sb, self.bbd)  # 이전 링크 수집하기
                     t_link = get_block_link(org_sb, self.bbd_fat)  # 이전 링크 수집하기
 
                     t_num = 0
@@ -919,7 +910,6 @@ class OleWriteStream:
                     self.bbd += get_bblock(self.mm, n, self.bsize)
 
                 # 새로운 Small Block 링크가 필요하다
-                # self.small_block = get_block_link(self.pps[0]['Start'], self.bbd)
                 self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
 
                 # Small block 영역에 ssize 만큼씩 Overwrite
@@ -945,7 +935,6 @@ class OleWriteStream:
                     n = (len(data) / self.ssize) + (1 if (len(data) % self.ssize) else 0)
                     t_data = data + ('\x00' * ((n*self.ssize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
 
-                    # t_link = get_block_link(org_sb, self.sbd)  # 이전 링크 수집하기
                     t_link = get_block_link(org_sb, self.sbd_fat)  # 이전 링크 수집하기
                     t_link = self.__decrease_sbd_link(t_link, n)  # 필요한 개수로 링크 줄이기
 
@@ -1077,7 +1066,6 @@ class OleWriteStream:
 
             # self.mm에 SBD 적용하기
             sbd_startblock = get_uint32(self.mm, 0x3c)
-            # sbd_list_array = get_block_link(sbd_startblock, self.bbd)
             sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
             for i, n in enumerate(sbd_list_array):
