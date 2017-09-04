@@ -526,7 +526,7 @@ class OleFile:
 
         try:
             self.__get_pps_path()
-        except IndexError:  # OLE 파일 PPS 추적 방해 코드 (CVE-2003-0820)
+        except IndexError:
             pass
 
         # small block link 얻기
@@ -548,6 +548,10 @@ class OleFile:
 
         while len(f):
             x = f.pop(0)
+
+            if (x & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
+                self.cve_2003_0820 = True
+                continue
 
             if self.pps[x]['Type'] != 1 and self.pps[x]['Type'] != 2:
                 continue
