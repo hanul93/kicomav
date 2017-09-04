@@ -47,6 +47,12 @@ def scan_hwp_recoard(buf, lenbuf):
             extra_size = 8
             size = kavutil.get_uint32(buf, pos + 4)
 
+        if tagid == 0x43 and size > 4000:  # PARA_TEXT
+            t_buf = buf[pos:pos+size+extra_size]
+            d_buf = zlib.compress(t_buf)
+            if len(d_buf) / float(len(t_buf)) < 0.02:
+                return False, 0x43
+
         pos += (size + extra_size)
 
     if pos == lenbuf:
