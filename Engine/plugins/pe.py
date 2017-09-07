@@ -261,7 +261,7 @@ class PE:
                         if s['Characteristics'] & 0x20000000 == 0x20000000:
                             off = s['PointerRawData']
                             size = s['SizeRawData']
-                            fmd5 = cryptolib.md5(mm[off:off+size])
+                            fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
                             print '    %-8s %8d %s' % (s['Name'], size, fmd5)
 
                 print
