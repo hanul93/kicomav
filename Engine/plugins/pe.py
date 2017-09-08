@@ -258,11 +258,11 @@ class PE:
                     print '    ' + ('-' * ((9 * 2 - 1)+32))
 
                     for s in self.sections:
-                        if s['Characteristics'] & 0x20000000 == 0x20000000:
-                            off = s['PointerRawData']
-                            size = s['SizeRawData']
-                            fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
-                            print '    %-8s %8d %s' % (s['Name'], size, fmd5)
+                        #if s['Characteristics'] & 0x20000000 == 0x20000000:
+                        off = s['PointerRawData']
+                        size = s['SizeRawData']
+                        fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
+                        print '    %-8s %8d %s' % (s['Name'], size, fmd5)
 
                 print
                 kavutil.vprint('Entry Point (Raw)')
