@@ -45,6 +45,7 @@ KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
 g_delta_time = None  # 검사 시간
+display_scan_result = {'Prev':{}, 'Next':{}}  # 중복 출력을 막기 위한 구조체
 
 
 # -------------------------------------------------------------------------
@@ -592,6 +593,7 @@ def display_line(filename, message, message_color):
 # -------------------------------------------------------------------------
 def scan_callback(ret_value):
     global g_options
+    global display_scan_result  # 출력을 잠시 보류하는 구조체
 
     import kernel
 
@@ -623,8 +625,41 @@ def scan_callback(ret_value):
             message = 'ok'
             message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
-    display_line(disp_name, message, message_color)
-    log_print('%s\t%s\n' % (disp_name, message))
+    # 정상일 경우에는 /<...> path명에 의해 중복 발생 가능성 있음
+    # 그래서 중복을 출력하지 않도록 조정함
+    if message == 'ok':  
+        d_prev = display_scan_result.get('Prev', {})
+        if d_prev == {}:
+            d_prev['disp_name'] = disp_name
+            d_prev['message'] = message
+            d_prev['message_color'] = message_color
+        else:
+            d_next = display_scan_result.get('Next', {})
+            if d_next == {}:
+                d_next['disp_name'] = disp_name
+                d_next['message'] = message
+                d_next['message_color'] = message_color
+            else:
+                # Next가 존재하고 새로운 출력 대상이 왔는데 Next와 다르면...
+                # Prev는 출력, Next는 Prev로, 새로운 대상은 Next에 저장
+                if d_next['disp_name'] != disp_name:
+                    # Prev는 출력
+                    display_line(d_prev['disp_name'], d_prev['message'], d_prev['message_color'])
+                    log_print('%s\t%s\n' % (d_prev['disp_name'], d_prev['message']))
+
+                    # Next는 Prev로
+                    d_prev['disp_name'] = d_next['disp_name']
+                    d_prev['message'] = d_next['message']
+                    d_prev['message_color'] = d_next['message_color']
+
+                    # 새로운 대상은 Next에
+                    d_next['disp_name'] = disp_name
+                    d_next['message'] = message
+                    d_next['message_color'] = message_color
+                else:  # Next와 추가 대상이 같으면 그대로 둠
+                    pass
+    else:  # 악성코드 발견이면 저장된 모든 출력 대상을 출력한다.
+        print_display_scan_result(disp_name, message, message_color)
 
     if g_options.opt_move is False and g_options.opt_prompt:  # 프롬프트 옵션이 설정되었나?
         while True and ret_value['result']:
@@ -654,6 +689,30 @@ def scan_callback(ret_value):
         return kavcore.k2const.K2_ACTION_DELETE
 
     return kavcore.k2const.K2_ACTION_IGNORE
+
+
+# display_scan_result 구조체 결과물을 출력한다.
+def print_display_scan_result(disp_name, message, message_color):
+    global display_scan_result  # 출력을 잠시 보류하는 구조체
+
+    # Prev 출력
+    d_prev = display_scan_result.get('Prev', {})
+    if d_prev != {}:
+        display_line(d_prev['disp_name'], d_prev['message'], d_prev['message_color'])
+        log_print('%s\t%s\n' % (d_prev['disp_name'], d_prev['message']))
+        display_scan_result['Prev'] = {}  # Prev 초기화
+
+    # Next 출력
+    d_next = display_scan_result.get('Next', {})
+    if d_next != {}:
+        display_line(d_next['disp_name'], d_next['message'], d_next['message_color'])
+        log_print('%s\t%s\n' % (d_next['disp_name'], d_next['message']))
+        display_scan_result['Next'] = {}  # Prev 초기화
+
+    # 마지막 결과물 출력
+    if disp_name:
+        display_line(disp_name, message, message_color)
+        log_print('%s\t%s\n' % (disp_name, message))
 
 
 # -------------------------------------------------------------------------
@@ -913,6 +972,9 @@ def main():
 
             global g_delta_time
             g_delta_time = end_time - start_time
+
+            # 출력되지 못한 결과물을 출력한다.
+            print_display_scan_result(None, None, None)
 
             # 악성코드 검사 결과 출력
             ret = kav.get_result()
