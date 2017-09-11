@@ -54,22 +54,23 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
+        ret = {}  # 포맷 정보를 담을 공간
 
         mm = filehandle
         try:
             zlib.decompress(mm, -15)
-            ret = {'ff_zlib': 'ZLIB'}
-            return ret
+            ret['ff_zlib'] = 'ZLIB'
         except zlib.error:
             pass
 
         try:
             if kavutil.get_uint32(mm, 0) == len(mm) - 4:
-                ret = {'ff_embed_ole': 'EMBED_OLE'}
-                return ret
+                ret['ff_embed_ole'] = 'EMBED_OLE'
         except struct.error:
             pass
+
+        if len(ret):
+            return ret
 
         return None
 
@@ -86,7 +87,8 @@ class KavMain:
         # 미리 분석된 파일 포맷중에 특정 포맷이 있는가?
         if 'ff_zlib' in fileformat:
             file_scan_list.append(['arc_zlib', '<ZLIB>'])
-        elif 'ff_embed_ole' in fileformat:
+
+        if 'ff_embed_ole' in fileformat:
             file_scan_list.append(['arc_embed_ole', '<EMBED_OLE>'])
 
         return file_scan_list
