@@ -942,11 +942,11 @@ def main():
     cprint(msg, FOREGROUND_GREY)
 
     # 진단/치료 가능한 악성코드 수 출력
-    num_sig = kav.get_signum()
-    msg = 'Signature number: %d\n\n' % num_sig
+    num_sig = format(kav.get_signum(), ',')
+    msg = 'Signature number: %s\n\n' % num_sig
     cprint(msg, FOREGROUND_GREY)
 
-    log_print('# Signature number: %d\n' % num_sig)
+    log_print('# Signature number: %s\n' % num_sig)
     log_print('#\n\n')  # 로그 파일 헤더 끝...
 
     if options.opt_vlist is True:  # 악성코드 리스트 출력?
