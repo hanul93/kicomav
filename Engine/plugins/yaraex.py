@@ -4,7 +4,11 @@
 
 import os
 import kernel
-import yara
+try:
+    import yara
+    LOAD_YARA = True
+except ImportError:
+    LOAD_YARA = False
 
 
 # -------------------------------------------------------------------------
@@ -20,6 +24,11 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
+
+        # Yara 모듈이 없을 경우 엔질 로딩 실패 처리
+        if not LOAD_YARA:
+            return -1
+
         try:
             self.rules = yara.compile(plugins_path + os.sep + 'yaraex.yar')
         except:
