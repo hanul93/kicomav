@@ -58,8 +58,9 @@ class KavMain:
 
         mm = filehandle
         try:
-            zlib.decompress(mm, -15)
-            ret['ff_zlib'] = 'ZLIB'
+            d = zlib.decompress(mm, -15)
+            if len(d) > 1:
+                ret['ff_zlib'] = 'ZLIB'
         except zlib.error:
             pass
 
