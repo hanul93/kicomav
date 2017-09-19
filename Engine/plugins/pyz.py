@@ -5,6 +5,7 @@
 import zlib
 import struct
 import marshal
+import types
 import kernel
 
 
@@ -36,29 +37,44 @@ class PyzFile:
         except IOError:
             pass
 
-        return None
-
     def close(self):
         if self.fp:
             self.fp.close()
             self.fp = None
 
     def namelist(self):
-        if self.tocs:
-            return self.tocs.keys()
+        names = []
 
-        return []
+        if self.tocs:
+            if isinstance(self.tocs, types.DictionaryType):
+                return self.tocs.keys()
+            elif isinstance(self.tocs, types.ListType):
+                for x in self.tocs:
+                    names.append(x[0])
+
+        return names
 
     def read(self, fname):
         try:
-            toc = self.tocs[fname]
-            start = toc[1]
-            size = toc[2]
+            if isinstance(self.tocs, types.DictionaryType):
+                toc = self.tocs[fname]
+                start = toc[1]
+                size = toc[2]
+                flag = True
+            elif isinstance(self.tocs, types.ListType):
+                for x in self.tocs:
+                    if x[0] == fname:
+                        start = x[1][1]
+                        size = x[1][2]
+                        flag = True
+                        break
 
             self.fp.seek(start)
-            buf = self.fp.read(size)
+            data = self.fp.read(size)
 
-            data = zlib.decompress(buf)
+            if flag:
+                data = zlib.decompress(data)
+
             return data
         except KeyError:
             pass
