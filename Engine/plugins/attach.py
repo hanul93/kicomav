@@ -38,7 +38,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'Attach Engine'  # 엔진 설명
         info['kmd_name'] = 'attach'  # 엔진 파일 이름
 
@@ -57,7 +57,8 @@ class KavMain:
         # 미리 분석된 파일 포맷중에 첨부 파일 포맷이 있는가?
         if 'ff_attach' in fileformat:
             pos = fileformat['ff_attach']['Attached_Pos']
-            file_scan_list.append(['arc_attach:%d' % pos, 'Attached'])
+            size = fileformat['ff_attach']['Attached_Size']
+            file_scan_list.append(['arc_attach:%d:%d' % (pos, size), 'Attached'])
 
             if self.verbose:
                 print '-' * 79
@@ -65,6 +66,7 @@ class KavMain:
                 kavutil.vprint(None, 'Engine', 'attach.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
                 kavutil.vprint(None, 'Attach Point', '0x%08X' % pos)
+                kavutil.vprint(None, 'Attach Size', '0x%08X' % size)
 
                 with open(filename, 'rb') as fp:
                     fp.seek(pos)
@@ -88,12 +90,14 @@ class KavMain:
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
         if arc_engine_id.find('arc_attach:') != -1:
-            pos = int(arc_engine_id[len('arc_attach:'):])
+            t = arc_engine_id.split(':')
+            pos = int(t[1])
+            size = int(t[2])
 
             try:
                 with open(arc_name, 'rb') as fp:
                     fp.seek(pos)
-                    data = fp.read()
+                    data = fp.read(size)
                     # print data
             except IOError:
                 return None

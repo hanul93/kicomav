@@ -321,7 +321,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'PE Engine'  # 엔진 설명
         info['kmd_name'] = 'pe'  # 엔진 파일 이름
 
@@ -369,9 +369,17 @@ class KavMain:
                 t_pe_size = pe_format['CERTIFICATE_Offset'] + pe_format['CERTIFICATE_Size']
                 if pe_size < t_pe_size:
                     pe_size = t_pe_size
+                attach_size = file_size - pe_size
+            else:
+                attach_size = file_size - pe_size - pe_format['CERTIFICATE_Size']
+        else:
+            attach_size = file_size - pe_size
 
         if pe_size < file_size and pe_size != 0:
-            fileformat = {'Attached_Pos': pe_size}  # 포맷 정보를 담을 공간
+            fileformat = {  # 포맷 정보를 담을 공간
+                'Attached_Pos': pe_size,
+                'Attached_Size': attach_size
+            }
             ret['ff_attach'] = fileformat
 
         return ret
