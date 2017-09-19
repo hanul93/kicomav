@@ -965,6 +965,9 @@ def main():
                 if os.path.exists(scan_path):  # 폴더 혹은 파일가 존재하는가?
                     kav.scan(scan_path, scan_callback, disinfect_callback, update_callback, quarantine_callback)
                 else:
+                    # 출력되지 못한 결과물을 출력한다.
+                    print_display_scan_result(None, None, None)
+
                     print_error('Invalid path: \'%s\'' % scan_path)
 
             # 검사 종료 시간 체크
