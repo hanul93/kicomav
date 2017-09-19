@@ -51,6 +51,7 @@ g_options = None  # 옵션
 g_delta_time = None  # 검사 시간
 display_scan_result = {'Prev':{}, 'Next':{}}  # 중복 출력을 막기 위한 구조체
 
+PLUGIN_ERROR = False  # 플러인 엔진 로딩 실패 시 출력을 예쁘게 하기 위해 사용한 변수
 
 # -------------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
@@ -815,6 +816,22 @@ def quarantine_callback(filename, is_success):
 
 
 # -------------------------------------------------------------------------
+# 플러그인 엔진 로딩 실패 시 콜백 함수
+# -------------------------------------------------------------------------
+def import_error_callback(module_name):
+    global PLUGIN_ERROR
+
+    if not PLUGIN_ERROR:
+        PLUGIN_ERROR = True
+        print
+
+    if kavcore.k2const.K2DEBUG:
+        print_error('Invalid plugin: \'%s.py\'' % module_name)
+    else:
+        print_error('Invalid plugin: \'%s.kmd\'' % module_name)
+
+
+# -------------------------------------------------------------------------
 # print_result(result)
 # 악성코드 검사 결과를 출력한다.
 # 입력값 : result - 악성코드 검사 결과
@@ -935,10 +952,13 @@ def main():
 
     kav.set_options(options)  # 옵션을 설정
 
-    if not kav.init():  # 전체 플러그인 엔진 초기화
+    if not kav.init(import_error_callback):  # 전체 플러그인 엔진 초기화
         print
         print_error('KICOM Anti-Virus Engine init')
         return 0
+
+    if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
+        print 
 
     # 엔진 버전을 출력
     c = kav.get_version()

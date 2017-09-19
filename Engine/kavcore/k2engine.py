@@ -272,11 +272,12 @@ class EngineInstance:
             return False
 
     # ---------------------------------------------------------------------
-    # init(self)
+    # init(self, callback_fn)
     # 플러그인 엔진 전체를 초기화한다.
+    # 입력값 : callback_fn - 콜백함수 (생략 가능)
     # 리턴값 : 성공 여부
     # ---------------------------------------------------------------------
-    def init(self):
+    def init(self, callback_fn=None):
         # self.kavmain_inst는 최종 인스턴스가 아니다.
         # init 초기화 명령어를 실행해서 정상인 플러그인만 최종 등록해야 한다.
         t_kavmain_inst = []  # 최종 인스턴스 리스트
@@ -293,6 +294,9 @@ class EngineInstance:
 
                     if self.verbose:
                         print '    [-] %s.init() : %d' % (inst.__module__, ret)
+                else:  # 실패
+                    if isinstance(callback_fn, types.FunctionType):
+                        callback_fn(inst.__module__)
             except AttributeError:
                 continue
 
