@@ -35,7 +35,7 @@ class CArchiveFile:
             if magic == MAGIC:
                 # print totallen, tocpos, toclen, pyvers, pylib_name
 
-                pkg_start = len(mm) - totallen
+                pkg_start = 0  # len(mm) - totallen
                 # print pkg_start, len(mm), totallen
 
                 s = mm[pkg_start + tocpos:pkg_start + tocpos + toclen]
