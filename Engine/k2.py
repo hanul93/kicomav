@@ -638,13 +638,13 @@ def scan_callback(ret_value):
             d_prev['disp_name'] = disp_name
             d_prev['message'] = message
             d_prev['message_color'] = message_color
-        else:
+        elif d_prev['disp_name'] != disp_name:
             d_next = display_scan_result.get('Next', {})
             if d_next == {}:
                 d_next['disp_name'] = disp_name
                 d_next['message'] = message
                 d_next['message_color'] = message_color
-            else:
+            elif d_next['disp_name'] != disp_name:
                 # Next가 존재하고 새로운 출력 대상이 왔는데 Next와 다르면...
                 # Prev는 출력, Next는 Prev로, 새로운 대상은 Next에 저장
                 if d_next['disp_name'] != disp_name:
@@ -702,14 +702,14 @@ def print_display_scan_result(disp_name, message, message_color):
 
     # Prev 출력
     d_prev = display_scan_result.get('Prev', {})
-    if d_prev != {}:
+    if d_prev != {} and d_prev['disp_name'] != disp_name:
         display_line(d_prev['disp_name'], d_prev['message'], d_prev['message_color'])
         log_print('%s\t%s\n' % (d_prev['disp_name'], d_prev['message']))
         display_scan_result['Prev'] = {}  # Prev 초기화
 
     # Next 출력
     d_next = display_scan_result.get('Next', {})
-    if d_next != {}:
+    if d_next != {} and d_next['disp_name'] != disp_name:
         display_line(d_next['disp_name'], d_next['message'], d_next['message_color'])
         log_print('%s\t%s\n' % (d_next['disp_name'], d_next['message']))
         display_scan_result['Next'] = {}  # Prev 초기화

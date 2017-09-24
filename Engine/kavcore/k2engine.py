@@ -565,8 +565,6 @@ class EngineInstance:
                                     # 압축 파일 최종 치료 처리
                                     self.__update_process(t_file_info)
                     else:
-                        display_scan_result = True  # 검사 결과 출력하기
-
                         # 압축 파일 최종 치료 처리
                         self.__update_process(t_file_info)
 
@@ -578,17 +576,18 @@ class EngineInstance:
                             if len(arc_file_list):
                                 file_scan_list = arc_file_list + file_scan_list
 
-                            # 한 개의 정보가 추가되는 것 중에 /<...> 형태로 입력되는 파일이면 리스트 출력을 잠시 보류한다.
+                            '''
+                            # 한 개의 정보가 추가되는 것 중에 /<...> 형태로 입력되는 파일이면 파일 카운트를 하지 않는다.
                             if len(arc_file_list) == 1 and \
                                self.disable_path.search(arc_file_list[0].get_additional_filename()):
-                                display_scan_result = False
+                                self.result['Files'] -= 1  # 파일 개수 카운트
+                            '''
                         except zipfile.BadZipfile:  # zip 헤더 오류
                             pass
 
                         # 검사 결과 출력하기
                         if self.options['opt_list']:  # 모든 리스트 출력인가?
-                            if display_scan_result:
-                                self.call_scan_callback_fn(scan_callback_fn, ret_value)
+                            self.call_scan_callback_fn(scan_callback_fn, ret_value)
             except KeyboardInterrupt:
                 return 1  # 키보드 종료
 
