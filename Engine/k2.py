@@ -755,6 +755,9 @@ def disinfect_callback(ret_value, action_type):
 # update의 콜백 함수
 # -------------------------------------------------------------------------
 def update_callback(ret_file_info):
+    # 출력되지 못한 결과물을 출력한다.
+    print_display_scan_result(None, None, None)
+
     if ret_file_info.is_modify():  # 수정되었다면 결과 출력
         disp_name = ret_file_info.get_filename()
 
