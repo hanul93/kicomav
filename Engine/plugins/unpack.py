@@ -5,6 +5,7 @@
 import zlib
 import struct
 import kavutil
+import kernel
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -41,7 +42,7 @@ class KavMain:
         info['title'] = 'Unpack Engine'  # 엔진 설명
         info['kmd_name'] = 'unpack'  # 엔진 파일 이름
         # info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
-        # info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -122,3 +123,29 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_embed_ole':
+
+            file_info = file_infos[0]
+            rname = file_info.get_filename()
+            try:
+                with open(rname, 'rb') as fp:
+                    buf = fp.read()
+
+                    new_data = struct.pack('<L', len(buf)) + buf  # 새로운 데이터로 교체
+
+                    open(arc_name, 'wb').write(new_data)  # 새로운 파일 생성
+
+                    return True
+            except IOError:
+                pass
+
+        return False
