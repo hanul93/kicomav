@@ -18,7 +18,8 @@ def analysis_ole10native(mm, verbose=False):
 
     try:
         if mm[:2] == '\x02\x00':
-            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
+            size = len(mm)
+            fileformat['size'] = size  # 포맷 주요 정보 저장
 
             label = mm[2:2 + MAX_PATH].split('\x00', 1)[0]
             fileformat['label'] = label
@@ -102,7 +103,8 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Ole10Native Engine'  # 엔진 설명
         info['kmd_name'] = 'olenative'  # 엔진 파일 이름
-        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료는 삭제로...
+        # info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료는 삭제로...
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -175,3 +177,37 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id.find('arc_ole10native:') != -1:
+            val = arc_engine_id.split(':')
+            off = int(val[1])
+            size = int(val[2])
+
+            ole10native_data = open(arc_name, 'rb').read()
+            # print '[-] Ole10Native :', arc_name
+
+            file_info = file_infos[0]
+            rname = file_info.get_filename()
+            try:
+                with open(rname, 'rb') as fp:
+                    buf = fp.read()
+
+                    new_data = ole10native_data[:off-4]  # 원래 data 삭제
+                    new_data += struct.pack('<L', len(buf)) + buf  # 새로운 데이터로 교체
+                    new_data += ole10native_data[off+size:]
+
+                    open(arc_name, 'wb').write(new_data)  # 새로운 파일 생성
+                    
+                    return True
+            except IOError:
+                pass
+
+        return False
