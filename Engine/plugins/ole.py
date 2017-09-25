@@ -5,6 +5,7 @@
 import os
 import struct
 import types
+import kernel
 
 
 # -------------------------------------------------------------------------
@@ -1569,6 +1570,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'OLE Library'  # 엔진 설명
         info['kmd_name'] = 'ole'  # 엔진 파일 이름
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -1652,3 +1654,36 @@ class KavMain:
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_ole':
+            o = OleFile(arc_name, write_mode=True)
+            # zfile = zipfile.ZipFile(arc_name, 'w')
+
+            for file_info in file_infos:
+                rname = file_info.get_filename()
+                try:
+                    with open(rname, 'rb') as fp:
+                        buf = fp.read()
+                        # print '[-] filename :', rname, len(buf)
+                        # print '[-] rname :',
+                        a_name = file_info.get_filename_in_archive()
+                        o.write_stream(a_name, buf)
+                        # zfile.writestr(a_name, buf)
+                except IOError:
+                    # print file_info.get_filename_in_archive()
+                    pass
+
+            o.close()
+            # zfile.close()
+
+            return True
+
+        return False
