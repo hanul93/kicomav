@@ -754,19 +754,26 @@ def disinfect_callback(ret_value, action_type):
 # -------------------------------------------------------------------------
 # update의 콜백 함수
 # -------------------------------------------------------------------------
-def update_callback(ret_file_info):
+def update_callback(ret_file_info, is_success):
     # 출력되지 못한 결과물을 출력한다.
     print_display_scan_result(None, None, None)
 
     if ret_file_info.is_modify():  # 수정되었다면 결과 출력
-        disp_name = ret_file_info.get_filename()
-
-        if os.path.exists(disp_name):
-            message = 'updated'
+        if len(ret_file_info.get_additional_filename()) != 0:
+            disp_name = '%s (%s)' % (ret_file_info.get_master_filename(), ret_file_info.get_additional_filename())
         else:
-            message = 'deleted'
+            disp_name = '%s' % (ret_file_info.get_master_filename())
 
-        message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
+        if is_success:
+            if os.path.exists(ret_file_info.get_filename()):
+                message = 'updated'
+            else:
+                message = 'deleted'
+
+            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
+        else:
+            message = 'update failed'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
 
         display_line(disp_name, message, message_color)
         log_print('%s\t%s\n' % (disp_name, message))

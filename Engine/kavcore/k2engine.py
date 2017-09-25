@@ -699,8 +699,8 @@ class EngineInstance:
                     if len(self.update_info):  # 최상위 파일이 아니면 하위 결과 추가
                         self.update_info.append(ret_file_info)
 
-                if isinstance(self.update_callback_fn, types.FunctionType) and ret_file_info:
-                    self.update_callback_fn(ret_file_info)
+                # if isinstance(self.update_callback_fn, types.FunctionType) and ret_file_info:
+                #    self.update_callback_fn(ret_file_info, True)
 
                 self.update_info = [file_struct]
 
@@ -748,6 +748,7 @@ class EngineInstance:
             # 재압축 진행
             # 파일 압축 (t) -> arc_name
 
+            ret = False
             if can_arc == kernel.MASTER_PACK:  # 재압축
                 for inst in self.kavmain_inst:
                     try:
@@ -758,8 +759,16 @@ class EngineInstance:
                         continue
             elif can_arc == kernel.MASTER_DELETE:  # 삭제
                 os.remove(arc_name)
+                ret = True
 
-            ret_file_info.set_modify(True)  # 수정 여부 표시
+            if ret:
+                ret_file_info.set_modify(True)  # 수정 여부 성공 표시
+                if isinstance(self.update_callback_fn, types.FunctionType) and ret_file_info:
+                    self.update_callback_fn(ret_file_info, True)
+            else:
+                ret_file_info.set_modify(False)  # 수정 여부 실패 표시
+                if isinstance(self.update_callback_fn, types.FunctionType) and ret_file_info:
+                    self.update_callback_fn(ret_file_info, False)
 
         # 압축된 파일들 모두 삭제
         for tmp in t:
