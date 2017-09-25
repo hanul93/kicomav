@@ -49,7 +49,8 @@ KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
 g_delta_time = None  # 검사 시간
-display_scan_result = {'Prev':{}, 'Next':{}}  # 중복 출력을 막기 위한 구조체
+display_scan_result = {'Prev': {}, 'Next': {}}  # 중복 출력을 막기 위한 구조체
+display_update_result = ''  # 압축 결과를 출력하기 위한 구조체
 
 PLUGIN_ERROR = False  # 플러인 엔진 로딩 실패 시 출력을 예쁘게 하기 위해 사용한 변수
 
@@ -755,6 +756,8 @@ def disinfect_callback(ret_value, action_type):
 # update의 콜백 함수
 # -------------------------------------------------------------------------
 def update_callback(ret_file_info, is_success):
+    global display_update_result
+
     # 출력되지 못한 결과물을 출력한다.
     print_display_scan_result(None, None, None)
 
@@ -775,8 +778,12 @@ def update_callback(ret_file_info, is_success):
             message = 'update failed'
             message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
 
-        display_line(disp_name, message, message_color)
-        log_print('%s\t%s\n' % (disp_name, message))
+        if display_update_result != disp_name:  # 이전 출력물과 동일하면 출력하지 않음
+            display_line(disp_name, message, message_color)
+            log_print('%s\t%s\n' % (disp_name, message))
+
+            display_update_result = disp_name
+
 
 '''
 def update_callback1(ret_file_info):
