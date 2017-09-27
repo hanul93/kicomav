@@ -175,46 +175,48 @@ class PE:
                 imp_off = self.rva_to_off(imp_rva)[0]
                 # print hex(imp_off), imp_size
                 imp_data = mm[imp_off:imp_off+imp_size]
-                for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
-                    try:
-                        dll_rva = kavutil.get_uint32(imp_data, (i*0x14)+0xC)
-                        api_rva = kavutil.get_uint32(imp_data, (i * 0x14))
-                        bo = 2
-                        if api_rva == 0:
-                            api_rva = kavutil.get_uint32(imp_data, (i*0x14)+0x10)
-                            bo = 0
+                if len(imp_data) == imp_size:
+                    for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
+                        try:
+                            dll_rva = kavutil.get_uint32(imp_data, (i*0x14)+0xC)
+                            api_rva = kavutil.get_uint32(imp_data, (i * 0x14))
+                            bo = 2
+                            if api_rva == 0:
+                                api_rva = kavutil.get_uint32(imp_data, (i*0x14)+0x10)
+                                bo = 0
 
-                        # print hex(api_rva)
-                        if dll_rva == 0:  # DLL 정보가 없음
-                            break
-
-                        t_off = self.rva_to_off(dll_rva)[0]
-                        dll_name = p_str.search(mm[t_off:t_off+0x20]).group()
-                        # print '[+]', dll_name
-                        imp_api[dll_name] = []
-
-                        t_off = self.rva_to_off(api_rva)[0]
-                        while True:
-                            try:
-                                api_name_rva = kavutil.get_uint32(mm, t_off)
-                            except struct.error:
+                            # print hex(api_rva)
+                            if dll_rva == 0:  # DLL 정보가 없음
                                 break
 
-                            if api_name_rva & 0x80000000 == 0x80000000:  # Odinal API
-                                    t_off += 4
-                                    continue
+                            t_off = self.rva_to_off(dll_rva)[0]
+                            dll_name = p_str.search(mm[t_off:t_off+0x20]).group()
+                            # print '[+]', dll_name
+                            imp_api[dll_name] = []
 
-                            if api_name_rva == 0:
-                                break
+                            t_off = self.rva_to_off(api_rva)[0]
+                            while True:
+                                try:
+                                    api_name_rva = kavutil.get_uint32(mm, t_off)
+                                except struct.error:
+                                    break
 
-                            t = self.rva_to_off(api_name_rva)[0]
-                            # print hex(t_off), hex(t)
-                            api_name = p_str.search(mm[t+bo:t+bo+0x20]).group()
-                            # print '   ', api_name
-                            imp_api[dll_name].append(api_name)
-                            t_off += 4
-                    except struct.error:
-                        pass
+                                if api_name_rva & 0x80000000 == 0x80000000:  # Odinal API
+                                        t_off += 4
+                                        continue
+
+                                if api_name_rva == 0:
+                                    break
+
+                                t = self.rva_to_off(api_name_rva)[0]
+                                # print hex(t_off), hex(t)
+                                api_name = p_str.search(mm[t+bo:t+bo+0x20]).group()
+                                # print '   ', api_name
+                                imp_api[dll_name].append(api_name)
+                                t_off += 4
+                        except struct.error:
+                            pass
+                # end if
 
                 pe_format['Import_API'] = imp_api
 
