@@ -624,8 +624,10 @@ class EngineInstance:
     # 입력값 : filename - 격리 대상 파일 이름
     # ---------------------------------------------------------------------
     def __quarantine_file(self, filename):
-        try:
-            if self.options['infp_path']:
+        if self.options['infp_path']:
+            is_success = False
+
+            try:
                 t_filename = os.path.split(filename)[-1]
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
                 fname = self.options['infp_path'] + os.sep + t_filename
@@ -639,14 +641,12 @@ class EngineInstance:
                         break
 
                 shutil.move(filename, t_quarantine_fname)  # 격리소로 이동
-                if isinstance(self.quarantine_callback_fn, types.FunctionType):
-                    self.quarantine_callback_fn(filename, True)
-        except shutil.Error:
+                is_success = True
+            except (shutil.Error, WindowsError) as e:
+                pass
+
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
-                self.quarantine_callback_fn(filename, False)
-        except WindowsError:
-            if isinstance(self.quarantine_callback_fn, types.FunctionType):
-                self.quarantine_callback_fn(filename, False)
+                self.quarantine_callback_fn(filename, is_success)
 
     # ---------------------------------------------------------------------
     # __update_process(self, file_struct, immediately_flag=False)
@@ -937,11 +937,7 @@ class EngineInstance:
                 fp.close()
 
             return ret
-        except IOError:
-            pass
-        except EngineKnownError:
-            pass
-        except WindowsError:
+        except (IOError, EngineKnownError, WindowsError) as e:
             pass
 
         return False
@@ -1027,9 +1023,7 @@ class EngineInstance:
                                 fp.close()
 
                             break  # 압축이 풀렸으면 종료
-                    except AttributeError:
-                        continue
-                    except struct.error:
+                    except (AttributeError, struct.error) as e:
                         continue
                     except RuntimeError:  # 암호가 설정된 zip 파일
                         return False, 'password protected'
@@ -1150,13 +1144,7 @@ class EngineInstance:
                         ret.update(ff)
                 except AttributeError:
                     pass
-        except IOError:
-            pass
-        except EngineKnownError:
-            pass
-        except ValueError:
-            pass
-        except WindowsError:
+        except (IOError, EngineKnownError, ValueError, WindowsError) as e:
             pass
 
         if mm:
