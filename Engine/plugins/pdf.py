@@ -30,7 +30,7 @@ class KavMain:
         self.p_pdf_obj = re.compile(pat, re.IGNORECASE)
 
         # /Filter
-        pat = '/Filter\s+/(\w+)'
+        pat = '/Filter\s*/(\w+)'
         self.p_pdf_filter = re.compile(pat, re.IGNORECASE)
 
         return 0  # 플러그인 엔진 초기화 성공
