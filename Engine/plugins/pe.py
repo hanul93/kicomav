@@ -102,6 +102,9 @@ class PE:
                 try:
                     rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
 
+                    if len(mm[rsrc_off:rsrc_off + rsrc_size]) != rsrc_size:  # 충분한 리소스가 존재하지 않음
+                        raise ValueError
+
                     # Type 체크
                     num_type_name = kavutil.get_uint16(mm, rsrc_off+0xC)
                     num_type_id = kavutil.get_uint16(mm, rsrc_off + 0xE)
@@ -158,7 +161,7 @@ class PE:
                                             pe_format['Resource_UserData'][string_name] = (data_off, data_size)
                                         else:
                                             pe_format['Resource_UserData'] = {string_name: (data_off, data_size)}
-                except struct.error:
+                except (struct.error, ValueError) as e:
                     pass
 
                 # if 'Resource_UserData' in pe_format:
