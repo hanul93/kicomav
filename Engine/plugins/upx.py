@@ -2,6 +2,7 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+import os
 import mmap
 import struct
 import kernel
@@ -448,6 +449,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -509,6 +511,17 @@ class KavMain:
                     arc_name = 'arc_upx!nrv2e'
                 else:
                     raise ValueError
+
+                if self.verbose:
+                    print '-' * 79
+                    kavutil.vprint('Engine')
+                    kavutil.vprint(None, 'Engine', 'upx.kmd')
+                    kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
+
+                    print
+                    kavutil.vprint('UPX : only support \'nrv2b\' compress method.')
+                    kavutil.vprint(None, 'Compress Method', arc_name.split('!')[-1])
+                    print
 
                 name = 'UPX'
                 file_scan_list.append([arc_name, name])
@@ -596,6 +609,12 @@ class KavMain:
 
                 if unpack_data == '':  # 압축 해제 실패
                     raise ValueError
+
+                if self.verbose:
+                    kavutil.vprint('Decompress')
+                    kavutil.vprint(None, 'Compressed Size', '%d' % len(data))
+                    kavutil.vprint(None, 'Decompress Size', '%d' % len(unpack_data))
+                    print
 
                 data = unpack_data
             except IOError:
