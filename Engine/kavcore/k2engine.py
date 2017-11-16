@@ -108,9 +108,9 @@ class Engine:
                 name = kmd_name.split('.')[0]
                 if k2const.K2DEBUG:
                     k = None
-                    module = imp.load_source(name, kmd_path.rsplit('.')[0] + '.py')
+                    module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
                     try:
-                        os.remove(kmd_path.rsplit('.')[0] + '.pyc')
+                        os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
                     except WindowsError:
                         pass
                 else:
