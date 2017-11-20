@@ -69,14 +69,34 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
+        ret = {}
 
         mm = filehandle
         if mm[0:4] == 'PK\x03\x04':  # 헤더 체크
-            fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
+            try:
+                zfile = zipfile.ZipFile(filename)  # zip 파일 열기
+                names = zfile.namelist()
+                zfile.close()
+            except zipfile.BadZipfile:
+                names = None
 
-            ret = {'ff_zip': fileformat}
-            return ret
+            # 파일 포맷은 ZIP이지만 특수 포맷인지를 한번 더 체크한다.
+            if names is not None:
+                for name in names:
+                    n = name.lower()
+                    if n == 'class.dex' or n == 'androidmanifest.xml' or n == 'meta-inf/manifest.mf':
+                        ret['ff_apk'] = 'apk'
+                    elif n == 'xl/workbook.xml':
+                        ret['ff_ooxml'] = 'xlsx'
+                    elif n == 'word/document.xml':
+                        ret['ff_ooxml'] = 'docx'
+                    elif n == 'ppt/presentation.xml':
+                        ret['ff_ooxml'] = 'pptx'
+
+                if len(ret) == 0:
+                    ret['ff_zip'] = 'zip'
+
+                return ret
 
         return None
 
