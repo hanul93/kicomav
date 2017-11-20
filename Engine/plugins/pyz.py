@@ -2,11 +2,15 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+import os
+import re
 import zlib
 import struct
 import marshal
 import types
 import kernel
+import kavutil
+import cryptolib
 
 
 class PyzFile:
@@ -94,7 +98,15 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.verbose = verbose
         self.handle = {}  # 압축 파일 핸들
+
+        chars = r"A-Za-z0-9/\-=:.,_$%@'()[\]<> "
+        shortest_run = 5
+
+        regexp = '[%s]{%d,}' % (chars, shortest_run)
+        self.p_string = re.compile(regexp)
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -114,7 +126,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'PYZ Engine'  # 엔진 설명
         info['kmd_name'] = 'pyz'  # 엔진 파일 이름
         # info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
@@ -146,14 +158,17 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        fileformat = {}  # 포맷 정보를 담을 공간
+        ret = {}
 
         mm = filehandle
-        if mm[0:4] == 'PYZ\x00':  # 헤더 체크
-            ret = {'ff_pyz': 'PYZ'}
-            return ret
 
-        return None
+        if mm[0:4] == 'PYZ\x00':  # 헤더 체크
+            ret['ff_pyz'] = 'PYZ'
+        elif mm[0:8] == '\x63\x00\x00\x00\x00\x00\x00\x00' or \
+            mm[8:0x10] == '\x63\x00\x00\x00\x00\x00\x00\x00':
+            ret['ff_pyc'] = 'PYC'
+
+        return ret
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
@@ -199,3 +214,75 @@ class KavMain:
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
+
+    # ---------------------------------------------------------------------
+    # scan(self, filehandle, filename, fileformat)
+    # 악성코드를 검사한다.
+    # 입력값 : filehandle  - 파일 핸들
+    #         filename    - 파일 이름
+    #         fileformat  - 파일 포맷
+    #         filename_ex - 파일 이름 (압축 내부 파일 이름)
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
+    # ---------------------------------------------------------------------
+    def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
+        try:
+            # 미리 분석된 파일 포맷중에 PE 포맷이 있는가?
+            if 'ff_pyc' in fileformat:
+                if self.verbose:
+                    print '-' * 79
+                    kavutil.vprint('Engine')
+                    kavutil.vprint(None, 'Engine', 'pyz.kmd')
+
+                mm = filehandle
+
+                # String 추출
+                if len(mm):
+                    if self.verbose:
+                        print
+                        kavutil.vprint('String')
+
+                    for match in self.p_string.finditer(mm):
+                        find_str = match.group()
+                        find_str_off = match.start()
+
+                        # 중요 문자열 시작전에 해당 문자열의 길이가 존재함
+                        x = kavutil.get_uint32(mm, find_str_off - 4)
+                        if len(find_str) < x:
+                            continue
+
+                        buf = find_str[:x]
+                        fsize = len(buf)
+
+                        if self.verbose:
+                            fmd5 = cryptolib.md5(buf)
+                            kavutil.vprint(None, fmd5, '%3d : %s' % (fsize, buf))
+
+                        if fsize and kavutil.handle_pattern_md5.match_size('emalware', fsize):
+                            fmd5 = cryptolib.md5(buf)
+                            # print fsize, fmd5
+                            vname = kavutil.handle_pattern_md5.scan('emalware', fsize, fmd5)
+                            if vname:
+                                return True, vname, 0, kernel.INFECTED
+        except IOError:
+            pass
+
+        # 악성코드를 발견하지 못했음을 리턴한다.
+        return False, '', -1, kernel.NOT_FOUND
+
+    # ---------------------------------------------------------------------
+    # disinfect(self, filename, malware_id)
+    # 악성코드를 치료한다.
+    # 입력값 : filename    - 파일 이름
+    #        : malware_id - 치료할 악성코드 ID
+    # 리턴값 : 악성코드 치료 여부
+    # ---------------------------------------------------------------------
+    def disinfect(self, filename, malware_id):  # 악성코드 치료
+        try:
+            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
+            if malware_id == 0:
+                os.remove(filename)  # 파일 삭제
+                return True  # 치료 완료 리턴
+        except IOError:
+            pass
+
+        return False  # 치료 실패 리턴
