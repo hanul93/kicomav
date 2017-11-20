@@ -157,7 +157,9 @@ class KavMain:
     def listvirus(self):  # 진단 가능한 악성코드 리스트
         vlist = list()  # 리스트형 변수 선언
 
-        vlist.append(self.virus_name)  # 진단/치료하는 악성코드 이름 등록
+        # 진단/치료하는 악성코드 이름 등록
+        vlist.append('Exploit.MSWord.DDE.a')
+        vlist.append('Exploit.MSWord.DDE.b')
 
         return vlist
 
@@ -174,6 +176,6 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'DDE Scan Engine'  # 엔진 설명
         info['kmd_name'] = 'dde'  # 엔진 파일 이름
-        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = 2  # 진단/치료 가능한 악성코드 수
 
         return info
