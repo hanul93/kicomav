@@ -130,16 +130,19 @@ if os.name == 'nt':
 
 
     def cprint(msg, color):
-        if not NOCOLOR:  # 색깔 설정
-            default_colors = get_text_attr()
-            default_bg = default_colors & 0x00F0
+        try:
+            if not NOCOLOR:  # 색깔 설정
+                default_colors = get_text_attr()
+                default_bg = default_colors & 0x00F0
 
-            set_text_attr(color | default_bg)
-            sys.stdout.write(msg)
-            set_text_attr(default_colors)
-        else:  # 색깔 설정 없음
-            sys.stdout.write(msg)
-            sys.stdout.flush()
+                set_text_attr(color | default_bg)
+                sys.stdout.write(msg)
+                set_text_attr(default_colors)
+            else:  # 색깔 설정 없음
+                sys.stdout.write(msg)
+                sys.stdout.flush()
+        except IOError:
+            pass
 else:
     def cprint(msg, color):
         sys.stdout.write(msg)
