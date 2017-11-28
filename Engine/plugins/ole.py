@@ -761,7 +761,9 @@ class OleFile:
 
         # print no
 
-        ow = OleWriteStream(self.mm, self.pps, self.bsize, self.ssize, self.bbd, self.sbd,
+        ow = OleWriteStream(self.mm, self.pps, self.bsize, self.ssize,
+                            self.bbd, self.bbd_fat,
+                            self.sbd, self.sbd_fat,
                             self.root_list_array, self.small_block, self.verbose)
         t = ow.delete(no)
         if t:
