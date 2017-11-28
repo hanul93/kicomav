@@ -22,8 +22,11 @@ class KavMain:
         pat = r'^s*%PDF-1.'
         self.p_pdf_header = re.compile(pat, re.IGNORECASE)
 
-        pat = r'\s/OpenAction\b'
-        self.p_pdf_openaction = re.compile(pat, re.IGNORECASE)
+        # 해당 패턴이 존재하면 악성코드 검사를 시도한다.
+        self.p_pdf_scanables = []
+        pats = [r'/OpenAction\b', r'/Action\b']
+        for pat in pats:
+            self.p_pdf_scanables.append(re.compile(pat, re.IGNORECASE))
 
         # Stream을 가진 Object
         pat = r'(\d+)\s+0\s+obj\s*<<.+>>\s*?stream\s*([\d\D]+?)\s*endstream\s+endobj'
@@ -97,7 +100,11 @@ class KavMain:
             try:
                 with open(filename, 'rb') as fp:
                     buf = fp.read()
-                    if not self.p_pdf_openaction.search(buf):  # OpenAction이 없으면 검사하지 않음
+
+                    for p in self.p_pdf_scanables:
+                        if p.search(buf):  # 패턴이 발견되었으면 악성코드 검사해야 한다.
+                            break
+                    else:
                         raise IOError
             except IOError:
                 return []
