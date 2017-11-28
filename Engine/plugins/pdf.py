@@ -26,7 +26,7 @@ class KavMain:
 
         # 해당 패턴이 존재하면 악성코드 검사를 시도한다.
         self.p_pdf_scanables = []
-        pats = [r'/OpenAction\b', r'/Action\b']
+        pats = [r'/OpenAction\b', r'/EmbeddedFile\b', r'/JavaScript\b', r'/JS\b']
         for pat in pats:
             self.p_pdf_scanables.append(re.compile(pat, re.IGNORECASE))
 
