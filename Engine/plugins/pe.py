@@ -419,7 +419,7 @@ class PE:
                     print '    ' + ('-' * ((9 * 2 - 1)+32))
 
                     for s in self.sections:
-                        #if s['Characteristics'] & 0x20000000 == 0x20000000:
+                        # if s['Characteristics'] & 0x20000000 == 0x20000000:
                         off = s['PointerRawData']
                         size = s['SizeRawData']
                         fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
@@ -442,7 +442,10 @@ class PE:
             rva = section['RVA']
 
             if rva <= t_rva < rva + size:
-                foff = (section['PointerRawData'] / self.pe_file_align) * self.pe_file_align
+                if self.pe_file_align:
+                    foff = (section['PointerRawData'] / self.pe_file_align) * self.pe_file_align
+                else:
+                    foff = section['PointerRawData']
                 t_off = t_rva - rva + foff
 
                 return t_off, self.sections.index(section)
@@ -518,7 +521,10 @@ class KavMain:
         pe_file_align = pe_format['FileAlignment']
 
         for sec in pe_format['Sections']:
-            off = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+            if pe_file_align:
+                off = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+            else:
+                off = sec['PointerRawData']
             size = sec['SizeRawData']
             if pe_size < off + size:
                 pe_size = off + size
