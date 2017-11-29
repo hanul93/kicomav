@@ -90,7 +90,7 @@ class CArchiveFile:
                 data = zlib.decompress(data)
 
             return data
-        except KeyError:
+        except (KeyError, zlib.error) as e:
             pass
 
         return None
