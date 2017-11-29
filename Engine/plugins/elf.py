@@ -203,7 +203,7 @@ class ELF32:
                 print
                 kavutil.HexDump().Buffer(mm[:], ep_raw, 0x80)
                 print
-        except ValueError:
+        except (ValueError, struct.error) as e:
             pass
 
         return fileformat
@@ -313,7 +313,7 @@ class ELF64:
                 print
                 kavutil.HexDump().Buffer(mm[:], ep_raw, 0x80)
                 print
-        except ValueError:
+        except (ValueError, struct.error) as e:
             pass
 
         return fileformat
