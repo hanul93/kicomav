@@ -344,7 +344,7 @@ class OleFile:
         self.pps = None
         self.small_block = None
         self.root_list_array = None
-        self.cve_2003_0820 = False  # 취약점 존재 여부
+        self.exploit = []  # 취약점 존재 여부
 
         # 임시 변수
         self.__deep = None
@@ -490,7 +490,8 @@ class OleFile:
             self.pps.append(p)
 
         # PPS Tree 검증
-        self.__valid_pps_tree()
+        if self.__valid_pps_tree() is False:
+            return False
 
         if self.verbose:
             print
@@ -537,6 +538,8 @@ class OleFile:
             vprint('Small Blocks')
             print self.small_block
 
+        return True
+
     # ---------------------------------------------------------------------
     # PPS Tree의 유효성을 체크한다. (내장)
     # ---------------------------------------------------------------------
@@ -550,12 +553,16 @@ class OleFile:
         while len(f):
             x = f.pop(0)
 
-            if (x & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
-                self.cve_2003_0820 = True
-                continue
-
-            if self.pps[x]['Type'] != 1 and self.pps[x]['Type'] != 2:
-                continue
+            try:
+                if self.pps[x]['Type'] != 1 and self.pps[x]['Type'] != 2 and len(self.pps[x]['Name']) == 0:
+                    continue
+            except IndexError:
+                if (x & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
+                    self.exploit.append('Exploit.OLE.CVE-2003-0820')
+                    return False
+                else:  # CVE-2003-0347 취약점
+                    self.exploit.append('Exploit.OLE.CVE-2003-0347')
+                    return False
 
             self.pps[x]['Valid'] = True
 
@@ -568,6 +575,8 @@ class OleFile:
             if self.pps[x]['Dir'] != 0xffffffff:
                 f.append(self.pps[x]['Dir'])
 
+        return True
+
     # ---------------------------------------------------------------------
     # PPS 전체 경로 구하기 (내장)
     # ---------------------------------------------------------------------
@@ -576,8 +585,8 @@ class OleFile:
             pps_name = ''
             name = prefix + pps_name
         else:
-            if (node & 0x90900000) == 0x90900000:  # CVE-2003-0820 취약점
-                self.cve_2003_0820 = True
+            if self.pps[node]['Valid'] is False:  # 유효한 PPS만 처리함
+                return 0
 
             pps_name = self.pps[node]['Name'].encode('cp949', 'ignore')
             name = prefix + '/' + pps_name

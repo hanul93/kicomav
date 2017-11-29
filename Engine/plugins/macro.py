@@ -774,11 +774,11 @@ class KavMain:
                 o = ole.OleFile(filename)
 
                 # 취약점 공격인가?
-                if o.cve_2003_0820 is True:
+                if len(o.exploit):
                     if o:
                         o.close()
 
-                    return True, 'Exploit.OLE.CVE-2003-0820', MALWARE_ID_OLE, kernel.INFECTED
+                    return True, o.exploit[0], MALWARE_ID_OLE, kernel.INFECTED
 
                 ole_lists = o.listdir()
 
