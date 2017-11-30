@@ -251,8 +251,12 @@ class PE:
             pe_format['EntryPoint_in_Section'] = sec_idx  # EP가 포함된 섹션
 
             # 리소스 분석
-            rsrc_rva = self.data_directories[image_directory_entry.RESOURCE].VirtualAddress  # 리소스 위치(RVA)
-            rsrc_size = self.data_directories[image_directory_entry.RESOURCE].Size  # 리소스 크기
+            try:
+                rsrc_rva = self.data_directories[image_directory_entry.RESOURCE].VirtualAddress  # 리소스 위치(RVA)
+                rsrc_size = self.data_directories[image_directory_entry.RESOURCE].Size  # 리소스 크기
+            except IndexError:
+                rsrc_rva = 0
+                rsrc_size = 0
 
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
@@ -324,8 +328,12 @@ class PE:
                 #     print pe_format['Resource_UserData']
 
             # Import API 분석
-            imp_rva = self.data_directories[image_directory_entry.IMPORT].VirtualAddress  # Import API 위치(RVA)
-            imp_size = self.data_directories[image_directory_entry.IMPORT].Size  # Import API 크기
+            try:
+                imp_rva = self.data_directories[image_directory_entry.IMPORT].VirtualAddress  # Import API 위치(RVA)
+                imp_size = self.data_directories[image_directory_entry.IMPORT].Size  # Import API 크기
+            except IndexError:
+                imp_rva = 0
+                imp_size = 0
 
             if imp_rva:  # Import API 존재
                 imp_api = {}
@@ -380,8 +388,12 @@ class PE:
                 pe_format['Import_API'] = imp_api
 
             # 디지털 인증서 분석
-            cert_off = self.data_directories[image_directory_entry.SECURITY].VirtualAddress  # 유일하게 RVA가 아닌 오프셋
-            cert_size = self.data_directories[image_directory_entry.SECURITY].Size  # 디지털 인증서 크기
+            try:
+                cert_off = self.data_directories[image_directory_entry.SECURITY].VirtualAddress  # 유일하게 RVA가 아닌 오프셋
+                cert_size = self.data_directories[image_directory_entry.SECURITY].Size  # 디지털 인증서 크기
+            except IndexError:
+                cert_off = 0
+                cert_size = 0
 
             if cert_off:  # 디지털 인증서 존재
                 if cert_off + cert_size <= len(mm[:]):  # UPack의 경우 이상한 값이 셋팅 됨
