@@ -394,6 +394,9 @@ class OleFile:
             HexDump.buffer(self.mm, 0, 0x60)
             print
 
+        if self.bsize % 0x200 != 0 or self.ssize != 0x40:  # 이상 파일 정보 처리
+            return False
+
         # bbd 읽기
         self.bbd_list_array, num_of_bbd_blocks, num_of_xbbd_blocks, xbbd_start_block = \
             get_bbd_list_array(self.mm, self.verbose)
