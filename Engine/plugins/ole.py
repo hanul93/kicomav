@@ -213,15 +213,18 @@ def get_block_link(no, bbd_or_sbd_fat):
         ret.append(next_b)
 
         while True:
-            next_b = fat[next_b]
-            if next_b == 0xfffffffe:
-                break
-
-            if len(ret) % 10000 == 0:
-                if next_b in ret:  # 이미 링크가 존재하면 종료
+            try:
+                next_b = fat[next_b]
+                if next_b == 0xfffffffe:
                     break
 
-            ret.append(next_b)
+                if len(ret) % 10000 == 0:
+                    if next_b in ret:  # 이미 링크가 존재하면 종료
+                        break
+
+                ret.append(next_b)
+            except KeyError:
+                break
 
     return ret
 
