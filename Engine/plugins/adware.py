@@ -23,7 +23,7 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
 
-        chars = r"A-Za-z0-9/\-=:.,_$%@'()[\]<> "
+        chars = r"A-Za-z0-9/\-=:.,_$%@'\"()[\]<> "
         shortest_run = 5
 
         regexp = '[%s]{%d,}' % (chars, shortest_run)
