@@ -1102,7 +1102,19 @@ class EngineInstance:
                     name = alist[1]  # 압축 파일의 내부 파일 이름
 
                     if len(deep_name):  # 압축 파일 내부 표시용
-                        dname = '%s/%s' % (deep_name, name)
+                        try:
+                            deep_name1 = deep_name
+                            name1 = name
+                            
+                            if type(deep_name) != type(name):
+                                if isinstance(deep_name, unicode):
+                                    name1 = name.decode('utf-8', 'ignore')
+                                elif isinstance(name, unicode):
+                                    deep_name1 = deep_name.decode('utf-8', 'ignore')
+
+                            dname = '%s/%s' % (deep_name1, name1)
+                        except UnicodeDecodeError:
+                            continue
                     else:
                         dname = '%s' % name
 
