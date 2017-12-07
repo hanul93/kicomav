@@ -9,6 +9,28 @@ import kavutil
 import cryptolib
 
 
+# 인증서 정보
+strdict = {
+    0x11: 'PostalCode',
+    0x6: 'C',
+    0x8: 'S',
+    0x7: 'L',
+    0x9: 'STREET',
+    0x3: 'CN',
+    0xA: 'O',
+    0xB: 'OU'
+}
+
+
+# 인증서 정보 추출
+def get_subj(data):
+    if data[0] == '\x31' and data[2] == '\x30' and data[4:8] == '06035504'.decode('hex'):
+        s = ord(data[10])
+        return 11+s, ord(data[8]), data[11:11+s]
+
+    return None, None, None
+
+
 # -------------------------------------------------------------------------
 # KavMain 클래스
 # -------------------------------------------------------------------------
@@ -23,11 +45,7 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
 
-        chars = r"A-Za-z0-9/\-=:.,_$%@'\"()[\]<> "
-        shortest_run = 5
-
-        regexp = '[%s]{%d,}' % (chars, shortest_run)
-        self.p_string = re.compile(regexp)
+        self.p_subj = re.compile(r'\x31\x0B\x30\x09\x06\x03\x55\x04\x06\x13\x02')
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -72,30 +90,40 @@ class KavMain:
                     if len(cert_data):
                         if self.verbose:
                             print
-                            kavutil.vprint('String')
+                            kavutil.vprint('X.509')
 
-                        for match in self.p_string.finditer(cert_data):
-                            find_str = match.group()
-                            find_str_off = match.start()
-
-                            # 중요 문자열 시작전에 해당 문자열의 길이가 존재함
-                            x = ord(cert_data[find_str_off-1])
-                            if len(find_str) < x:
-                                continue
-
-                            buf = find_str[:x]
-                            fsize = len(buf)
+                        for p in self.p_subj.finditer(cert_data):
+                            off = p.span()[0]
 
                             if self.verbose:
-                                fmd5 = cryptolib.md5(buf)
-                                kavutil.vprint(None, fmd5, '%3d : %s' % (fsize, buf))
+                                print '-' * 40
 
-                            if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
-                                fmd5 = cryptolib.md5(buf)
-                                # print fsize, fmd5
-                                vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
-                                if vname:
-                                    return True, vname, 0, kernel.INFECTED
+                            while True:
+                                t = get_subj(cert_data[off:])
+                                if not t[0]:
+                                    break
+
+                                if self.verbose:
+                                    s = strdict.get(t[1], 'None')
+                                    msg = '%02X : %s = %s' % (t[1], s, t[2])
+                                    print '    [-] %02X : %s = %s' % (t[1], s, t[2])
+
+                                off += t[0]
+
+                                if t[1] == 0x3:  # CN
+                                    buf = t[2]
+                                    fsize = len(buf)
+
+                                    if self.verbose:
+                                        fmd5 = cryptolib.md5(buf)
+                                        print '    [-] %d:%s:  # %s' % (fsize, fmd5, buf)
+
+                                    if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
+                                        fmd5 = cryptolib.md5(buf)
+                                        # print fsize, fmd5
+                                        vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
+                                        if vname:
+                                            return True, vname, 0, kernel.INFECTED
         except IOError:
             pass
 
