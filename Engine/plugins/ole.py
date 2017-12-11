@@ -3,6 +3,7 @@
 
 
 import os
+import sys
 import struct
 import types
 import kernel
@@ -397,7 +398,8 @@ class OleFile:
                 t += '   - ' if p['Dir'] == 0xffffffff else '%4d ' % p['Dir']
                 t += '       - ' if p['Start'] == 0xffffffff else '%8X ' % p['Start']
 
-                print '    ' + '%2d %-35s %d %22s %8d' % (self.pps.index(p), p['Name'], p['Type'], t, p['Size'])
+                tname = p['Name'].encode(sys.stdout.encoding, 'replace')
+                print '    ' + '%2d %-35s %d %22s %8d' % (self.pps.index(p), tname, p['Type'], t, p['Size'])
 
         # PPS 전체 경로 구하기
         self.__deep = 0
