@@ -283,6 +283,9 @@ class OleFile:
                     next_b = kavutil.get_uint32(t_data, self.bsize-4)
         '''
 
+        if len(self.bbd_list_array)/4 < num_of_bbd_blocks:
+            return False
+
         self.bbd = ''
         for i in range(num_of_bbd_blocks):
             no = kavutil.get_uint32(self.bbd_list_array, i*4)
@@ -419,6 +422,9 @@ class OleFile:
     # ---------------------------------------------------------------------
     def __valid_pps_tree(self):
         f = []
+
+        if len(self.pps) == 0:  # 분석된 PPS가 없으면 종료
+            return False
 
         if self.pps[0]['Dir'] != 0xffffffff and self.pps[0]['Type'] == 5:
             f.append(self.pps[0]['Dir'])
