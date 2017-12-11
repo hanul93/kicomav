@@ -57,7 +57,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        # 악성코드 DDE 패턴
+        # 악성코드 DDE 패턴 (https://blog.nviso.be/2017/10/11/detecting-dde-in-ms-office-documents/)
         self.dde_ptns = []
 
         s = r'<w:fldChar\s+?w:fldCharType="begin"\/>.+?\b[Dd][Dd][Ee][Aa][Uu][Tt][Oo]\b.+?<w:fldChar\s+?w:fldCharType="end"\/>'

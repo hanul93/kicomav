@@ -6,140 +6,13 @@ import os
 import struct
 import types
 import kernel
+import kavutil
 
 
 # -------------------------------------------------------------------------
 # 메시지 출력 함수
 # -------------------------------------------------------------------------
 __version__ = '1.0'
-
-
-# -------------------------------------------------------------------------
-# 메시지 출력 함수
-# -------------------------------------------------------------------------
-def vprint(header, section=None, msg=None):
-    if header:
-        print '[*] %s' % header
-
-    if section:
-        if len(msg) > 50:
-            new_msg = msg[:22] + ' ... ' + msg[-22:]
-        else:
-            new_msg = msg
-        print '    [-] %-20s: %s' % (section, new_msg)
-
-
-# -------------------------------------------------------------------------
-# 함수명 : HexDump
-# 설  명 : 주어진 파일에서 지정된 영역에 대해 Hex 덤프를 보여준다.
-# 인자값 : fname : 파일명
-#         start : 덤프할 영역의 시작 위치
-#         size  : 덤프할 크기
-#         width : 한줄에 보여줄 문자의 개수
-# -------------------------------------------------------------------------
-class HexDump:
-    def __init__(self):
-        pass
-
-    '''
-    @staticmethod
-    def file(fname, start, size=0x200, width=16):
-        fp = open(fname, "rb")
-        fp.seek(start)
-        row = start % width  # 열
-        col = (start / width) * width  # 행
-        r_size = 0
-        line_start = row
-        while True:
-            if r_size + (width - line_start) < size:
-                r_char = (width - line_start)  # 읽어야할 문자 수
-                r_size += (width - line_start)
-            else:
-                r_char = size - r_size
-                r_size = size
-
-            # print line_start, r_char
-            line = fp.read(r_char)
-            if len(line) == 0:
-                break
-            # 주소 값
-            output = "%08X : " % col
-            # Hex 값
-            output += line_start * "   " + "".join("%02x " % ord(c) for c in line)
-            output += "  " + (width - (line_start + r_char)) * "   "
-            # 문자 값
-            output += line_start * " "
-            output += "".join(['.', c][HexDump.is_printable(c)] for c in line)
-            print output
-            col += width
-            line_start = 0
-            if r_size == size:
-                break
-        fp.close()
-    '''
-
-    # -------------------------------------------------------------------------
-    # 함수명 : Buffer
-    # 설  명 : 주어진 버퍼에 대해 Hex 덤프를 보여준다.
-    # 인자값 : fbuf   : 버퍼
-    #         start : 덤프할 영역의 시작 위치
-    #         size  : 덤프할 크기
-    #         width : 한줄에 보여줄 문자의 개수
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def buffer(buf, start, size=0x200, width=16):
-        # 주어진 크기보다 크면 버퍼가 작다면 인자값을 조정
-        if len(buf) < size:
-            size = len(buf)
-        row = start % width  # 열
-        col = (start / width)  # 행
-        # [row ... width*col]
-        # [width*col ... width * (col+1)]
-        r_size = 0
-        line_start = row + (col * width)
-        # print hex(line_start), hex(width*(col+1))
-        # print hex(row), hex(col)
-        while True:
-            line = buf[line_start:width * (col + 1)]
-
-            if len(line) == 0:
-                break
-            if (r_size + len(line)) < size:
-                pass
-            else:
-                # print hex(line_start), hex(line_start + (size - r_size))
-                line = line[0:(size - r_size)]
-                r_size = size - len(line)
-            # 주소 값
-            output = "%08X : " % ((line_start / width) * width)
-            # Hex 값
-            output += row * "   " + "".join("%02x " % ord(c) for c in line)
-            output += "  " + (width - (row + len(line))) * "   "
-            # 문자 값
-            output += row * " "
-            output += "".join(['.', c][HexDump.is_printable(c)] for c in line)
-            print output
-            line_start = width * (col + 1)
-            col += 1
-            row = 0
-            r_size += len(line)
-            if r_size == size:
-                break
-
-    # -------------------------------------------------------------------------
-    # 함수명 : is_printable
-    # 설  명 : 주어진 문자가 출력 가능한 문자인지를 확인한다.
-    # 인자값 : char  : 문자
-    # 반환값 : True  : 출력 가능한 문자
-    #          False : 출력 할 수 없는 문자
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def is_printable(char):
-        c = ord(char)
-        if 0x20 <= c <= 0x80:
-            return True
-        else:
-            return False
 
 
 # -------------------------------------------------------------------------
@@ -250,9 +123,9 @@ def get_bbd_list_array(buf, verbose=False):
     bsize = 1 << get_uint16(buf, 0x1e)
 
     if verbose:
-        vprint(None, 'Num of BBD Blocks', '%d' % num_of_bbd_blocks)
-        vprint(None, 'XBBD Start', '%08X' % xbbd_start_block)
-        vprint(None, 'Num of XBBD Blocks', '%d' % num_of_xbbd_blocks)
+        kavutil.vprint(None, 'Num of BBD Blocks', '%d' % num_of_bbd_blocks)
+        kavutil.vprint(None, 'XBBD Start', '%08X' % xbbd_start_block)
+        kavutil.vprint(None, 'Num of XBBD Blocks', '%d' % num_of_xbbd_blocks)
 
     if num_of_bbd_blocks > 109:  # bbd list 개수가 109보다 크면 xbbd를 가져와야 함
         next_b = xbbd_start_block
@@ -387,11 +260,11 @@ class OleFile:
         self.ssize = 1 << get_uint16(self.mm, 0x20)
 
         if self.verbose:
-            vprint('Header')
-            vprint(None, 'Big Block Size', '%d' % self.bsize)
-            vprint(None, 'Small Block Size', '%d' % self.ssize)
+            kavutil.vprint('Header')
+            kavutil.vprint(None, 'Big Block Size', '%d' % self.bsize)
+            kavutil.vprint(None, 'Small Block Size', '%d' % self.ssize)
             print
-            HexDump.buffer(self.mm, 0, 0x60)
+            kavutil.HexDump().Buffer(self.mm, 0, 0x60)
             print
 
         if self.bsize % 0x200 != 0 or self.ssize != 0x40:  # 이상 파일 정보 처리
@@ -401,19 +274,22 @@ class OleFile:
         self.bbd_list_array, num_of_bbd_blocks, num_of_xbbd_blocks, xbbd_start_block = \
             get_bbd_list_array(self.mm, self.verbose)
 
+        '''
+        # 상당히 많은 데이터가 출력되어 주석 처리
         if self.verbose:
             print
             if num_of_bbd_blocks < 109:
-                HexDump.buffer(self.mm, 0x4c, num_of_bbd_blocks * 4)
+                kavutil.HexDump().Buffer(self.mm, 0x4c, num_of_bbd_blocks * 4)
             else:
-                HexDump.buffer(self.mm, 0x4c, num_of_bbd_blocks * 109)
+                kavutil.HexDump().Buffer(self.mm, 0x4c, num_of_bbd_blocks * 109)
 
                 next_b = xbbd_start_block
                 for i in range(num_of_xbbd_blocks):
                     t_data = get_bblock(self.mm, next_b, self.bsize)
                     print
-                    HexDump.buffer(self.mm, (next_b+1) * self.bsize)
+                    kavutil.HexDump().Buffer(self.mm, (next_b+1) * self.bsize)
                     next_b = get_uint32(t_data, self.bsize-4)
+        '''
 
         self.bbd = ''
         for i in range(num_of_bbd_blocks):
@@ -428,9 +304,9 @@ class OleFile:
         if self.verbose:
             open('bbd.dmp', 'wb').write(self.bbd)
             print
-            vprint('BBD')
+            kavutil.vprint('BBD')
             print
-            HexDump.buffer(self.bbd, 0, 0x80)
+            kavutil.HexDump().Buffer(self.bbd, 0, 0x80)
 
         # Root 읽기
         root_startblock = get_uint32(self.mm, 0x30)
@@ -444,10 +320,10 @@ class OleFile:
         if self.verbose:
             open('root.dmp', 'wb').write(self.root)
             print
-            vprint('ROOT')
-            vprint(None, 'Start Blocks', '%d' % root_startblock)
+            kavutil.vprint('ROOT')
+            kavutil.vprint(None, 'Start Blocks', '%d' % root_startblock)
             print
-            HexDump.buffer(self.root, 0, 0x80)
+            kavutil.HexDump().Buffer(self.root, 0, 0x80)
 
         # sbd 읽기
         sbd_startblock = get_uint32(self.mm, 0x3c)
@@ -466,11 +342,11 @@ class OleFile:
         if self.verbose:
             open('sbd.dmp', 'wb').write(self.sbd)
             print
-            vprint('SBD')
-            vprint(None, 'Start Blocks', '%d' % sbd_startblock)
-            vprint(None, 'Num of SBD Blocks', '%d' % num_of_sbd_blocks)
+            kavutil.vprint('SBD')
+            kavutil.vprint(None, 'Start Blocks', '%d' % sbd_startblock)
+            kavutil.vprint(None, 'Num of SBD Blocks', '%d' % num_of_sbd_blocks)
             print
-            HexDump.buffer(self.sbd, 0, 0x80)
+            kavutil.HexDump().Buffer(self.sbd, 0, 0x80)
 
         # PPS 읽기
         self.pps = []
@@ -501,7 +377,7 @@ class OleFile:
 
         if self.verbose:
             print
-            vprint('Property Storage')
+            kavutil.vprint('Property Storage')
             '''
             print '    %-2s %-20s %4s %-8s %-8s %-8s %-8s %-8s' % ('No', 'Name', 'Type', 'Prev', 'Next', 'Dir', 'SB',
                                                                    'Size')
@@ -541,7 +417,7 @@ class OleFile:
         self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
         if self.verbose:
             print
-            vprint('Small Blocks')
+            kavutil.vprint('Small Blocks')
             print self.small_block
 
         return True
@@ -714,8 +590,8 @@ class OleFile:
 
                 if self.parent.verbose:
                     print
-                    vprint(pps['Name'])
-                    HexDump.buffer(data, 0, size)
+                    kavutil.vprint(pps['Name'])
+                    kavutil.HexDump().Buffer(data, 0, 80)
 
                 return data[:size]
 
@@ -1091,7 +967,7 @@ class OleWriteStream:
         if self.verbose:
             print
             buf = get_bblock(self.mm, n, self.bsize)
-            HexDump.buffer(buf, 0, 0x200)
+            kavutil.HexDump().Buffer(buf, 0, 0x200)
 
     # ---------------------------------------------------------------------
     # SBD 링크를 줄인다
