@@ -349,7 +349,7 @@ class OleFile:
             p = {}
             pps = self.root[i*0x80:(i+1)*0x80]
 
-            t_size = kavutil.get_uint16(pps, 0x40)
+            t_size = min(kavutil.get_uint16(pps, 0x40), 0x40)
 
             if t_size != 0:
                 p['Name'] = DecodeStreamName(pps[0:t_size-2]).decode('UTF-16LE', 'replace')
