@@ -23,16 +23,8 @@ class Error(Exception):
 
 
 # ---------------------------------------------------------------------
-# 데이터 읽기
+# MisiBase64 인코더 디코더
 # ---------------------------------------------------------------------
-def get_uint16(buf, off):
-    return struct.unpack('<H', buf[off:off + 2])[0]
-
-
-def get_uint32(buf, off):
-    return struct.unpack('<L', buf[off:off + 4])[0]
-
-
 def MsiBase64Encode(x):
     ct = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._'
     if x > 63:
@@ -46,7 +38,7 @@ def DecodeStreamName(name):
     och = []
 
     for i in range(len(name) / 2):
-        wch.append(get_uint16(name, i * 2))
+        wch.append(kavutil.get_uint16(name, i * 2))
 
     for ch in wch:
         if 0x3800 <= ch <= 0x4840:
@@ -115,12 +107,12 @@ def get_bblock(buf, no, bsize):
 # ---------------------------------------------------------------------
 def get_bbd_list_array(buf, verbose=False):
     bbd_list_array = buf[0x4c:0x200]  # 전체 bbd_list
-    num_of_bbd_blocks = get_uint32(buf, 0x2c)
+    num_of_bbd_blocks = kavutil.get_uint32(buf, 0x2c)
 
-    xbbd_start_block = get_uint32(buf, 0x44)
-    num_of_xbbd_blocks = get_uint32(buf, 0x48)
+    xbbd_start_block = kavutil.get_uint32(buf, 0x44)
+    num_of_xbbd_blocks = kavutil.get_uint32(buf, 0x48)
 
-    bsize = 1 << get_uint16(buf, 0x1e)
+    bsize = 1 << kavutil.get_uint16(buf, 0x1e)
 
     if verbose:
         kavutil.vprint(None, 'Num of BBD Blocks', '%d' % num_of_bbd_blocks)
@@ -133,7 +125,7 @@ def get_bbd_list_array(buf, verbose=False):
         for i in range(num_of_xbbd_blocks):
             t_data = get_bblock(buf, next_b, bsize)
             bbd_list_array += t_data[:-4]
-            next_b = get_uint32(t_data, bsize-4)
+            next_b = kavutil.get_uint32(t_data, bsize-4)
 
     return bbd_list_array[:num_of_bbd_blocks*4], num_of_bbd_blocks, num_of_xbbd_blocks, xbbd_start_block
 
@@ -142,12 +134,12 @@ def get_bbd_list_array(buf, verbose=False):
 # OLE의 BBD list의 index를 Offset으로 리턴한다.
 # ---------------------------------------------------------------------
 def get_bbd_list_index_to_offset(buf, idx):
-    num_of_bbd_blocks = get_uint32(buf, 0x2c)
+    num_of_bbd_blocks = kavutil.get_uint32(buf, 0x2c)
 
-    xbbd_start_block = get_uint32(buf, 0x44)
-    # num_of_xbbd_blocks = get_uint32(buf, 0x48)
+    xbbd_start_block = kavutil.get_uint32(buf, 0x44)
+    # num_of_xbbd_blocks = kavutil.get_uint32(buf, 0x48)
 
-    bsize = 1 << get_uint16(buf, 0x1e)
+    bsize = 1 << kavutil.get_uint16(buf, 0x1e)
 
     if idx >= num_of_bbd_blocks:  # 범위를 벗어나면 에러
         return -1
@@ -165,7 +157,7 @@ def get_bbd_list_index_to_offset(buf, idx):
                 return -1
 
             t_buf = get_bblock(buf, next_b, bsize)
-            next_b = get_uint32(t_buf, bsize-4)
+            next_b = kavutil.get_uint32(t_buf, bsize-4)
 
         return (next_b + 1) * bsize + (off * 4)
 
@@ -256,8 +248,8 @@ class OleFile:
             raise Error('Not Ole signature')
 
         # big block, small bloc 크기 구하기
-        self.bsize = 1 << get_uint16(self.mm, 0x1e)
-        self.ssize = 1 << get_uint16(self.mm, 0x20)
+        self.bsize = 1 << kavutil.get_uint16(self.mm, 0x1e)
+        self.ssize = 1 << kavutil.get_uint16(self.mm, 0x20)
 
         if self.verbose:
             kavutil.vprint('Header')
@@ -288,17 +280,17 @@ class OleFile:
                     t_data = get_bblock(self.mm, next_b, self.bsize)
                     print
                     kavutil.HexDump().Buffer(self.mm, (next_b+1) * self.bsize)
-                    next_b = get_uint32(t_data, self.bsize-4)
+                    next_b = kavutil.get_uint32(t_data, self.bsize-4)
         '''
 
         self.bbd = ''
         for i in range(num_of_bbd_blocks):
-            no = get_uint32(self.bbd_list_array, i*4)
+            no = kavutil.get_uint32(self.bbd_list_array, i*4)
             self.bbd += get_bblock(self.mm, no, self.bsize)
 
         self.bbd_fat = {}
         for i in range(len(self.bbd) / 4):
-            n = get_uint32(self.bbd, i*4)
+            n = kavutil.get_uint32(self.bbd, i*4)
             self.bbd_fat[i] = n
 
         if self.verbose:
@@ -309,7 +301,7 @@ class OleFile:
             kavutil.HexDump().Buffer(self.bbd, 0, 0x80)
 
         # Root 읽기
-        root_startblock = get_uint32(self.mm, 0x30)
+        root_startblock = kavutil.get_uint32(self.mm, 0x30)
         root_list_array = get_block_link(root_startblock, self.bbd_fat)
         self.root_list_array = root_list_array
 
@@ -326,8 +318,8 @@ class OleFile:
             kavutil.HexDump().Buffer(self.root, 0, 0x80)
 
         # sbd 읽기
-        sbd_startblock = get_uint32(self.mm, 0x3c)
-        num_of_sbd_blocks = get_uint32(self.mm, 0x40)
+        sbd_startblock = kavutil.get_uint32(self.mm, 0x3c)
+        num_of_sbd_blocks = kavutil.get_uint32(self.mm, 0x40)
         sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
         self.sbd = ''
@@ -336,7 +328,7 @@ class OleFile:
 
         self.sbd_fat = {}
         for i in range(len(self.sbd) / 4):
-            n = get_uint32(self.sbd, i*4)
+            n = kavutil.get_uint32(self.sbd, i*4)
             self.sbd_fat[i] = n
 
         if self.verbose:
@@ -354,7 +346,7 @@ class OleFile:
             p = {}
             pps = self.root[i*0x80:(i+1)*0x80]
 
-            t_size = get_uint16(pps, 0x40)
+            t_size = kavutil.get_uint16(pps, 0x40)
 
             if t_size != 0:
                 p['Name'] = DecodeStreamName(pps[0:t_size-2]).decode('UTF-16LE', 'replace')
@@ -362,11 +354,11 @@ class OleFile:
                 p['Name'] = ''
 
             p['Type'] = ord(pps[0x42])
-            p['Prev'] = get_uint32(pps, 0x44)
-            p['Next'] = get_uint32(pps, 0x48)
-            p['Dir'] = get_uint32(pps, 0x4c)
-            p['Start'] = get_uint32(pps, 0x74)
-            p['Size'] = get_uint32(pps, 0x78)
+            p['Prev'] = kavutil.get_uint32(pps, 0x44)
+            p['Next'] = kavutil.get_uint32(pps, 0x48)
+            p['Dir'] = kavutil.get_uint32(pps, 0x4c)
+            p['Start'] = kavutil.get_uint32(pps, 0x74)
+            p['Size'] = kavutil.get_uint32(pps, 0x78)
             p['Valid'] = False
 
             self.pps.append(p)
@@ -838,7 +830,7 @@ class OleWriteStream:
 
                 self.bbd = ''
                 for i in range(len(bbd_list_array)/4):
-                    n = get_uint32(bbd_list_array, i*4)
+                    n = kavutil.get_uint32(bbd_list_array, i*4)
                     self.bbd += get_bblock(self.mm, n, self.bsize)
 
                 # 새로운 Small Block 링크가 필요하다
@@ -980,7 +972,7 @@ class OleWriteStream:
             t_link = []
 
             for i in range(len(self.sbd) / 4):
-                t_link.append(get_uint32(self.sbd, i * 4))
+                t_link.append(kavutil.get_uint32(self.sbd, i * 4))
 
             t = org_link_list[num_link:]
             org_link_list = org_link_list[:num_link]
@@ -997,7 +989,7 @@ class OleWriteStream:
                 self.sbd += struct.pack('<L', i)
 
             # self.mm에 SBD 적용하기
-            sbd_startblock = get_uint32(self.mm, 0x3c)
+            sbd_startblock = kavutil.get_uint32(self.mm, 0x3c)
             sbd_list_array = get_block_link(sbd_startblock, self.bbd_fat)
 
             for i, n in enumerate(sbd_list_array):
@@ -1020,7 +1012,7 @@ class OleWriteStream:
             t_link = []
 
             for i in range(len(self.bbd) / 4):
-                t_link.append(get_uint32(self.bbd, i * 4))
+                t_link.append(kavutil.get_uint32(self.bbd, i * 4))
 
             t = org_link_list[num_link:]
             org_link_list = org_link_list[:num_link]
@@ -1042,7 +1034,7 @@ class OleWriteStream:
 
             bbd_list_array = []
             for i in range(len(t) / 4):
-                bbd_list_array.append(get_uint32(t, i * 4))
+                bbd_list_array.append(kavutil.get_uint32(t, i * 4))
 
             for i, n in enumerate(bbd_list_array):
                 self.__set_bblock(n, self.bbd[i*self.bsize:(i+1)*self.bsize])
@@ -1067,12 +1059,12 @@ class OleWriteStream:
         # BBD를 모은다
         bbd = ''
         for i in range(num_of_bbd_blocks):
-            no = get_uint32(bbd_list_array, i*4)
+            no = kavutil.get_uint32(bbd_list_array, i*4)
             bbd += get_bblock(self.mm, no, self.bsize)
 
         bbd_link = []
         for i in range(len(bbd) / 4):
-            bbd_link.append(get_uint32(bbd, i*4))
+            bbd_link.append(kavutil.get_uint32(bbd, i*4))
 
         # 사용하지 않는 BBD 링크를 찾는다.
         free_link = [i for i, no in enumerate(bbd_link) if (no == 0xffffffff and i < size / self.bsize)]
@@ -1100,10 +1092,10 @@ class OleWriteStream:
 
             # 추가해야 할 BBD list 개수는 한개의 BBD에는 bsize / 4 개수만큼 Big Block을 담을 수 있음
             b_num = (add_num / (self.bsize/4)) + (1 if (add_num % (self.bsize/4)) else 0)
-            old_num_bbd = get_uint32(self.mm, 0x2c)
+            old_num_bbd = kavutil.get_uint32(self.mm, 0x2c)
 
-            xbbd_start_block = get_uint32(self.mm, 0x44)
-            num_of_xbbd_blocks = get_uint32(self.mm, 0x48)
+            xbbd_start_block = kavutil.get_uint32(self.mm, 0x44)
+            num_of_xbbd_blocks = kavutil.get_uint32(self.mm, 0x48)
 
             # 추가적인 Big Block을 계산한다. BBD List와 XBBD 블록도 추가될 수 있기 때문에...
             old_b_num = b_num
@@ -1150,7 +1142,7 @@ class OleWriteStream:
                     t_data = ''
                     for i in range(num_of_xbbd_blocks-1):
                         t_data = get_bblock(self.mm, next_b, self.bsize)
-                        next_b = get_uint32(t_data, self.bsize-4)
+                        next_b = kavutil.get_uint32(t_data, self.bsize-4)
 
                 # 기존 XBBD 마지막에 새로운 XBBD 링크 추가
                 t_data = t_data[:-4] + struct.pack('<L', last_no)
@@ -1188,9 +1180,9 @@ class OleWriteStream:
             for no in special_no:
                 seg = no / bb_num
                 off = no % bb_num
-                # print hex(no), hex(seg), hex(off), hex(get_uint32(bbd_list_array, seg*4))
+                # print hex(no), hex(seg), hex(off), hex(kavutil.get_uint32(bbd_list_array, seg*4))
 
-                t_no = get_uint32(bbd_list_array, seg*4)
+                t_no = kavutil.get_uint32(bbd_list_array, seg*4)
                 t_off = ((t_no + 1) * self.bsize) + (off * 4)
 
                 self.mm = self.mm[:t_off] + '\xfd\xff\xff\xff' + self.mm[t_off+4:]
@@ -1199,7 +1191,7 @@ class OleWriteStream:
 
                 # t = get_bblock(self.mm, t_no, self.bsize)
                 # print repr(t)
-                # t = get_uint32(t, off*4)
+                # t = kavutil.get_uint32(t, off*4)
                 # print hex(t)
 
             # BBD List에 BBD 등록하기
@@ -1220,7 +1212,7 @@ class OleWriteStream:
         # SBD 링크를 생성한다.
         sbd_link = []
         for i in range(len(self.sbd) / 4):
-            sbd_link.append(get_uint32(self.sbd, i*4))
+            sbd_link.append(kavutil.get_uint32(self.sbd, i*4))
 
         # 사용하지 않는 SBD 링크를 찾는다.
         free_link = [i for i, no in enumerate(sbd_link) if (no == 0xffffffff and i < r_size / self.ssize)]
@@ -1255,7 +1247,7 @@ class OleWriteStream:
         # BBD를 모은다
         bbd = ''
         for i in range(num_of_bbd_blocks):
-            no = get_uint32(bbd_list_array, i*4)
+            no = kavutil.get_uint32(bbd_list_array, i*4)
             bbd += get_bblock(self.mm, no, self.bsize)
 
         if self.verbose:
@@ -1263,7 +1255,7 @@ class OleWriteStream:
 
         bbd_link = []
         for i in range(len(bbd) / 4):
-            bbd_link.append(get_uint32(bbd, i*4))
+            bbd_link.append(kavutil.get_uint32(bbd, i*4))
 
         # 사용하지 않는 BBD 링크를 찾는다.
         free_link = [i for i, no in enumerate(bbd_link) if (no == 0xffffffff)]
@@ -1311,7 +1303,7 @@ class OleWriteStream:
         # SBD 링크를 생성한다.
         sbd_link = []
         for i in range(len(sbd) / 4):
-            sbd_link.append(get_uint32(sbd, i*4))
+            sbd_link.append(kavutil.get_uint32(sbd, i*4))
 
         # 사용하지 않는 SBD 링크를 찾는다.
         free_link = [i for i, no in enumerate(sbd_link) if (no == 0xffffffff)]
@@ -1353,7 +1345,7 @@ class OleWriteStream:
     # ---------------------------------------------------------------------
     def __modify_sbd(self, sbd):
         # 원래 이미지에 SBD 덮어쓰기
-        sbd_no = get_uint32(self.mm, 0x3c)
+        sbd_no = kavutil.get_uint32(self.mm, 0x3c)
         # sbd_list_array = get_block_link(sbd_no, self.bbd)
         sbd_list_array = get_block_link(sbd_no, self.bbd_fat)
         # print sbd_list_array
@@ -1371,7 +1363,7 @@ class OleWriteStream:
         bbd_list_array, _, _, _ = get_bbd_list_array(self.mm)
 
         for i in range(len(bbd_list_array) / 4):
-            no = get_uint32(bbd_list_array, i * 4)
+            no = kavutil.get_uint32(bbd_list_array, i * 4)
             data = bbd[i * self.bsize:(i + 1) * self.bsize]
             off = (no + 1) * self.bsize
             self.mm = self.mm[:off] + data + self.mm[off + self.bsize:]
