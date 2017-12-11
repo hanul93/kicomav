@@ -18,7 +18,8 @@ strdict = {
     0x9: 'STREET',
     0x3: 'CN',
     0xA: 'O',
-    0xB: 'OU'
+    0xB: 'OU',
+    0x5: 'SERIALNUMBER'
 }
 
 
@@ -124,6 +125,10 @@ class KavMain:
                                         vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
                                         if vname:
                                             return True, vname, 0, kernel.INFECTED
+
+                        if self.verbose:
+                            a = raw_input('>> ')
+
         except IOError:
             pass
 
