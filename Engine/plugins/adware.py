@@ -8,6 +8,32 @@ import kernel
 import kavutil
 import cryptolib
 
+# CA
+root_ca = {
+    '00df6b36ea98c80eadb0073f1cc55f12': 'DigiCert Assured ID Code Signing CA-1',
+    '2463771b9866ff7b13ed18967ca64172': 'VeriSign Class 3 Code Signing 2010 CA',
+    '92c1b5435deb5c966e7faf658151702e': 'Go Daddy Secure Certification Authority',
+    'c6dc85650aae0d331eb85346a2215837': 'GlobalSign CodeSigning CA - G2',
+    '1b3f805da201e048a769ee207a543a1c': 'VeriSign Class 3 Public Primary Certification Authority - G5',
+    '5b893aacad447b3f25c1592c5b4c24bd': 'COMODO Code Signing CA 2',
+    '99795c12d11384bb73393696d94496f7': 'AddTrust External CA Root',
+    'f573ac54dfd6fb82b0059f304ec4f091': 'UTN-USERFirst-Object',
+    '6f32db305d320f51445f9cd946a7bc36': 'Certum CA',
+    '0d49b1ef636d7b77cbb27f70585a1ed0': 'Certum Level III CA',
+    '6cbf089d921fa6c102554587b62f6562': 'Certum Trusted Network CA',
+    'a231f778343c770d2c6e21a9cb7eaf2a': 'Certum Code Signing CA',
+    'bfbca0a79da05faa979f70f75b56bfab': 'Thawte Timestamping CA',
+    'e2550a4ff3248b05ba525861d7e5a12b': 'DigiCert Assured ID Root CA',
+    '7879774fc2eb438ed3248b328c16be8e': 'Symantec SHA256 TimeStamping CA',
+    'ee91406be407a281b430e28a24153455': 'Microsoft Code Verification Root',
+    '0ae61bc24f70c173f42ff2983acf41ff': 'Symantec Time Stamping Services CA - G2',
+    'fdbeb9127e23fab3e19b578a9d6d4920': 'Certification Authority of WoSign',
+    '882d32e9b560bd27000832ccb7cebeb5': 'Symantec Class 3 SHA256 Code Signing CA',
+    '3f24843eff2b32ab9f84eff836faa138': 'DigiCert SHA2 Assured ID Code Signing CA',
+    'dd902610461459ae2ac1d29fa6f934d8': 'Symantec SHA256 TimeStamping Signer - G1',
+    '511df12e11d09ef6ffb8960bc8e48c2a': 'Symantec Time Stamping Services Signer - G4',
+    '203951806534410c6d0992d08f5a2a2d': 'VeriSign Universal Root Certification Authority',
+}
 
 # 인증서 정보
 strdict = {
@@ -126,8 +152,17 @@ class KavMain:
                                         if vname:
                                             return True, vname, 0, kernel.INFECTED
 
+                                    if self.verbose:
+                                        if not root_ca.get(fmd5, None):  # 알려진 CA는 제외
+                                            # 악성코드 탐지가 안될때 패턴 작업을 위해 파일에 기록
+                                            fmd5 = cryptolib.md5(buf)
+                                            fsha256 = cryptolib.sha256(mm)
+                                            msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, buf, fsha256)
+                                            open('adware.mdb', 'at').write(msg)
+
                         if self.verbose:
-                            a = raw_input('>> ')
+                            # a = raw_input('>> ')
+                            pass
 
         except IOError:
             pass
