@@ -150,12 +150,19 @@ class KavMain:
                                         # print fsize, fmd5
                                         vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
                                         if vname:
+                                            pos = ff['pe'].get('EntryPointRaw', 0)
+                                            if mm[pos:pos+4] == '\xff\x25\x00\x20':
+                                                pf = 'MSIL'
+                                            else:
+                                                pf = 'Win32'
+                                                # print hex(pos), repr(mm[pos:pos+4])
+                                            vname = kavutil.normal_vname(vname, pf)
                                             return True, vname, 0, kernel.INFECTED
 
                                     if self.verbose:
+                                        fmd5 = cryptolib.md5(buf)
                                         if not root_ca.get(fmd5, None):  # 알려진 CA는 제외
                                             # 악성코드 탐지가 안될때 패턴 작업을 위해 파일에 기록
-                                            fmd5 = cryptolib.md5(buf)
                                             fsha256 = cryptolib.sha256(mm)
                                             msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, buf, fsha256)
                                             open('adware.mdb', 'at').write(msg)
@@ -194,9 +201,21 @@ class KavMain:
     # 리턴값 : 악성코드 리스트
     # ---------------------------------------------------------------------
     def listvirus(self):  # 진단 가능한 악성코드 리스트
-        vlist = list()  # 리스트형 변수 선언
+        vlist = kavutil.handle_pattern_md5.get_sig_vlist('adware')
+        vlist = list(set(vlist))
+        vlist.sort()
 
-        return vlist
+        vlists = []
+        for vname in vlist:
+            vname = kavutil.normal_vname(vname)
+            if vname.find('<p>'):
+                vlists.append(vname.replace('<p>', 'Win32'))
+                vlists.append(vname.replace('<p>', 'MSIL'))
+            else:
+                vlists.append(vname)
+
+        vlists.sort()
+        return vlists
 
     # ---------------------------------------------------------------------
     # getinfo(self)
@@ -210,6 +229,6 @@ class KavMain:
         info['version'] = '1.0'      # 버전
         info['title'] = 'Adware Scan Engine'  # 엔진 설명
         info['kmd_name'] = 'adware'  # 엔진 파일 이름
-        info['sig_num'] = kavutil.handle_pattern_md5.get_sig_num('adware')  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = kavutil.handle_pattern_md5.get_sig_num('adware') * 2  # 진단/치료 가능한 악성코드 수
 
         return info

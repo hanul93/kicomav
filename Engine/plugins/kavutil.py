@@ -481,6 +481,23 @@ def get_uint64(buf, off):
     return struct.unpack('<Q', buf[off:off+8])[0]
 
 
+# -------------------------------------------------------------------------
+# normal_vname(vname):
+# 주어진 악성코드 이름의 특수 문자를 처리한다.
+# 입력값 : vname - 악성코드 이름
+#         platform - Win32, MSIL 등
+# 리턴값 : 새로운 악성코드 이름
+# -------------------------------------------------------------------------
+def normal_vname(vname, platform=None):
+    # vname = vname.replace('<n>', 'not-a-virus:')
+    vname = vname.replace('<n>', '')
+    
+    if platform:
+        vname = vname.replace('<p>', platform)
+
+    return vname
+        
+
 # ----------------------------------------------------------------------------
 # Feature를 위한 로직
 # ----------------------------------------------------------------------------
