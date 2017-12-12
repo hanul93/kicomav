@@ -432,6 +432,9 @@ class OleFile:
             f.append(self.pps[0]['Dir'])
             self.pps[0]['Valid'] = True
 
+        if len(f) == 0:  # 정상적인 PPS가 없음
+            return False
+
         while len(f):
             x = f.pop(0)
 
