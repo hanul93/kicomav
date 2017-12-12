@@ -33,6 +33,28 @@ root_ca = {
     'dd902610461459ae2ac1d29fa6f934d8': 'Symantec SHA256 TimeStamping Signer - G1',
     '511df12e11d09ef6ffb8960bc8e48c2a': 'Symantec Time Stamping Services Signer - G4',
     '203951806534410c6d0992d08f5a2a2d': 'VeriSign Universal Root Certification Authority',
+    '5f1858aefd218bd5cdb8187bc0be25c2': 'thawte Primary Root CA',
+    'fc7323c665f25b915a8d2c8c3a1c43d0': 'Thawte Code Signing CA - G2',
+    '2eedd6ce03ef886ab20051ec63e7d17f': 'COMODO RSA Code Signing CA',
+    '4d91354b5dc10d2771e2b05bd77a8b58': 'Microsoft Timestamping PCA',
+    '841c35150c6cf0fa1b70d02fff66f242': 'Microsoft Code Signing PCA',
+    'b016306dde9f96d5ea344e788c34cbc1': 'VeriSign Class 3 Code Signing 2004 CA',
+    'd91da0bcb4d9dc6ea8ea462a231f1010': 'VeriSign Time Stamping Services CA',
+    'e9f9a620abc8b57f101e7f841672ac74': 'Microsoft Windows Verification Intermediate PCA',
+    'd3f6378d39a33f2cb7e13e32e1409b49': 'GlobalSign Root CA',
+    '2974e8729c8713831f1e4b477afdc0ab': 'DigiCert Assured ID CA-1',
+    '36d1948364aeeb8419387bbecff1d567': 'GlobalSign ObjectSign CA',
+    'bc6f0d562350d3f669b3c203210dbf0c': 'Thawte Premium Server CA',
+    'fb374766133ab1de6d22f740aa08cbb9': 'COMODO Time Stamping Signer',
+    'f6a29f5ba7b3523221cea09ada0de7a4': 'DigiCert Timestamp Responder',
+    '8c2ca830d46600361a01dc691394739d': 'thawte SHA256 Code Signing CA',
+    'a25c349a964b3b0fc7b299a4e0cd13d1': 'WoSign Class 3 Code Signing CA',
+    'ef1c510fe31d42cd0f4f2003690abbc4': 'GlobalSign Timestamping CA - G2',
+    '8eba8cbf3efaa5f7dd31b63213a9553e': 'WoSign Time Stamping Signer',
+    '0ca77d0cb754d92744349e9b764beaf7': 'GlobalSign CodeSigning CA - SHA256 - G2',
+    '2ed9e7c532f259802ed96d0e36fdc039': 'GlobalSign Time Stamping Authority',
+    'ad40bb9d5feee9aec27e2f33f813db04': 'COMODO RSA Certification Authority',
+    '3336cc222eaaa64923e00113e7864e14': 'GlobalSign Primary Object Publishing CA'
 }
 
 # 인증서 정보
