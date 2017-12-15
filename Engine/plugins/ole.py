@@ -659,9 +659,15 @@ class OleFile:
                             self.bbd, self.bbd_fat,
                             self.sbd, self.sbd_fat,
                             self.root_list_array, self.small_block, self.verbose)
-        t = ow.delete(no)
-        if t:
-            self.init(t)  # 새롭게 OLE 재로딩
+
+        target_pps = self.pps[no]
+        if target_pps['Valid'] and target_pps['Type'] == 2:  # 유요한 PPS에 대한 삭제인지 확인
+            size = target_pps['Size']
+            ow.write(no, '\x00' * size)  # 모든 데이터를 0으로 Wipe
+            
+            t = ow.delete(no)  # 링크 삭제
+            if t:
+                self.init(t)  # 새롭게 OLE 재로딩
 
 # ---------------------------------------------------------------------
 # OleWriteStream 클래스
@@ -707,16 +713,30 @@ class OleWriteStream:
 
         # Next 수정하기
         if pps_next != 0xffffffff:
-            t_no = self.pps[pps_prev]['Next']
-            if t_no != 0xffffffff:
-                while True:
-                    if self.pps[t_no]['Next'] == 0xffffffff:
-                        self.__set_pps_header(t_no, pps_next=pps_next)
+            # Next 수정하기 (현재 no에 Prev, Next가 모두 존재할 경우)
+            if pps_prev != 0xffffffff:
+                t_no = self.pps[pps_prev]['Next']
+                if t_no != 0xffffffff:
+                    while True:
+                        if self.pps[t_no]['Next'] == 0xffffffff:
+                            self.__set_pps_header(t_no, pps_next=pps_next)
+                            break
+                        else:
+                            t_no = self.pps[t_no]['Next']
+                else:
+                    self.__set_pps_header(pps_prev, pps_next=pps_next)
+            else:  # Next 값만 존재하는 경우
+                # Next 조정하기 (no가 Next에 존재하는 경우)
+                for i, pps in enumerate(self.pps):
+                    if pps['Next'] == no:
+                        self.__set_pps_header(i, pps_next=pps_next)
                         break
-                    else:
-                        t_no = self.pps[t_no]['Next']
-            else:
-                self.__set_pps_header(pps_prev, pps_next=pps_next)
+
+                # Next 조정하기 (no가 Prev에 존재하는 경우)
+                for i, pps in enumerate(self.pps):
+                    if pps['Prev'] == no:
+                        self.__set_pps_header(i, pps_next=pps_next)
+                        break
 
         # PPS 정보를 삭제함
         self.__set_pps_header(no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff, pps_dir=0xffffffff)
