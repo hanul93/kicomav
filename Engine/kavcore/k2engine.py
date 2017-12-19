@@ -552,18 +552,19 @@ class EngineInstance:
                             if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
                                 return 0
 
-                            self.__disinfect_process(ret_value, action_type)
+                            d_ret = self.__disinfect_process(ret_value, action_type)
 
-                            # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
-                            if self.options['opt_dis'] or \
-                               (action_type == k2const.K2_ACTION_DISINFECT or action_type == k2const.K2_ACTION_DELETE):
-                                # 치료 옵션이 존재할때에만... 실행
-                                if os.path.exists(t_file_info.get_filename()):
-                                    t_file_info.set_modify(True)
-                                    file_scan_list = [t_file_info] + file_scan_list
-                                else:
-                                    # 압축 파일 최종 치료 처리
-                                    self.__update_process(t_file_info)
+                            if d_ret:  # 치료 성공?
+                                # 악성코드 치료 후 해당 파일이 삭제되지 않고 존재한다면 다시 검사 필요
+                                if self.options['opt_dis'] or \
+                                   (action_type == k2const.K2_ACTION_DISINFECT or action_type == k2const.K2_ACTION_DELETE):
+                                    # 치료 옵션이 존재할때에만... 실행
+                                    if os.path.exists(t_file_info.get_filename()):
+                                        t_file_info.set_modify(True)
+                                        file_scan_list = [t_file_info] + file_scan_list
+                                    else:
+                                        # 압축 파일 최종 치료 처리
+                                        self.__update_process(t_file_info)
                     else:
                         # 압축 파일 최종 치료 처리
                         self.__update_process(t_file_info)
@@ -820,13 +821,15 @@ class EngineInstance:
                 os.remove(d_fname)
                 d_ret = True
                 self.result['Deleted_files'] += 1  # 삭제 파일 수
-            except IOError:
+            except (IOError, WindowsError) as e:
                 d_ret = False
 
         t_file_info.set_modify(d_ret)  # 치료(수정/삭제) 여부 표시
 
         if isinstance(self.disinfect_callback_fn, types.FunctionType):
             self.disinfect_callback_fn(ret_value, action_type)
+
+        return d_ret
 
     # ---------------------------------------------------------------------
     # __scan_file(self, file_struct, fileformat)
