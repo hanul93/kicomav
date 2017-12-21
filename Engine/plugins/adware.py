@@ -4,80 +4,79 @@
 
 import os
 import re
+import struct
 import kernel
 import kavutil
 import cryptolib
 
-# CA
-root_ca = {
-    '00df6b36ea98c80eadb0073f1cc55f12': 'DigiCert Assured ID Code Signing CA-1',
-    '2463771b9866ff7b13ed18967ca64172': 'VeriSign Class 3 Code Signing 2010 CA',
-    '92c1b5435deb5c966e7faf658151702e': 'Go Daddy Secure Certification Authority',
-    'c6dc85650aae0d331eb85346a2215837': 'GlobalSign CodeSigning CA - G2',
-    '1b3f805da201e048a769ee207a543a1c': 'VeriSign Class 3 Public Primary Certification Authority - G5',
-    '5b893aacad447b3f25c1592c5b4c24bd': 'COMODO Code Signing CA 2',
-    '99795c12d11384bb73393696d94496f7': 'AddTrust External CA Root',
-    'f573ac54dfd6fb82b0059f304ec4f091': 'UTN-USERFirst-Object',
-    '6f32db305d320f51445f9cd946a7bc36': 'Certum CA',
-    '0d49b1ef636d7b77cbb27f70585a1ed0': 'Certum Level III CA',
-    '6cbf089d921fa6c102554587b62f6562': 'Certum Trusted Network CA',
-    'a231f778343c770d2c6e21a9cb7eaf2a': 'Certum Code Signing CA',
-    'bfbca0a79da05faa979f70f75b56bfab': 'Thawte Timestamping CA',
-    'e2550a4ff3248b05ba525861d7e5a12b': 'DigiCert Assured ID Root CA',
-    '7879774fc2eb438ed3248b328c16be8e': 'Symantec SHA256 TimeStamping CA',
-    'ee91406be407a281b430e28a24153455': 'Microsoft Code Verification Root',
-    '0ae61bc24f70c173f42ff2983acf41ff': 'Symantec Time Stamping Services CA - G2',
-    'fdbeb9127e23fab3e19b578a9d6d4920': 'Certification Authority of WoSign',
-    '882d32e9b560bd27000832ccb7cebeb5': 'Symantec Class 3 SHA256 Code Signing CA',
-    '3f24843eff2b32ab9f84eff836faa138': 'DigiCert SHA2 Assured ID Code Signing CA',
-    'dd902610461459ae2ac1d29fa6f934d8': 'Symantec SHA256 TimeStamping Signer - G1',
-    '511df12e11d09ef6ffb8960bc8e48c2a': 'Symantec Time Stamping Services Signer - G4',
-    '203951806534410c6d0992d08f5a2a2d': 'VeriSign Universal Root Certification Authority',
-    '5f1858aefd218bd5cdb8187bc0be25c2': 'thawte Primary Root CA',
-    'fc7323c665f25b915a8d2c8c3a1c43d0': 'Thawte Code Signing CA - G2',
-    '2eedd6ce03ef886ab20051ec63e7d17f': 'COMODO RSA Code Signing CA',
-    '4d91354b5dc10d2771e2b05bd77a8b58': 'Microsoft Timestamping PCA',
-    '841c35150c6cf0fa1b70d02fff66f242': 'Microsoft Code Signing PCA',
-    'b016306dde9f96d5ea344e788c34cbc1': 'VeriSign Class 3 Code Signing 2004 CA',
-    'd91da0bcb4d9dc6ea8ea462a231f1010': 'VeriSign Time Stamping Services CA',
-    'e9f9a620abc8b57f101e7f841672ac74': 'Microsoft Windows Verification Intermediate PCA',
-    'd3f6378d39a33f2cb7e13e32e1409b49': 'GlobalSign Root CA',
-    '2974e8729c8713831f1e4b477afdc0ab': 'DigiCert Assured ID CA-1',
-    '36d1948364aeeb8419387bbecff1d567': 'GlobalSign ObjectSign CA',
-    'bc6f0d562350d3f669b3c203210dbf0c': 'Thawte Premium Server CA',
-    'fb374766133ab1de6d22f740aa08cbb9': 'COMODO Time Stamping Signer',
-    'f6a29f5ba7b3523221cea09ada0de7a4': 'DigiCert Timestamp Responder',
-    '8c2ca830d46600361a01dc691394739d': 'thawte SHA256 Code Signing CA',
-    'a25c349a964b3b0fc7b299a4e0cd13d1': 'WoSign Class 3 Code Signing CA',
-    'ef1c510fe31d42cd0f4f2003690abbc4': 'GlobalSign Timestamping CA - G2',
-    '8eba8cbf3efaa5f7dd31b63213a9553e': 'WoSign Time Stamping Signer',
-    '0ca77d0cb754d92744349e9b764beaf7': 'GlobalSign CodeSigning CA - SHA256 - G2',
-    '2ed9e7c532f259802ed96d0e36fdc039': 'GlobalSign Time Stamping Authority',
-    'ad40bb9d5feee9aec27e2f33f813db04': 'COMODO RSA Certification Authority',
-    '3336cc222eaaa64923e00113e7864e14': 'GlobalSign Primary Object Publishing CA'
-}
 
-# 인증서 정보
-strdict = {
-    0x11: 'PostalCode',
-    0x6: 'C',
-    0x8: 'S',
-    0x7: 'L',
-    0x9: 'STREET',
-    0x3: 'CN',
-    0xA: 'O',
-    0xB: 'OU',
-    0x5: 'SERIALNUMBER'
-}
+# -------------------------------------------------------------------------
+# ASN1 클래스 : PE 파일 Authenticode signature format
+# -------------------------------------------------------------------------
+class ASN1:
+    def __init__(self):
+        self.data = None
+        self.name_count = {}
 
+    def set_data(self, data):
+        self.data = data
 
-# 인증서 정보 추출
-def get_subj(data):
-    if data[0] == '\x31' and data[2] == '\x30' and data[4:8] == '06035504'.decode('hex'):
-        s = ord(data[10])
-        return 11+s, ord(data[8]), data[11:11+s]
+    def hex_string(self, data):
+        d = ['%02X' % ord(x) for x in data]
+        return ' '.join(d)
 
-    return None, None, None
+    def parse(self):
+        return self.__parse_asn1(self.data)
+
+    def __parse_asn1(self, data):
+        ret = []
+
+        d = data
+
+        while len(d) > 2:
+            t, l, d1, off = self.get_asn1_data(d)
+
+            if self.is_constructed(t):
+                ret.append(self.__parse_asn1(d1))
+            else:
+                x1 = self.hex_string(d1)
+                ttype = t & 0x1f
+                if ttype == 0x6:  # Type이 ObjectIdentifier이면...
+                    ret.append(x1)
+                elif ttype in [0x13, 0x14, 0xC]:  # Type이 0x13이면 String 같음
+                    ret.append(d1)
+                elif ttype == 0x17:  # Type이 0x17이면 Time 같음
+                    ret.append(d1)
+                else:
+                    ret.append(x1)
+
+            d = d[off+l:]
+
+        return ret
+
+    # 주어진 Type이 폴더인지 알아낸다.
+    def is_constructed(self, val):
+        return val & 0x20 == 0x20
+
+    # ASN1의 길이를 얻는다.
+    def get_asn1_len(self, data):
+        val = ord(data[1])
+
+        if val & 0x80 == 0:
+            return val, 2
+        else:
+            data_type = {1: 'B', 2: 'H', 4: 'L'}
+            data_len = val & 0x7f
+
+            val = struct.unpack('>' + data_type[data_len], data[2:2+data_len])[0]
+            return val, 2+data_len
+
+    # ASN1의 데이터를 얻는다.
+    def get_asn1_data(self, data):
+        asn1_type = ord(data[0])
+        asn1_len, off = self.get_asn1_len(data)
+        asn1_data = data[off:off+asn1_len]
+        return asn1_type, asn1_len, asn1_data, off
 
 
 # -------------------------------------------------------------------------
@@ -93,8 +92,6 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
-
-        self.p_subj = re.compile(r'\x31\x0B\x30\x09\x06\x03\x55\x04\x06\x13\x02')
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -125,74 +122,61 @@ class KavMain:
 
                 cert_off = ff['pe'].get('CERTIFICATE_Offset', 0)
                 cert_size = ff['pe'].get('CERTIFICATE_Size', 0)
-                
-                if cert_off != 0 and cert_size != 0:
-                    # 인증서 추출
-                    cert_data = mm[cert_off:cert_off + cert_size]
 
+                if cert_off != 0 and cert_size != 0:
                     if self.verbose:
                         print '-' * 79
                         kavutil.vprint('Engine')
                         kavutil.vprint(None, 'Engine', 'adware.kmd')
 
-                    # String 추출
-                    if len(cert_data):
-                        if self.verbose:
-                            print
-                            kavutil.vprint('X.509')
+                    # 인증서 추출
+                    cert_data = mm[cert_off:cert_off + cert_size]
+                    asn1 = ASN1()
+                    asn1.set_data(cert_data[8:])
+                    try:
+                        r = asn1.parse()
 
-                        for p in self.p_subj.finditer(cert_data):
-                            off = p.span()[0]
+                        # Signed Data 이면서 버전 정보가 1인가?
+                        if r[0][0] == '2A 86 48 86 F7 0D 01 07 02' and r[0][1][0][0] == '01':
+                            signeddata = r[0][1][0]
+                            certificates = signeddata[3]
+
+                            signerinfo = r[0][1][0][-1]
+                            issuer_and_serialnumber = signerinfo[0][1]
+                            issuer_serial = issuer_and_serialnumber[1]
+
+                            for cert in certificates:
+                                if cert[0][1] == issuer_serial:  # 동일한 일련번호 찾기
+                                    signer_name = cert[0][5][-1][0][1]
+                                    break
+                            else:
+                                raise IndexError
+
+                            # 일련번호의 길이가 제각각이라 md5 고정길이로 만듬
+                            fmd5 = cryptolib.md5(issuer_serial)
+                            fsize = kavutil.get_uint16(fmd5.decode('hex'), 0)
 
                             if self.verbose:
-                                print '-' * 40
+                                kavutil.vprint('Signer')
+                                kavutil.vprint(None, 'Name', signer_name)
+                                kavutil.vprint(None, 'Serial Number', issuer_serial)
 
-                            while True:
-                                t = get_subj(cert_data[off:])
-                                if not t[0]:
-                                    break
+                                msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, signer_name, cryptolib.sha256(mm))
+                                open('adware.mdb', 'at').write(msg)
 
-                                if self.verbose:
-                                    s = strdict.get(t[1], 'None')
-                                    msg = '%02X : %s = %s' % (t[1], s, t[2])
-                                    print '    [-] %02X : %s = %s' % (t[1], s, t[2])
+                            if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
+                                vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
+                                if vname:
+                                    pos = ff['pe'].get('EntryPointRaw', 0)
+                                    if mm[pos:pos + 4] == '\xff\x25\x00\x20':
+                                        pf = 'MSIL'
+                                    else:
+                                        pf = 'Win32'
 
-                                off += t[0]
-
-                                if t[1] == 0x3:  # CN
-                                    buf = t[2]
-                                    fsize = len(buf)
-
-                                    if self.verbose:
-                                        fmd5 = cryptolib.md5(buf)
-                                        print '    [-] %d:%s:  # %s' % (fsize, fmd5, buf)
-
-                                    if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
-                                        fmd5 = cryptolib.md5(buf)
-                                        # print fsize, fmd5
-                                        vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
-                                        if vname:
-                                            pos = ff['pe'].get('EntryPointRaw', 0)
-                                            if mm[pos:pos+4] == '\xff\x25\x00\x20':
-                                                pf = 'MSIL'
-                                            else:
-                                                pf = 'Win32'
-                                                # print hex(pos), repr(mm[pos:pos+4])
-                                            vname = kavutil.normal_vname(vname, pf)
-                                            return True, vname, 0, kernel.INFECTED
-
-                                    if self.verbose:
-                                        fmd5 = cryptolib.md5(buf)
-                                        if not root_ca.get(fmd5, None):  # 알려진 CA는 제외
-                                            # 악성코드 탐지가 안될때 패턴 작업을 위해 파일에 기록
-                                            fsha256 = cryptolib.sha256(mm)
-                                            msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, buf, fsha256)
-                                            open('adware.mdb', 'at').write(msg)
-
-                        if self.verbose:
-                            # a = raw_input('>> ')
-                            pass
-
+                                    vname = kavutil.normal_vname(vname, pf)
+                                    return True, vname, 0, kernel.INFECTED
+                    except IndexError:
+                        pass
         except IOError:
             pass
 
