@@ -6,6 +6,8 @@ import os
 import struct
 import kernel
 import kavutil
+import zlib
+import cPickle
 import cryptolib
 
 
@@ -92,6 +94,14 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
 
+        # Adware Gen 검사기 로딩
+        try:
+            b = open(plugins_path + os.sep + 'adware.a01', 'rb').read()
+            if b[:4] == 'KAVS':
+                self.adware_gen = cPickle.loads(zlib.decompress(b[12:]))
+        except:
+            self.adware_gen = None
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -117,72 +127,110 @@ class KavMain:
 
             # 미리 분석된 파일 포맷중에 PE 포맷이 있는가?
             if 'ff_pe' in fileformat:
-                ff = fileformat['ff_pe']
+                # Cert를 이용해 악성코드를 검사한다.
+                ret = self.__scan_asn1(filehandle, filename, fileformat, filename_ex)
+                if ret[0]:  # 악성코드 발견이면 종료
+                    return ret
 
-                cert_off = ff['pe'].get('CERTIFICATE_Offset', 0)
-                cert_size = ff['pe'].get('CERTIFICATE_Size', 0)
-
-                if cert_off != 0 and cert_size != 0:
-                    if self.verbose:
-                        print '-' * 79
-                        kavutil.vprint('Engine')
-                        kavutil.vprint(None, 'Engine', 'adware.kmd')
-
-                    # 인증서 추출
-                    cert_data = mm[cert_off:cert_off + cert_size]
-                    asn1 = ASN1()
-                    asn1.set_data(cert_data[8:])
-                    try:
-                        r = asn1.parse()
-
-                        # Signed Data 이면서 버전 정보가 1인가?
-                        if r[0][0] == '2A 86 48 86 F7 0D 01 07 02' and r[0][1][0][0] == '01':
-                            signeddata = r[0][1][0]
-                            certificates = signeddata[3]
-
-                            signerinfo = r[0][1][0][-1]
-                            issuer_and_serialnumber = signerinfo[0][1]
-                            issuer_serial = issuer_and_serialnumber[1]
-
-                            for cert in certificates:
-                                if cert[0][1] == issuer_serial:  # 동일한 일련번호 찾기
-                                    for x in cert[0][5]:
-                                        if x[0][0] == '55 04 03':  # Common Name
-                                            signer_name = x[0][1]
-                                            break
-                                    else:
-                                        continue  # no break encountered
-                                    break
-                            else:
-                                raise IndexError
-
-                            # 일련번호의 길이가 제각각이라 md5 고정길이로 만듬
-                            fmd5 = cryptolib.md5(issuer_serial)
-                            fsize = kavutil.get_uint16(fmd5.decode('hex'), 0)
-
-                            if self.verbose:
-                                kavutil.vprint('Signer')
-                                kavutil.vprint(None, 'Name', signer_name)
-                                kavutil.vprint(None, 'Serial Number', issuer_serial)
-
-                                msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, signer_name, cryptolib.sha256(mm))
-                                open('adware.mdb', 'at').write(msg)
-
-                            if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
-                                vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
-                                if vname:
-                                    pos = ff['pe'].get('EntryPointRaw', 0)
-                                    if mm[pos:pos + 4] == '\xff\x25\x00\x20':
-                                        pf = 'MSIL'
-                                    else:
-                                        pf = 'Win32'
-
-                                    vname = kavutil.normal_vname(vname, pf)
-                                    return True, vname, 0, kernel.INFECTED
-                    except IndexError:
-                        pass
+                # rdata를 이용해 악성코드를 검사한다.
+                if self.adware_gen:
+                    ret = self.__scan_rdata(filehandle, filename, fileformat, filename_ex)
+                    if ret[0]:  # 악성코드 발견이면 종료
+                        return ret
         except IOError:
             pass
+
+        # 악성코드를 발견하지 못했음을 리턴한다.
+        return False, '', -1, kernel.NOT_FOUND
+
+    # ---------------------------------------------------------------------
+    # Cert 정보에서 Adware 배포자를 검사한다.
+    # ---------------------------------------------------------------------
+    def __scan_asn1(self, filehandle, filename, fileformat, filename_ex):
+        mm = filehandle
+
+        ff = fileformat['ff_pe']
+
+        cert_off = ff['pe'].get('CERTIFICATE_Offset', 0)
+        cert_size = ff['pe'].get('CERTIFICATE_Size', 0)
+
+        if cert_off != 0 and cert_size != 0:
+            if self.verbose:
+                print '-' * 79
+                kavutil.vprint('Engine')
+                kavutil.vprint(None, 'Engine', 'adware.kmd')
+
+            # 인증서 추출
+            cert_data = mm[cert_off:cert_off + cert_size]
+            asn1 = ASN1()
+            asn1.set_data(cert_data[8:])
+            try:
+                r = asn1.parse()
+
+                # Signed Data 이면서 버전 정보가 1인가?
+                if r[0][0] == '2A 86 48 86 F7 0D 01 07 02' and r[0][1][0][0] == '01':
+                    signeddata = r[0][1][0]
+                    certificates = signeddata[3]
+
+                    signerinfo = r[0][1][0][-1]
+                    issuer_and_serialnumber = signerinfo[0][1]
+                    issuer_serial = issuer_and_serialnumber[1]
+
+                    for cert in certificates:
+                        if cert[0][1] == issuer_serial:  # 동일한 일련번호 찾기
+                            for x in cert[0][5]:
+                                if x[0][0] == '55 04 03':  # Common Name
+                                    signer_name = x[0][1]
+                                    break
+                            else:
+                                continue  # no break encountered
+                            break
+                    else:
+                        raise IndexError
+
+                    # 일련번호의 길이가 제각각이라 md5 고정길이로 만듬
+                    fmd5 = cryptolib.md5(issuer_serial)
+                    fsize = kavutil.get_uint16(fmd5.decode('hex'), 0)
+
+                    if self.verbose:
+                        kavutil.vprint('Signer')
+                        kavutil.vprint(None, 'Name', signer_name)
+                        kavutil.vprint(None, 'Serial Number', issuer_serial)
+
+                        msg = '%d:%s:  # %s, %s\n' % (fsize, fmd5, signer_name, cryptolib.sha256(mm))
+                        open('adware.mdb', 'at').write(msg)
+
+                    if fsize and kavutil.handle_pattern_md5.match_size('adware', fsize):
+                        vname = kavutil.handle_pattern_md5.scan('adware', fsize, fmd5)
+                        if vname:
+                            pos = ff['pe'].get('EntryPointRaw', 0)
+                            if mm[pos:pos + 4] == '\xff\x25\x00\x20':
+                                pf = 'MSIL'
+                            else:
+                                pf = 'Win32'
+
+                            vname = kavutil.normal_vname(vname, pf)
+                            return True, vname, 0, kernel.INFECTED
+            except IndexError:
+                pass
+
+        # 악성코드를 발견하지 못했음을 리턴한다.
+        return False, '', -1, kernel.NOT_FOUND
+
+    # ---------------------------------------------------------------------
+    # rdata에 Adware에서 자주 사용하는 문자열을 검사한다.
+    # ---------------------------------------------------------------------
+    def __scan_rdata(self, filehandle, filename, fileformat, filename_ex):
+        mm = filehandle
+
+        ff = fileformat['ff_pe']
+
+        if ff['pe']['SectionNumber'] > 2:
+            section = ff['pe']['Sections'][1]  # .rdata
+            foff = section['PointerRawData']
+            fsize = section['SizeRawData']
+            for x in self.adware_gen.finditer(mm[foff:foff+fsize]):
+                return True, 'Adware.Win32.Generic', 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
@@ -236,7 +284,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'      # 버전
+        info['version'] = '1.1'      # 버전
         info['title'] = 'Adware Scan Engine'  # 엔진 설명
         info['kmd_name'] = 'adware'  # 엔진 파일 이름
         info['sig_num'] = kavutil.handle_pattern_md5.get_sig_num('adware') * 2  # 진단/치료 가능한 악성코드 수
