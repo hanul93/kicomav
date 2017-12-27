@@ -3,7 +3,6 @@
 
 
 import os
-import re
 import struct
 import kernel
 import kavutil
@@ -43,7 +42,7 @@ class ASN1:
                 ttype = t & 0x1f
                 if ttype == 0x6:  # Type이 ObjectIdentifier이면...
                     ret.append(x1)
-                elif ttype in [0x13, 0x14, 0xC]:  # Type이 0x13이면 String 같음
+                elif ttype in [0x13, 0x14, 0xC, 0x16]:  # Type이 0x13이면 String 같음
                     ret.append(d1)
                 elif ttype == 0x17:  # Type이 0x17이면 Time 같음
                     ret.append(d1)
@@ -147,7 +146,12 @@ class KavMain:
 
                             for cert in certificates:
                                 if cert[0][1] == issuer_serial:  # 동일한 일련번호 찾기
-                                    signer_name = cert[0][5][-1][0][1]
+                                    for x in cert[0][5]:
+                                        if x[0][0] == '55 04 03':  # Common Name
+                                            signer_name = x[0][1]
+                                            break
+                                    else:
+                                        continue  # no break encountered
                                     break
                             else:
                                 raise IndexError
