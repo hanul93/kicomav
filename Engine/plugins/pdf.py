@@ -20,24 +20,36 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.REF_OBJ = 0  # 참조 OBJ의 Stream 추출하기
+        self.IN_OBJ = 1  # 해당 문장이 포함된 OBJ의 Stream 추출하기
+
         # PDF 헤더
         pat = r'^s*%PDF-1.'
         self.p_pdf_header = re.compile(pat, re.IGNORECASE)
 
-        # 해당 패턴이 존재하면 악성코드 검사를 시도한다.
-        self.p_pdf_scanables = []
-        pats = [r'/OpenAction\b', r'/EmbeddedFile\b', r'/JavaScript\b', r'/JS\b']
-        for pat in pats:
-            self.p_pdf_scanables.append(re.compile(pat, re.IGNORECASE))
+        # PDF내부의 OBJ의 위치 기록을 위해 사용한다.
+        s = r'(\d+)\s+0\s+obj\s*<<[\d\D]+?endobj'
+        self.p_obj = re.compile(s)
+        self.pdf_obj_off = None
 
-        # Stream을 가진 Object
-        pat = r'(\d+)\s+0\s+obj\s*<<.+>>\s*?stream\s*([\d\D]+?)\s*endstream\s+endobj'
-        self.p_pdf_obj = re.compile(pat, re.IGNORECASE)
+        # 해당 패턴이 존재하면 악성코드 검사를 시도한다.
+        self.p_pdf_scanables = {}
+        pats = {r'/JS\s+(\d+)\s+0\s+R\b': self.REF_OBJ,
+                r'/Length\s+0\b': self.IN_OBJ
+                }
+
+        for pat in pats.keys():
+            self.p_pdf_scanables[re.compile(pat, re.IGNORECASE)] = pats[pat]
+
+        # Stream 추출
+        pat = r'stream\s*([\d\D]+?)\s*endstream'
+        self.p_stream = re.compile(pat, re.IGNORECASE)
 
         # /Filter
         pat = '/Filter\s*/(\w+)'
         self.p_pdf_filter = re.compile(pat, re.IGNORECASE)
 
+        # PDF 트로이목마 진단용 패턴
         pat = r'this\.exportDataObject.+?cName:.+?nLaunch'
         self.p_pdf_trojan_js = re.compile(pat)
 
@@ -60,7 +72,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.1'  # 버전
+        info['version'] = '1.2'  # 버전
         info['title'] = 'PDF Engine'  # 엔진 설명
         info['kmd_name'] = 'pdf'  # 엔진 파일 이름
         info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
@@ -150,25 +162,34 @@ class KavMain:
     # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
     # ---------------------------------------------------------------------
     def arclist(self, filename, fileformat):
+        self.pdf_obj_off = None
+        stream_obj_no = []
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
         # 미리 분석된 파일 포맷중에 PDF 포맷이 있는가?
         if 'ff_pdf' in fileformat:
             try:
-                with open(filename, 'rb') as fp:
-                    buf = fp.read()
+                buf = open(filename, 'rb').read()
+                for pat in self.p_pdf_scanables.keys():
+                    for p in pat.finditer(buf):
+                        if self.p_pdf_scanables[pat] == self.REF_OBJ:
+                            stream_obj_no.append(p.groups()[0])
+                        else:  # self.IN_OBJ
+                            self.__search_object_off(buf)
 
-                    for p in self.p_pdf_scanables:
-                        if p.search(buf):  # 패턴이 발견되었으면 악성코드 검사해야 한다.
-                            break
-                    else:
-                        raise IOError
-            except IOError:
+                            for obj_no in self.pdf_obj_off.keys():
+                                start_off = self.pdf_obj_off[obj_no][0]
+                                end_off = self.pdf_obj_off[obj_no][1]
+                                if start_off < p.span()[0] < end_off:
+                                    stream_obj_no.append(obj_no)
+                                    break
+
+                if len(stream_obj_no):  # Stream 추출 대상이 존재하는가?
+                    stream_obj_no.sort()
+                    for no in stream_obj_no:
+                        file_scan_list.append(['arc_pdf', 'PDF #%s' % no])
+            except (IOError, MemoryError) as e:
                 return []
-
-            for obj in self.p_pdf_obj.finditer(buf):
-                obj_id = obj.groups()[0]
-                file_scan_list.append(['arc_pdf', 'PDF #%s' % obj_id])
 
         return file_scan_list
 
@@ -180,28 +201,30 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id == 'arc_pdf':
-            buf = ''
-
+        if arc_engine_id == 'arc_pdf' and self.pdf_obj_off is not None:
             try:
-                with open(arc_name, 'rb') as fp:
-                    buf = fp.read()
-            except IOError:
-                return None
+                obj_no = fname_in_arc[5:]  # 압축 해제 대상 추출
 
-            for obj in self.p_pdf_obj.finditer(buf):
-                obj_id = obj.groups()[0]
-                if obj_id == fname_in_arc[5:]:  # 압축 해제 대상인가?
-                    data = obj.groups()[1]  # Stream 데이터 추출
+                buf = open(arc_name, 'rb').read()
+                start_off, end_off = self.pdf_obj_off[obj_no]
 
-                    t = self.p_pdf_filter.search(obj.group())
-                    if (t is not None) and (t.groups()[0].lower() == 'flatedecode'):
-                        try:
-                            data = zlib.decompress(data)
-                        except zlib.error:
-                            pass
+                # Stream 추출
+                p = self.p_stream.search(buf[start_off:end_off])
+                if p:  # 찾았음
+                    data = p.groups()[0]
+
+                    # 필터가 존재하나?
+                    pf = self.p_pdf_filter.search(buf[start_off:end_off])
+                    if pf:
+                        if pf.groups()[0].lower() == 'flatedecode':
+                            try:
+                                data = zlib.decompress(data)
+                            except zlib.error:
+                                pass
 
                     return data
+            except (IOError, MemoryError) as e:
+                pass
 
         return None
 
@@ -211,3 +234,20 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
+
+    # ---------------------------------------------------------------------
+    # __search_object_off(self, buf)
+    # PDF OBJ의 위치를 기록한다. [내부용]
+    # ---------------------------------------------------------------------
+    def __search_object_off(self, buf):
+        if self.pdf_obj_off:
+            return
+
+        self.pdf_obj_off = {}
+        for p in self.p_obj.finditer(buf):
+            obj_no = p.groups()[0]
+            obj_off = p.span()
+            self.pdf_obj_off[obj_no] = obj_off
+
+        if len(self.pdf_obj_off) == 0:
+            self.pdf_obj_off = None
