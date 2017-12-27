@@ -605,7 +605,10 @@ class KavMain:
                 unpack_data = ''  # UPX 해제된 이미지
 
                 if arc_engine_id[8:] == 'nrv2b':  # UPX 알고리즘 중 nrv2b 압축인가?
-                    ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1, pe_img)
+                    try:
+                        ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1, pe_img)
+                    except OverflowError:
+                        raise ValueError
 
                 if unpack_data == '':  # 압축 해제 실패
                     raise ValueError
