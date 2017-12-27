@@ -99,12 +99,17 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 tar 포맷이 있는가?
         if 'ff_tar' in fileformat:
-            tfile = self.__get_handle(filename)
+            try:
+                tfile = self.__get_handle(filename)
 
-            for name in tfile.getnames():
-                file_scan_list.append(['arc_tar', name])
+                for name in tfile.getnames():
+                    file_scan_list.append(['arc_tar', name])
 
-        return file_scan_list
+                return file_scan_list
+            except tarfile.ReadError:
+                pass
+
+        return []
 
     # ---------------------------------------------------------------------
     # unarc(self, arc_engine_id, arc_name, fname_in_arc)
