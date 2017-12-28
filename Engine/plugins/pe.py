@@ -6,6 +6,7 @@ import os
 import re
 import ctypes
 import struct
+import kernel
 import kavutil
 import cryptolib
 
@@ -501,6 +502,8 @@ class KavMain:
         info['title'] = 'PE Engine'  # 엔진 설명
         info['kmd_name'] = 'pe'  # 엔진 파일 이름
 
+        # 리소스 파일에 악성코드가 존재하는 경우로 최상위 파일을 삭제한다.
+        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료 후 재압축 유무
         return info
 
     # ---------------------------------------------------------------------
