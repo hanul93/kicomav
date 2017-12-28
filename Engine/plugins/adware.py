@@ -9,6 +9,13 @@ import kavutil
 import zlib
 import cPickle
 import cryptolib
+import StringIO
+
+try:
+    import yara
+    LOAD_YARA = True
+except ImportError:
+    LOAD_YARA = False
 
 
 # -------------------------------------------------------------------------
@@ -93,12 +100,21 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
+        self.sig_num_yara = 0
 
-        # Adware Gen 검사기 로딩
+        # Yara 모듈이 없을 경우 엔질 로딩 실패 처리
+        if not LOAD_YARA:
+            return -1
+
+        # Adware Yara 룰 로딩
         try:
-            b = open(plugins_path + os.sep + 'adware.a01', 'rb').read()
+            b = open(plugins_path + os.sep + 'adware.y01', 'rb').read()
+            self.sig_num_yara = kavutil.get_uint32(b, 4)
             if b[:4] == 'KAVS':
-                self.adware_gen = cPickle.loads(zlib.decompress(b[12:]))
+                t = zlib.decompress(b[12:])
+
+                buff = StringIO.StringIO(t)
+                self.adware_gen = yara.load(file=buff)
         except:
             self.adware_gen = None
 
@@ -229,8 +245,11 @@ class KavMain:
             section = ff['pe']['Sections'][1]  # .rdata
             foff = section['PointerRawData']
             fsize = section['SizeRawData']
-            for x in self.adware_gen.finditer(mm[foff:foff+fsize]):
-                return True, 'Adware.Win32.Generic', 0, kernel.INFECTED
+
+            ret = self.adware_gen.match(data=mm[foff:foff + fsize])
+            if len(ret):
+                vname = ret[0].meta.get('KicomAV', ret[0].rule)  # KicomAV meta 정보 확인
+                return True, vname, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
@@ -287,6 +306,8 @@ class KavMain:
         info['version'] = '1.1'      # 버전
         info['title'] = 'Adware Scan Engine'  # 엔진 설명
         info['kmd_name'] = 'adware'  # 엔진 파일 이름
-        info['sig_num'] = kavutil.handle_pattern_md5.get_sig_num('adware') * 2  # 진단/치료 가능한 악성코드 수
+        s_num = kavutil.handle_pattern_md5.get_sig_num('adware') * 2  # 진단/치료 가능한 악성코드 수
+        s_num += self.sig_num_yara
+        info['sig_num'] =s_num
 
         return info
