@@ -37,7 +37,8 @@ class PyzFile:
 
             fp.seek(toc_off)
             toc = fp.read()
-            self.tocs = marshal.loads(toc)
+            if toc[0] == '[' or toc[0] == '{':  # ListType or DictionaryType인가?
+                self.tocs = marshal.loads(toc)
         except IOError:
             pass
 
