@@ -958,11 +958,16 @@ def main():
     # 백신 엔진 구동
     k2 = kavcore.k2engine.Engine()  # 엔진 클래스
 
+    # 플러그인 엔진 설정
     plugins_path = os.path.split(os.path.abspath(sys.argv[0]))[0] + os.sep + 'plugins'
-    if not k2.set_plugins(plugins_path):  # 플러그인 엔진 설정
+    if not k2.set_plugins(plugins_path):
         print
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
+
+    # 임시 폴더 설정
+    pwd = os.path.split(sys.argv[0])[0]  # 프로그램이 실행중인 폴더
+    k2.set_temppath(os.path.abspath(pwd))
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:
