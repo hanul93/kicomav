@@ -10,7 +10,6 @@ import types
 import mmap
 import glob
 import re
-import tempfile
 import shutil
 import struct
 import zipfile
@@ -46,6 +45,7 @@ class Engine:
         self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = None  # 플러그인 경로
+        self.temp_path = None  # 임시 폴더 클래스
         self.kmdfiles = []  # 우선순위가 기록된 kmd 리스트
         self.kmd_modules = []  # 메모리에 로딩된 모듈
 
@@ -54,23 +54,15 @@ class Engine:
         self.max_datetime = datetime.datetime(1980, 1, 1, 0, 0, 0, 0)
         
         # 키콤백신이 만든 임시 파일 모두 제거
-        self.__remove_kav_tempfile()  
+        # self.__remove_kav_tempfile()
 
     # ---------------------------------------------------------------------
-    # __remove_kav_tempfile(self)
-    # 임시 폴더에 존재하는 임시 파일 제거
+    # __del__(self)
+    # 클래스를 종료 한다.
     # ---------------------------------------------------------------------
-    def __remove_kav_tempfile(self):
-        tpath = tempfile.gettempdir()
-        fl = glob.glob(tpath + os.sep + 'ktmp*')
-        for name in fl:
-            if os.path.isfile(name):
-                try:
-                    os.remove(name)
-                except IOError:
-                    pass
-                except WindowsError:  # 기타 삭제 오류 처리
-                    pass
+    def __del__(self):
+        # 키콤백신이 만든 임시 파일 모두 제거
+        self.temp_path.removetempdir()
 
     # ---------------------------------------------------------------------
     # set_plugins(self, plugins_path)
@@ -152,11 +144,21 @@ class Engine:
         return True
 
     # ---------------------------------------------------------------------
+    # set_temppath(self, temp_path)
+    # 주어진 임시 폴더를 설정한다.
+    # 인자값 : temp_path - 임시 폴더 클래스
+    # 리턴값 : 성공 여부
+    # ---------------------------------------------------------------------
+    def set_temppath(self, temp_path):
+        # 임시 폴더를 지정한다.
+        self.temp_path = k2file.K2Tempfile(temp_path)
+
+    # ---------------------------------------------------------------------
     # create_instance(self)
     # 백신 엔진의 인스턴스를 생성한다.
     # ---------------------------------------------------------------------
     def create_instance(self):
-        ei = EngineInstance(self.plugins_path, self.max_datetime, self.verbose)
+        ei = EngineInstance(self.plugins_path, self.temp_path, self.max_datetime, self.verbose)
         if ei.create(self.kmd_modules):
             return ei
         else:
@@ -221,16 +223,18 @@ class Engine:
 # -------------------------------------------------------------------------
 class EngineInstance:
     # ---------------------------------------------------------------------
-    # __init__(self, plugins_path, max_datetime, verbose=False)
+    # __init__(self, plugins_path, temp_path, max_datetime, verbose=False)
     # 클래스를 초기화 한다.
     # 인자값 : plugins_path - 플러그인 엔진 경로
+    #         temp_path    - 임시 폴더 클래스
     #         max_datetime - 플러그인 엔진의 최신 시간 값
     #         verbose      - 디버그 여부
     # ---------------------------------------------------------------------
-    def __init__(self, plugins_path, max_datetime, verbose=False):
+    def __init__(self, plugins_path, temp_path, max_datetime, verbose=False):
         self.verbose = verbose  # 디버깅 여부
 
         self.plugins_path = plugins_path  # 플러그인 경로
+        self.temp_path = temp_path  # 임시 폴더 클래스
         self.max_datetime = max_datetime  # 플러그 엔진의 가장 최신 시간 값
 
         self.options = {}  # 옵션
@@ -995,7 +999,7 @@ class EngineInstance:
 
                         if unpack_data:
                             # 압축을 해제하여 임시 파일을 생성
-                            rname = tempfile.mktemp(prefix='ktmp')
+                            rname = self.temp_path.mktemp()
                             fp = open(rname, 'wb')
                             fp.write(unpack_data)
                             fp.close()
@@ -1035,7 +1039,7 @@ class EngineInstance:
                 else:  # end for
                     # 어떤 엔진도 압축 해제를 하지 못한 경우
                     # 임시 파일만 생성한 뒤 종료
-                    rname = tempfile.mktemp(prefix='ktmp')
+                    rname = self.temp_path.mktemp()
                     fp = open(rname, 'wb')
                     fp.close()
                     # print '[*] Make   :', rname
@@ -1108,7 +1112,7 @@ class EngineInstance:
                         try:
                             deep_name1 = deep_name
                             name1 = name
-                            
+
                             if type(deep_name) != type(name):
                                 if isinstance(deep_name, unicode):
                                     name1 = name.decode('utf-8', 'ignore')
