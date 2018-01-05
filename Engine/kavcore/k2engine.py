@@ -77,14 +77,14 @@ class Engine:
         # 우선순위를 알아낸다.
         if k2const.K2DEBUG:
             pu = None
-            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.lst', pu)
+            ret = self.__get_kmd_list(os.path.join(plugins_path, 'kicom.lst'), pu)
         else:
             # 공개키를 로딩한다.
-            pu = k2rsa.read_key(plugins_path + os.sep + 'key.pkr')
+            pu = k2rsa.read_key(os.path.join(plugins_path, 'key.pkr'))
             if not pu:
                 return False
 
-            ret = self.__get_kmd_list(plugins_path + os.sep + 'kicom.kmd', pu)
+            ret = self.__get_kmd_list(os.path.join(plugins_path, 'kicom.kmd'), pu)
 
         if not ret:  # 로딩할 KMD 파일이 없다.
             return False
@@ -95,7 +95,7 @@ class Engine:
 
         # 우선순위대로 KMD 파일을 로딩한다.
         for kmd_name in self.kmdfiles:
-            kmd_path = plugins_path + os.sep + kmd_name
+            kmd_path = os.path.join(plugins_path, kmd_name)
             try:
                 name = kmd_name.split('.')[0]
                 if k2const.K2DEBUG:
@@ -121,7 +121,7 @@ class Engine:
                 pass
 
         # 악성코드 패턴에서 최신 시간 값을 얻는다.
-        fl = glob.glob(plugins_path + os.sep + '*.n??')
+        fl = glob.glob(os.path.join(plugins_path, '*.n??'))
         for fname in fl:
             try:
                 buf = open(fname, 'rb').read(12)
@@ -445,8 +445,7 @@ class EngineInstance:
                 # 폴더면 내부 파일리스트만 검사 대상 리스트에 등록
                 if os.path.isdir(real_name):
                     # 폴더 등을 처리할 때를 위해 뒤에 붇는 os.sep는 우선 제거
-                    if real_name[-1] == os.sep:
-                        real_name = real_name[:-1]
+                    real_name = os.path.abspath(real_name)
 
                     # 콜백 호출 또는 검사 리턴값 생성
                     ret_value['result'] = False  # 폴더이므로 악성코드 없음
@@ -461,7 +460,7 @@ class EngineInstance:
 
                     if is_sub_dir_scan:
                         # 폴더 안의 파일들을 검사대상 리스트에 추가
-                        flist = glob.glob(real_name + os.sep + '*')
+                        flist = glob.glob(os.path.join(real_name, '*'))
                         tmp_flist = []
 
                         for rfname in flist:
@@ -635,7 +634,7 @@ class EngineInstance:
             try:
                 t_filename = os.path.split(filename)[-1]
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
-                fname = self.options['infp_path'] + os.sep + t_filename
+                fname = os.path.join(self.options['infp_path'], t_filename)
                 t_quarantine_fname = fname
                 count = 1
                 while True:

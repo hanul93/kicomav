@@ -56,7 +56,7 @@ class PatternMD5:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
-        fl = glob.glob(plugins_path + os.sep + '*.s??')
+        fl = glob.glob(os.path.join(plugins_path, '*.s??'))
         fl.sort()
         for name in fl:
             obj = p_md5_pattern_ext.search(name)
@@ -169,7 +169,7 @@ class PatternMD5:
         if not (sig_key in sig_dict) or not (idx in sig_dict[sig_key]):
             # 패턴 로딩
             try:
-                name_fname = self.plugins + os.sep + '%s.%s%s' % (sig_key, sig_prefix, idx)
+                name_fname = os.path.join(self.plugins, '%s.%s%s' % (sig_key, sig_prefix, idx))
                 sp = self.__load_sig(name_fname)
                 if sp is None:
                     return False
@@ -220,7 +220,7 @@ class PatternMD5:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(self.plugins + os.sep + '%s.c??' % sig_key)
+        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
 
         for fname in fl:
             try:
@@ -240,7 +240,7 @@ class PatternMD5:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(self.plugins + os.sep + '%s.n??' % sig_key)
+        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
 
         for fname in fl:
             try:

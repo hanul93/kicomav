@@ -108,7 +108,7 @@ class KavMain:
 
         # Adware Yara 룰 로딩
         try:
-            b = open(plugins_path + os.sep + 'adware.y01', 'rb').read()
+            b = open(os.path.join(plugins_path, 'adware.y01'), 'rb').read()
             self.sig_num_yara = kavutil.get_uint32(b, 4)
             if b[:4] == 'KAVS':
                 t = zlib.decompress(b[12:])

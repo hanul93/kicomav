@@ -446,7 +446,7 @@ def download_file(url, filename, fnhook=None):
     rurl += filename.replace('\\', '/')
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.abspath('') + os.sep + filename
+    pwd = os.path.join(os.path.abspath(''), filename)
 
     if fnhook is not None:
         cprint(filename + ' ', FOREGROUND_GREY)
@@ -476,7 +476,7 @@ def get_download_list(url):
         t = line.split(' ')  # 업데이트 목록 한개를 구한다
 
         # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
-        if chek_need_update(pwd + os.sep + t[1], t[0]) == 1:
+        if chek_need_update(os.path.join(pwd, t[1]), t[0]) == 1:
             # 다르면 업데이트 목록에 추가
             down_list.append(t[1])
 
@@ -958,16 +958,18 @@ def main():
     # 백신 엔진 구동
     k2 = kavcore.k2engine.Engine()  # 엔진 클래스
 
+    # 프로그램이 실행중인 폴더
+    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
+
     # 플러그인 엔진 설정
-    plugins_path = os.path.split(os.path.abspath(sys.argv[0]))[0] + os.sep + 'plugins'
+    plugins_path = os.path.join(k2_pwd, 'plugins')
     if not k2.set_plugins(plugins_path):
         print
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
 
     # 임시 폴더 설정
-    pwd = os.path.split(sys.argv[0])[0]  # 프로그램이 실행중인 폴더
-    k2.set_temppath(os.path.abspath(pwd))
+    k2.set_temppath(k2_pwd)
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:

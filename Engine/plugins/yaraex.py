@@ -30,7 +30,7 @@ class KavMain:
             return -1
 
         try:
-            self.rules = yara.compile(plugins_path + os.sep + 'yaraex.yar')
+            self.rules = yara.compile(os.path.join(plugins_path, 'yaraex.yar'))
         except:
             if self.verbose:
                 print '[*] ERROR : YARA Rule compile'
