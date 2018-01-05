@@ -28,6 +28,8 @@ import urllib
 import time
 import struct
 import datetime
+import gzip
+import tempfile
 from optparse import OptionParser
 import kavcore.k2engine
 import kavcore.k2const
@@ -410,15 +412,21 @@ def update_kicomav():
     print
 
     try:
-        url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v2/'  # 서버 주소를 나중에 바꿔야 한다.
+        url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
         down_list = get_download_list(url)
+        is_k2_exe_update = 'k2.exe' in down_list
 
         while len(down_list) != 0:
             filename = down_list.pop(0)
+
             # 파일 한개씩 업데이트 한다.
-            download_file(url, filename, hook)
+            if filename != 'k2.exe':
+                download_file(url, filename, gz=True, fnhook=hook)
+
+        if is_k2_exe_update:
+            k2temp_path = download_file_k2(url, 'k2.exe', gz=True, fnhook=hook)
 
         # 업데이트 완료 메시지 출력
         cprint('\n[', FOREGROUND_GREY)
@@ -427,6 +435,10 @@ def update_kicomav():
 
         # 업데이트 설정 파일 삭제
         os.remove('update.cfg')
+
+        # k2.exe의 경우 최종 업데이트 프로그램 실행
+        if is_k2_exe_update:
+            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', os.path.abspath('')))
     except KeyboardInterrupt:
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
@@ -439,14 +451,18 @@ def hook(blocknumber, blocksize, totalsize):
 
 
 # 한개의 파일을 다운로드 한다.
-def download_file(url, filename, fnhook=None):
+def download_file(url, filename, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
     rurl += filename.replace('\\', '/')
+    if gz:
+        rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
     pwd = os.path.join(os.path.abspath(''), filename)
+    if gz:
+        pwd += '.gz'
 
     if fnhook is not None:
         cprint(filename + ' ', FOREGROUND_GREY)
@@ -454,8 +470,46 @@ def download_file(url, filename, fnhook=None):
     # 파일을 다운로드 한다
     urllib.urlretrieve(rurl, pwd, fnhook)
 
+    if gz:
+        data = gzip.open(pwd, 'rb').read()
+        fname = os.path.join(os.path.abspath(''), filename)
+        open(fname, 'wb').write(data)
+        os.remove(pwd)  # gz 파일은 삭제한다.
+
     if fnhook is not None:
         cprint(' update\n', FOREGROUND_GREEN)
+
+
+# k2.exe를 다운로드 한다.
+def download_file_k2(url, filename, gz=False, fnhook=None):
+    rurl = url
+
+    # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
+    rurl += filename.replace('\\', '/')
+    if gz:
+        rurl += '.gz'
+
+    # 저장해야 할 파일의 전체 경로를 구한다
+    pwd = os.path.join(os.path.abspath(''), filename)
+    if gz:
+        pwd += '.gz'
+
+    if fnhook is not None:
+        cprint(filename + ' ', FOREGROUND_GREY)
+
+    # 파일을 다운로드 한다
+    urllib.urlretrieve(rurl, pwd, fnhook)
+
+    if gz:
+        data = gzip.open(pwd, 'rb').read()
+        fname = tempfile.mktemp(prefix='ktmp') + '.exe'
+        open(fname, 'wb').write(data)
+        os.remove(pwd)  # gz 파일은 삭제한다.
+
+    if fnhook is not None:
+        cprint(' update\n', FOREGROUND_GREEN)
+
+    return fname
 
 
 # 업데이트 해야 할 파일의 목록을 구한다
