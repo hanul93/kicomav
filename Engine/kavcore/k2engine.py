@@ -53,8 +53,8 @@ class Engine:
         # 초기값으로는 1980-01-01을 지정한다.
         self.max_datetime = datetime.datetime(1980, 1, 1, 0, 0, 0, 0)
         
-        # 키콤백신이 만든 임시 파일 모두 제거
-        # self.__remove_kav_tempfile()
+        # 키콤백신이 만든 임시 파일 모두 제거 (운영체제의 임시 폴더를 초기화)
+        k2file.K2Tempfile().removetempdir()
 
     # ---------------------------------------------------------------------
     # __del__(self)

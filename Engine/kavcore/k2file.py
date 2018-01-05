@@ -11,23 +11,26 @@ import tempfile
 # K2Tempfile 클래스
 # ---------------------------------------------------------------------
 class K2Tempfile:
-    def __init__(self, path):
-        i = 0
-        pid = os.getpid()
-
-        while i < 5:
-            self.temp_path = os.path.join(path, 'tmp%05x' % pid)
-            if not os.path.exists(self.temp_path):
-                try:
-                    os.mkdir(self.temp_path)
-                    break
-                except (IOError, WindowsError) as e:
-                    pass
-
-            pid += 1
-            i += 1  # 5번만 폴더 만들기 시도
-        else:
+    def __init__(self, path=None):
+        if not path:  # 임시 폴더 설정이 없으면 운영체제의 임시 폴더로 설정
             self.temp_path = tempfile.gettempdir()
+        else:
+            i = 0
+            pid = os.getpid()
+
+            while i < 5:
+                self.temp_path = os.path.join(path, 'tmp%05x' % pid)
+                if not os.path.exists(self.temp_path):
+                    try:
+                        os.mkdir(self.temp_path)
+                        break
+                    except (IOError, WindowsError) as e:
+                        pass
+
+                pid += 1
+                i += 1  # 5번만 폴더 만들기 시도
+            else:
+                self.temp_path = tempfile.gettempdir()
 
     def gettempdir(self):
         return self.temp_path
