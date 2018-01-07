@@ -84,7 +84,7 @@ class KavMain:
             if names is not None:
                 for name in names:
                     n = name.lower()
-                    if n == 'class.dex' or n == 'androidmanifest.xml' or n == 'meta-inf/manifest.mf':
+                    if n == 'classes.dex':
                         ret['ff_apk'] = 'apk'
                     elif n == 'xl/workbook.xml':
                         ret['ff_ooxml'] = 'xlsx'
