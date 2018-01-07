@@ -8,36 +8,6 @@ import kavutil
 
 
 # -------------------------------------------------------------------------
-# 폴더 생성
-# -------------------------------------------------------------------------
-def create_folder(path):
-    if os.path.exists(path) is False:
-        t_dir = path
-
-        # 폴더가 존재하는 곳까지 진행
-        while 1:
-            if os.path.exists(t_dir) is False:
-                t_dir, tmp = os.path.split(t_dir)
-            else:
-                break
-
-        # print dir # 실제 존재하는 폴더
-
-        makedir = path.replace(t_dir, '')
-        mkdir_list = makedir.split(os.sep)
-
-        for m in mkdir_list:
-            if len(m) != 0:
-                t_dir += (os.sep + m)
-                # print dir # 폴더 생성
-                os.mkdir(t_dir)
-
-        return True
-    else:
-        return False
-
-
-# -------------------------------------------------------------------------
 # 데이터 읽기 함수 (엔디안 때문에 Kavutil과 별도로 작성)
 # -------------------------------------------------------------------------
 def get_uint16(buf, off, endian='<'):
@@ -431,31 +401,6 @@ class KavMain:
 
         fileformat['elf'] = elf_format
         ret = {'ff_elf': fileformat}
-
-        '''
-        # 임시 분류 작업
-        import zlib
-        import shutil
-
-        try:
-            phnum = len(elf_format['ProgramHeaders'])
-            shnum = len(elf_format['Sections'])
-
-            if shnum:
-                root = 'elf\\s_%02d\\' % shnum
-            else:
-                root = 'elf\\p_%02d\\' % phnum
-
-            off = elf_format['EntryPointRaw']
-            buf = filehandle[off:off+0x10]
-            crc32 = (zlib.crc32(buf[:0x10]) & 0xffffffff)
-            path = os.path.abspath(root + '%08x' % crc32)
-            path = os.path.normcase(path)
-            create_folder(path)
-            shutil.copy(filename, path)
-        except KeyError:
-            pass
-        '''
 
         return ret
 
