@@ -29,6 +29,7 @@ import time
 import struct
 import datetime
 import gzip
+import re
 import tempfile
 from optparse import OptionParser
 import kavcore.k2engine
@@ -518,23 +519,24 @@ def get_download_list(url):
 
     pwd = os.path.abspath('')
 
-    # 업데이트 설정 파일을 다운로드 한다
-    download_file(url, 'update.cfg')
+    try:
+        # 업데이트 설정 파일을 다운로드 한다
+        download_file(url, 'update.cfg')
 
-    fp = open('update.cfg', 'r')
+        buf = open('update.cfg', 'r').read()
+        p_lists = re.compile(r'([A-Fa-f0-9]{64}) (.+)')
+        lines = p_lists.findall(buf)
 
-    while True:
-        line = fp.readline().strip()
-        if not line:
-            break
-        t = line.split(' ')  # 업데이트 목록 한개를 구한다
+        for line in lines:
+            fhash = line[0]
+            fname = line[1]
 
-        # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
-        if chek_need_update(os.path.join(pwd, t[1]), t[0]) == 1:
-            # 다르면 업데이트 목록에 추가
-            down_list.append(t[1])
-
-    fp.close()
+            # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+            if chek_need_update(os.path.join(pwd, fname), fhash) == 1:
+                # 다르면 업데이트 목록에 추가
+                down_list.append(fname)
+    except:
+        pass
 
     return down_list
 
