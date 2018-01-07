@@ -292,7 +292,11 @@ class EngineInstance:
         for inst in self.kavmain_inst:
             try:
                 # 플러그인 엔진의 init 함수 호출
-                ret = inst.init(self.plugins_path, self.options['opt_verbose'])
+                if k2const.K2DEBUG:  # 디버그 모드일때만 verbose 옵션 동작
+                    ret = inst.init(self.plugins_path, self.options['opt_verbose'])
+                else:
+                    ret = inst.init(self.plugins_path, False)
+                    
                 if not ret:  # 성공
                     t_kavmain_inst.append(inst)
 
@@ -594,6 +598,11 @@ class EngineInstance:
                             self.call_scan_callback_fn(scan_callback_fn, ret_value)
             except KeyboardInterrupt:
                 return 1  # 키보드 종료
+            except:
+                if k2const.K2DEBUG:
+                    import traceback
+                    print traceback.format_exc()
+                pass
 
         self.__update_process(None, True)  # 최종 파일 정리
 
@@ -887,11 +896,7 @@ class EngineInstance:
                 fp.close()
 
             return ret, vname, mid, scan_state, eid
-        except EngineKnownError:
-            pass
-        except ValueError:
-            pass
-        except KeyboardInterrupt:
+        except (EngineKnownError, ValueError, KeyboardInterrupt) as e:
             pass
         except:
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수

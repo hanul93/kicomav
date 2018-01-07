@@ -397,7 +397,7 @@ def print_options():
              --no-color        don't print with color
              --move            move infected files in quarantine folder
              --update          update
-             --verbose         enabling verbose mode
+             --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
         -?,  --help            this help
                                * = default option'''
