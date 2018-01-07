@@ -15,6 +15,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 * Python 2.7
 * [pylzma](https://github.com/fancycode/pylzma)
 * [yara](https://github.com/plusvic/yara)
+* [backports.lzma](https://github.com/peterjc/backports.lzma)
 
 ## Quick start
 
@@ -37,8 +38,8 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
-Copyright (C) 1995-2017 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 Usage: k2.py path[s] [options]
@@ -57,7 +58,7 @@ Options:
              --no-color        don't print with color
              --move            move infected files in quarantine folder
              --update          update
-             --verbose         enabling verbose mode
+             --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
         -?,  --help            this help
                                * = default option
@@ -70,8 +71,8 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release>k2.py --update
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
-Copyright (C) 1995-2017 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
 plugins/emalware.c01 .... update
@@ -89,11 +90,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
-Copyright (C) 1995-2017 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Mon Sep  4 01:33:12 2017 UTC
-Signature number: 1635
+Last updated Thu Jan  8 07:50:42 2018 UTC
+Signature number: 1,675
 
 C:\kicomav\Relea ... 08ecba90d0cd778  infected : Trojan-Ransom.Win32.Snocry.cxu
 C:\kicomav\Release\ ... 218e8a8d7eb93df1003  infected : Trojan.Win32.Agent.icgh
@@ -118,11 +119,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py sample\test.zip -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
-Copyright (C) 1995-2017 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Mon Sep  4 01:33:12 2017 UTC
-Signature number: 1638
+Last updated Thu Jan  8 07:50:42 2018 UTC
+Signature number: 1,675
 
 C:\kicomav\Release\sample\test.zip  ok
 C:\kicomav\Relea ... .zip (dummy.txt)  infected : Dummy-Test-File (not a virus)
@@ -147,11 +148,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.28 (Sep 04 2017)
-Copyright (C) 1995-2017 Kei Choi. All rights reserved.
+KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Mon Sep  4 01:33:12 2017 UTC
-Signature number: 1638
+Last updated Thu Jan  8 07:50:42 2018 UTC
+Signature number: 1,675
 
 Dummy-Test-File (not a virus)                      [dummy.kmd]
 EICAR-Test-File (not a virus)                      [eicar.kmd]
