@@ -49,7 +49,7 @@ class K2Tempfile:
                 os.rmdir(self.temp_path)
                 self.temp_path = None
                 return True
-        except (IOError, OSError) as e:  # 기타 삭제 오류 처리
+        except (IOError, OSError, AttributeError) as e:  # 기타 삭제 오류 처리
             pass
 
         return False
