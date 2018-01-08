@@ -7,6 +7,7 @@ import sys
 import os
 import struct
 import marshal
+import zlib
 
 s = os.path.dirname(
     os.path.dirname(
@@ -68,8 +69,10 @@ def add_signature(line):
     p1 = fmd5[:6]  # 앞쪽 6Byte
     p2 = fmd5[6:]  # 뒤쪽 10Byte
 
-    p2_sig.append(p2)  # 2차 악성코드 패턴 추가
-    p2_id = p2_sig.index(p2)
+    # p2_sig.append(p2)  # 2차 악성코드 패턴 추가
+    # p2_id = p2_sig.index(p2)
+
+    p2_id = len(p2_sig)
 
     # 혹시 기존 p1이 존재하는가?
     if p1 in p1_sig:
@@ -77,7 +80,13 @@ def add_signature(line):
     else:
         p1_sig[p1] = [p2_id]
 
-    name_sig.append(name)
+    if name in name_sig:  # 이미 등록된 이름이면 id만 획득
+        name_id = name_sig.index(name)
+    else:
+        name_id = len(name_sig)
+        name_sig.append(name)
+
+    p2_sig.append((p2, name_id))
 
 
 # -------------------------------------------------------------------------
@@ -94,25 +103,25 @@ def save_signature(fname, _id):
 
     # 크기 파일 저장 : ex) script.s01
     sname = '%s.s%02d' % (fname, _id)
-    t = marshal.dumps(set(size_sig))  # 중복된 데이터 삭제 후 저장
+    t = zlib.compress(marshal.dumps(set(size_sig)))  # 중복된 데이터 삭제 후 저장
     t = 'KAVS' + struct.pack('<L', len(size_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 패턴 p1 파일 저장 : ex) script.i01
     sname = '%s.i%02d' % (fname, _id)
-    t = marshal.dumps(p1_sig)
+    t = zlib.compress(marshal.dumps(p1_sig))
     t = 'KAVS' + struct.pack('<L', len(p1_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 패턴 p2 파일 저장 : ex) script.c01
     sname = '%s.c%02d' % (fname, _id)
-    t = marshal.dumps(p2_sig)
+    t = zlib.compress(marshal.dumps(p2_sig))
     t = 'KAVS' + struct.pack('<L', len(p2_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 악성코드 이름 파일 저장 : ex) script.n01
     sname = '%s.n%02d' % (fname, _id)
-    t = marshal.dumps(name_sig)
+    t = zlib.compress(marshal.dumps(name_sig))
     t = 'KAVS' + struct.pack('<L', len(name_sig)) + val_date + val_time + t
     save_file(sname, t)
 

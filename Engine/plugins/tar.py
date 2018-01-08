@@ -2,9 +2,8 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
-import zlib
-import struct
-import kavutil
+import re
+import tarfile
 import kernel
 
 # -------------------------------------------------------------------------
@@ -19,6 +18,8 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.p_tar_magic = re.compile(r'[\d\x20\x00]+')
+        self.handle = {}  # 압축 파일 핸들
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -39,12 +40,26 @@ class KavMain:
 
         info['author'] = 'Kei Choi'  # 제작자
         info['version'] = '1.0'  # 버전
-        info['title'] = 'Unpack Engine'  # 엔진 설명
-        info['kmd_name'] = 'unpack'  # 엔진 파일 이름
-        # info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
-        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        info['title'] = 'Tar Archive Engine'  # 엔진 설명
+        info['kmd_name'] = 'tar'  # 엔진 파일 이름
+        info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
 
         return info
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = tarfile.open(filename)  # tar 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
@@ -55,24 +70,20 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        ret = {}  # 포맷 정보를 담을 공간
+        ret = {}
 
         mm = filehandle
-        try:
-            d = zlib.decompress(mm, -15)
-            if len(d) > 1:
-                ret['ff_zlib'] = 'ZLIB'
-        except zlib.error:
-            pass
+        p = self.p_tar_magic.match(mm[100:157])  # tar 매직이 없어서 별도로 체크
+        if p:  # 헤더 체크
+            if len(p.group()) == 57:
+                try:
+                    tfile = tarfile.open(filename)  # tar 파일 열기
+                    tfile.close()
 
-        try:
-            if kavutil.get_uint32(mm, 0) == len(mm) - 4:
-                ret['ff_embed_ole'] = 'EMBED_OLE'
-        except struct.error:
-            pass
-
-        if len(ret):
-            return ret
+                    ret['ff_tar'] = 'tar'
+                    return ret
+                except tarfile.ReadError:
+                    pass
 
         return None
 
@@ -86,14 +97,19 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 특정 포맷이 있는가?
-        if 'ff_zlib' in fileformat:
-            file_scan_list.append(['arc_zlib', '<ZLIB>'])
+        # 미리 분석된 파일 포맷중에 tar 포맷이 있는가?
+        if 'ff_tar' in fileformat:
+            try:
+                tfile = self.__get_handle(filename)
 
-        if 'ff_embed_ole' in fileformat:
-            file_scan_list.append(['arc_embed_ole', '<EMBED_OLE>'])
+                for name in tfile.getnames():
+                    file_scan_list.append(['arc_tar', name])
 
-        return file_scan_list
+                return file_scan_list
+            except tarfile.ReadError:
+                pass
+
+        return []
 
     # ---------------------------------------------------------------------
     # unarc(self, arc_engine_id, arc_name, fname_in_arc)
@@ -103,17 +119,14 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id == 'arc_zlib':
+        if arc_engine_id == 'arc_tar':
+            tfile = self.__get_handle(arc_name)
             try:
-                buf = open(arc_name, 'rb').read()
-                data = zlib.decompress(buf, -15)
+                f = tfile.extractfile(fname_in_arc)
+                data = f.read()
                 return data
-            except zlib.error:
+            except tarfile.ReadError:
                 pass
-        elif arc_engine_id == 'arc_embed_ole':
-            buf = open(arc_name, 'rb').read()
-            data = buf[4:]
-            return data
 
         return None
 
@@ -122,30 +135,7 @@ class KavMain:
     # 압축 파일 핸들을 닫는다.
     # ---------------------------------------------------------------------
     def arcclose(self):
-        pass
-
-    # ---------------------------------------------------------------------
-    # mkarc(self, arc_engine_id, arc_name, file_infos)
-    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
-    #         arc_name      - 최종적으로 압축될 압축 파일 이름
-    #         file_infos    - 압축 대상 파일 정보 구조체
-    # 리턴값 : 압축 성공 여부 (True or False)
-    # ---------------------------------------------------------------------
-    def mkarc(self, arc_engine_id, arc_name, file_infos):
-        if arc_engine_id == 'arc_embed_ole':
-
-            file_info = file_infos[0]
-            rname = file_info.get_filename()
-            try:
-                with open(rname, 'rb') as fp:
-                    buf = fp.read()
-
-                    new_data = struct.pack('<L', len(buf)) + buf  # 새로운 데이터로 교체
-
-                    open(arc_name, 'wb').write(new_data)  # 새로운 파일 생성
-
-                    return True
-            except IOError:
-                pass
-
-        return False
+        for fname in self.handle.keys():
+            tfile = self.handle[fname]
+            tfile.close()
+            self.handle.pop(fname)

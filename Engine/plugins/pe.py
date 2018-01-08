@@ -4,9 +4,134 @@
 
 import os
 import re
+import ctypes
 import struct
+import kernel
 import kavutil
 import cryptolib
+
+BYTE = ctypes.c_ubyte
+WORD = ctypes.c_ushort
+DWORD = ctypes.c_ulong
+FLOAT = ctypes.c_float
+LPBYTE = ctypes.POINTER(ctypes.c_ubyte)
+LPTSTR = ctypes.POINTER(ctypes.c_char)
+HANDLE = ctypes.c_void_p
+PVOID = ctypes.c_void_p
+LPVOID = ctypes.c_void_p
+UINT_PTR = ctypes.c_ulong
+SIZE_T = ctypes.c_ulong
+
+
+class DOS_HEADER(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ('e_magic', WORD),
+        ('e_cblp', WORD),
+        ('e_cp', WORD),
+        ('e_crlc', WORD),
+        ('e_cparhdr', WORD),
+        ('e_minalloc', WORD),
+        ('e_maxalloc', WORD),
+        ('e_ss', WORD),
+        ('e_sp', WORD),
+        ('e_csum', WORD),
+        ('e_ip', WORD),
+        ('e_cs', WORD),
+        ('e_lfarlc', WORD),
+        ('e_ovno', WORD),
+        ('e_res', BYTE * 8),  # 8Byte
+        ('e_oemid', WORD),
+        ('e_oeminfo', WORD),
+        ('e_res2', BYTE * 20),  # 20Byte
+        ('e_lfanew', DWORD),
+    ]
+
+
+class FILE_HEADER(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ('Machine', WORD),
+        ('NumberOfSections', WORD),
+        ('CreationYear', DWORD),
+        ('PointerToSymbolTable', DWORD),
+        ('NumberOfSymbols', DWORD),
+        ('SizeOfOptionalHeader', WORD),
+        ('Characteristics', WORD),
+    ]
+
+
+class OPTIONAL_HEADER(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ('Magic', WORD),
+        ('MajorLinkerVersion', BYTE),
+        ('MinorLinkerVersion', BYTE),
+        ('SizeOfCode', DWORD),
+        ('SizeOfInitializedData', DWORD),
+        ('SizeOfUninitializedData', DWORD),
+        ('AddressOfEntryPoint', DWORD),
+        ('BaseOfCode', DWORD),
+        ('BaseOfData', DWORD),
+        ('ImageBase', DWORD),
+        ('SectionAlignment', DWORD),
+        ('FileAlignment', DWORD),
+        ('MajorOperatingSystemVersion', WORD),
+        ('MinorOperatingSystemVersion', WORD),
+        ('MajorImageVersion', WORD),
+        ('MinorImageVersion', WORD),
+        ('MajorSubsystemVersion', WORD),
+        ('MinorSubsystemVersion', WORD),
+        ('Reserved1', DWORD),
+        ('SizeOfImage', DWORD),
+        ('SizeOfHeaders', DWORD),
+        ('CheckSum', DWORD),
+        ('Subsystem', WORD),
+        ('DllCharacteristics', WORD),
+        ('SizeOfStackReserve', DWORD),
+        ('SizeOfStackCommit', DWORD),
+        ('SizeOfHeapReserve', DWORD),
+        ('SizeOfHeapCommit', DWORD),
+        ('LoaderFlags', DWORD),
+        ('NumberOfRvaAndSizes', DWORD),
+    ]
+
+
+class DATA_DIRECTORY(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ('VirtualAddress', DWORD),
+        ('Size', DWORD),
+    ]
+
+
+class SECTION_HEADER(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ('Name', BYTE * 8),
+        ('Misc_VirtualSize', DWORD),
+        ('VirtualAddress', DWORD),
+        ('SizeOfRawData', DWORD),
+        ('PointerToRawData', DWORD),
+        ('PointerToRelocations', DWORD),
+        ('PointerToLinenumbers', DWORD),
+        ('NumberOfRelocations', WORD),
+        ('NumberOfLinenumbers', WORD),
+        ('Characteristics', DWORD),
+    ]
+
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    reverse = dict((value, key) for key, value in enums.iteritems())
+    enums['reverse_mapping'] = reverse
+    return type('Enum', (), enums)
+
+image_directory_entry = enum('EXPORT', 'IMPORT', 'RESOURCE', 'EXCEPTION', 'SECURITY',
+                             'BASERELOC', 'DEBUG',
+                             'COPYRIGHT',  # Architecture on non-x86 platforms
+                             'GLOBALPTR', 'TLS', 'LOAD_CONFIG', 'BOUND_IMPORT',
+                             'IAT', 'DELAY_IMPORT', 'COM_DESCRIPTOR', 'RESERVED')
 
 
 p_str = re.compile(r'[^\x00]+')  # NULL 문자 직전까지 복사
@@ -18,6 +143,7 @@ class PE:
         self.verbose = verbose
         self.mm = mm
         self.sections = []  # 모든 섹션 정보 담을 리스트
+        self.data_directories = []  # 모든 데이타 디렉토리 정보를 담을 리스트
         self.pe_file_align = 0
 
     # -------------------------------------------------------------------------
@@ -36,8 +162,11 @@ class PE:
             if mm[0:2] != 'MZ':  # MZ로 시작하나?
                 raise ValueError
 
+            dos_header = DOS_HEADER()
+            ctypes.memmove(ctypes.addressof(dos_header), mm[0:], ctypes.sizeof(dos_header))
+
             # PE 표식자 위치 알아내기
-            pe_pos = kavutil.get_uint32(mm, 0x3C)
+            pe_pos = dos_header.e_lfanew
 
             # PE 인가?
             if mm[pe_pos:pe_pos + 4] != 'PE\x00\x00':
@@ -45,45 +174,73 @@ class PE:
 
             pe_format['PE_Position'] = pe_pos
 
+            # File Header 읽기
+            file_header = FILE_HEADER()
+            file_header_size = ctypes.sizeof(file_header)  # file_header_size : 0x14
+            ctypes.memmove(ctypes.addressof(file_header), mm[pe_pos + 4:], file_header_size)
+
+            # Optional Header 읽기
+            optional_header = OPTIONAL_HEADER()
+            optional_header_size = ctypes.sizeof(optional_header)
+            ctypes.memmove(ctypes.addressof(optional_header), mm[pe_pos + 4 + file_header_size:], optional_header_size)
+
             # Optional Header의 Magic ID?
-            if mm[pe_pos + 0x18:pe_pos + 0x18 + 2] != '\x0B\x01':
+            if optional_header.Magic != 0x10b:
                 raise ValueError
 
             # Entry Point 구하기
-            pe_ep = kavutil.get_uint32(mm, pe_pos + 0x28)
+            pe_ep = optional_header.AddressOfEntryPoint
             pe_format['EntryPoint'] = pe_ep
 
             # Image Base 구하기
-            pe_img = kavutil.get_uint32(mm, pe_pos + 0x34)
+            pe_img = optional_header.ImageBase
             pe_format['ImageBase'] = pe_img
 
             # File Alignment 구하기
-            self.pe_file_align = kavutil.get_uint32(mm, pe_pos + 0x3C)
+            self.pe_file_align = optional_header.FileAlignment
             pe_format['FileAlignment'] = self.pe_file_align
 
             # Section 개수 구하기
-            section_num = kavutil.get_uint16(mm, pe_pos + 0x6)
+            section_num = file_header.NumberOfSections
             pe_format['SectionNumber'] = section_num
 
             # Optional Header 크기 구하기
-            opthdr_size = kavutil.get_uint16(mm, pe_pos + 0x14)
+            opthdr_size = file_header.SizeOfOptionalHeader
             pe_format['OptionalHederSize'] = opthdr_size
 
-            # t섹션 시작 위치
-            section_pos = pe_pos + 0x18 + opthdr_size
+            # Data Directory 읽기
+            data_directory_size = ctypes.sizeof(DATA_DIRECTORY())  # data_directory_size : 8
+            num_data_directory = (opthdr_size - optional_header_size) / data_directory_size
+            off_data_directory = pe_pos + 4 + file_header_size + optional_header_size
+
+            for i in range(num_data_directory):
+                dx = DATA_DIRECTORY()
+                ctypes.memmove(ctypes.addressof(dx),
+                               mm[off_data_directory + (i * data_directory_size):],
+                               data_directory_size)
+
+                self.data_directories.append(dx)
+
+            # 섹션 시작 위치
+            section_pos = pe_pos + 4 + file_header_size + opthdr_size
 
             # 모든 섹션 정보 추출
             for i in range(section_num):
                 section = {}
 
-                s = section_pos + (0x28 * i)
+                section_header = SECTION_HEADER()
+                section_header_size = ctypes.sizeof(section_header)  # section_header_size : 0x28
 
-                section['Name'] = mm[s:s + 8].replace('\x00', '')
-                section['VirtualSize'] = kavutil.get_uint32(mm, s+8)
-                section['RVA'] = kavutil.get_uint32(mm, s+12)
-                section['SizeRawData'] = kavutil.get_uint32(mm, s+16)
-                section['PointerRawData'] = kavutil.get_uint32(mm, s+20)
-                section['Characteristics'] = kavutil.get_uint32(mm, s+36)
+                s = section_pos + (section_header_size * i)
+                ctypes.memmove(ctypes.addressof(section_header), mm[s:], section_header_size)
+
+                sec_name = ctypes.cast(section_header.Name, ctypes.c_char_p)
+                section['Name'] = sec_name.value.replace('\x00', '')
+                section['VirtualSize'] = section_header.Misc_VirtualSize
+                section['RVA'] = section_header.VirtualAddress
+                section['SizeRawData'] = section_header.SizeOfRawData
+                section['PointerRawData'] = section_header.PointerToRawData
+                section['Characteristics'] = section_header.Characteristics
 
                 self.sections.append(section)
 
@@ -95,12 +252,19 @@ class PE:
             pe_format['EntryPoint_in_Section'] = sec_idx  # EP가 포함된 섹션
 
             # 리소스 분석
-            rsrc_rva = kavutil.get_uint32(mm, pe_pos + 0x88)  # 리소스 위치(RVA)
-            rsrc_size = kavutil.get_uint32(mm, pe_pos + 0x8C)  # 리소스 크기
+            try:
+                rsrc_rva = self.data_directories[image_directory_entry.RESOURCE].VirtualAddress  # 리소스 위치(RVA)
+                rsrc_size = self.data_directories[image_directory_entry.RESOURCE].Size  # 리소스 크기
+            except IndexError:
+                rsrc_rva = 0
+                rsrc_size = 0
 
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
                     rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
+
+                    if len(mm[rsrc_off:rsrc_off + rsrc_size]) != rsrc_size:  # 충분한 리소스가 존재하지 않음
+                        raise ValueError
 
                     # Type 체크
                     num_type_name = kavutil.get_uint16(mm, rsrc_off+0xC)
@@ -158,15 +322,19 @@ class PE:
                                             pe_format['Resource_UserData'][string_name] = (data_off, data_size)
                                         else:
                                             pe_format['Resource_UserData'] = {string_name: (data_off, data_size)}
-                except struct.error:
+                except (struct.error, ValueError) as e:
                     pass
 
                 # if 'Resource_UserData' in pe_format:
                 #     print pe_format['Resource_UserData']
 
             # Import API 분석
-            imp_rva = kavutil.get_uint32(mm, pe_pos + 0x80)  # Import API 위치(RVA)
-            imp_size = kavutil.get_uint32(mm, pe_pos + 0x84)  # Import API 크기
+            try:
+                imp_rva = self.data_directories[image_directory_entry.IMPORT].VirtualAddress  # Import API 위치(RVA)
+                imp_size = self.data_directories[image_directory_entry.IMPORT].Size  # Import API 크기
+            except IndexError:
+                imp_rva = 0
+                imp_size = 0
 
             if imp_rva:  # Import API 존재
                 imp_api = {}
@@ -175,52 +343,58 @@ class PE:
                 imp_off = self.rva_to_off(imp_rva)[0]
                 # print hex(imp_off), imp_size
                 imp_data = mm[imp_off:imp_off+imp_size]
-                for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
-                    try:
-                        dll_rva = kavutil.get_uint32(imp_data, (i*0x14)+0xC)
-                        api_rva = kavutil.get_uint32(imp_data, (i * 0x14))
-                        bo = 2
-                        if api_rva == 0:
-                            api_rva = kavutil.get_uint32(imp_data, (i*0x14)+0x10)
-                            bo = 0
+                if len(imp_data) == imp_size:
+                    for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
+                        try:
+                            dll_rva = kavutil.get_uint32(imp_data, (i*0x14)+0xC)
+                            api_rva = kavutil.get_uint32(imp_data, (i * 0x14))
+                            bo = 2
+                            if api_rva == 0:
+                                api_rva = kavutil.get_uint32(imp_data, (i*0x14)+0x10)
+                                bo = 0
 
-                        # print hex(api_rva)
-                        if dll_rva == 0:  # DLL 정보가 없음
-                            break
-
-                        t_off = self.rva_to_off(dll_rva)[0]
-                        dll_name = p_str.search(mm[t_off:t_off+0x20]).group()
-                        # print '[+]', dll_name
-                        imp_api[dll_name] = []
-
-                        t_off = self.rva_to_off(api_rva)[0]
-                        while True:
-                            try:
-                                api_name_rva = kavutil.get_uint32(mm, t_off)
-                            except struct.error:
+                            # print hex(api_rva)
+                            if dll_rva == 0:  # DLL 정보가 없음
                                 break
 
-                            if api_name_rva & 0x80000000 == 0x80000000:  # Odinal API
-                                    t_off += 4
-                                    continue
+                            t_off = self.rva_to_off(dll_rva)[0]
+                            dll_name = p_str.search(mm[t_off:t_off+0x20]).group()
+                            # print '[+]', dll_name
+                            imp_api[dll_name] = []
 
-                            if api_name_rva == 0:
-                                break
+                            t_off = self.rva_to_off(api_rva)[0]
+                            while True:
+                                try:
+                                    api_name_rva = kavutil.get_uint32(mm, t_off)
+                                except struct.error:
+                                    break
 
-                            t = self.rva_to_off(api_name_rva)[0]
-                            # print hex(t_off), hex(t)
-                            api_name = p_str.search(mm[t+bo:t+bo+0x20]).group()
-                            # print '   ', api_name
-                            imp_api[dll_name].append(api_name)
-                            t_off += 4
-                    except struct.error:
-                        pass
+                                if api_name_rva & 0x80000000 == 0x80000000:  # Odinal API
+                                        t_off += 4
+                                        continue
+
+                                if api_name_rva == 0:
+                                    break
+
+                                t = self.rva_to_off(api_name_rva)[0]
+                                # print hex(t_off), hex(t)
+                                api_name = p_str.search(mm[t+bo:t+bo+0x20]).group()
+                                # print '   ', api_name
+                                imp_api[dll_name].append(api_name)
+                                t_off += 4
+                        except struct.error:
+                            pass
+                # end if
 
                 pe_format['Import_API'] = imp_api
 
             # 디지털 인증서 분석
-            cert_off = kavutil.get_uint32(mm, pe_pos + 0x98)  # 디지털 인증서 위치(유일하게 RVA가 아닌 오프셋)
-            cert_size = kavutil.get_uint32(mm, pe_pos + 0x9C)  # 디지털 인증서 크기
+            try:
+                cert_off = self.data_directories[image_directory_entry.SECURITY].VirtualAddress  # 유일하게 RVA가 아닌 오프셋
+                cert_size = self.data_directories[image_directory_entry.SECURITY].Size  # 디지털 인증서 크기
+            except IndexError:
+                cert_off = 0
+                cert_size = 0
 
             if cert_off:  # 디지털 인증서 존재
                 if cert_off + cert_size <= len(mm[:]):  # UPack의 경우 이상한 값이 셋팅 됨
@@ -258,11 +432,11 @@ class PE:
                     print '    ' + ('-' * ((9 * 2 - 1)+32))
 
                     for s in self.sections:
-                        if s['Characteristics'] & 0x20000000 == 0x20000000:
-                            off = s['PointerRawData']
-                            size = s['SizeRawData']
-                            fmd5 = cryptolib.md5(mm[off:off+size])
-                            print '    %-8s %8d %s' % (s['Name'], size, fmd5)
+                        # if s['Characteristics'] & 0x20000000 == 0x20000000:
+                        off = s['PointerRawData']
+                        size = s['SizeRawData']
+                        fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
+                        print '    %-8s %8d %s' % (s['Name'], size, fmd5)
 
                 print
                 kavutil.vprint('Entry Point (Raw)')
@@ -281,7 +455,10 @@ class PE:
             rva = section['RVA']
 
             if rva <= t_rva < rva + size:
-                foff = (section['PointerRawData'] / self.pe_file_align) * self.pe_file_align
+                if self.pe_file_align:
+                    foff = (section['PointerRawData'] / self.pe_file_align) * self.pe_file_align
+                else:
+                    foff = section['PointerRawData']
                 t_off = t_rva - rva + foff
 
                 return t_off, self.sections.index(section)
@@ -321,10 +498,12 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'PE Engine'  # 엔진 설명
         info['kmd_name'] = 'pe'  # 엔진 파일 이름
 
+        # 리소스 파일에 악성코드가 존재하는 경우로 최상위 파일을 삭제한다.
+        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료 후 재압축 유무
         return info
 
     # ---------------------------------------------------------------------
@@ -357,7 +536,10 @@ class KavMain:
         pe_file_align = pe_format['FileAlignment']
 
         for sec in pe_format['Sections']:
-            off = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+            if pe_file_align:
+                off = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+            else:
+                off = sec['PointerRawData']
             size = sec['SizeRawData']
             if pe_size < off + size:
                 pe_size = off + size
@@ -369,9 +551,17 @@ class KavMain:
                 t_pe_size = pe_format['CERTIFICATE_Offset'] + pe_format['CERTIFICATE_Size']
                 if pe_size < t_pe_size:
                     pe_size = t_pe_size
+                attach_size = file_size - pe_size
+            else:
+                attach_size = file_size - pe_size - pe_format['CERTIFICATE_Size']
+        else:
+            attach_size = file_size - pe_size
 
         if pe_size < file_size and pe_size != 0:
-            fileformat = {'Attached_Pos': pe_size}  # 포맷 정보를 담을 공간
+            fileformat = {  # 포맷 정보를 담을 공간
+                'Attached_Pos': pe_size,
+                'Attached_Size': attach_size
+            }
             ret['ff_attach'] = fileformat
 
         return ret

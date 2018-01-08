@@ -1,9 +1,100 @@
-﻿# -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 # Author: Kei Choi(hanul93@gmail.com)
 
 
-import zipfile
-import kernel
+import zlib
+import mmap
+import struct
+
+
+MAGIC = 'MEI\014\013\012\013\016'
+
+
+class CArchiveFile:
+    def __init__(self, filename, verbose=False):
+        self.verbose = verbose  # 디버깅용
+        self.filename = filename
+        self.fp = None
+        self.mm = None
+        self.tocs = {}
+
+        self.parse()
+
+    def parse(self):
+        try:
+            fp = open(self.filename, 'rb')
+            mm = mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ)
+
+            self.fp = fp
+            self.mm = mm
+
+            mpos = mm[-4096:].rfind(MAGIC)
+            mbuf = mm[-4096 + mpos:]
+
+            magic, totallen, tocpos, toclen, pyvers, pylib_name = struct.unpack('!8siiii64s', mbuf[:88])
+            if magic == MAGIC:
+                # print totallen, tocpos, toclen, pyvers, pylib_name
+
+                pkg_start = 0  # len(mm) - totallen
+                # print pkg_start, len(mm), totallen
+
+                s = mm[pkg_start + tocpos:pkg_start + tocpos + toclen]
+                p = 0
+
+                while p < toclen:
+                    slen, dpos, dlen, ulen, flag, typcd = struct.unpack('!iiiiBB', s[p:p + 18])
+                    # print slen, dpos, dlen, ulen, flag, chr(typcd),
+                    nmlen = slen - 18
+                    p += 18
+                    (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
+                    p += nmlen
+                    nm = nm.rstrip(b'\0')
+                    nm = nm.decode('utf-8')
+                    # print nm
+
+                    self.tocs[nm] = {
+                        'Data Pos': dpos,
+                        'Data Length': dlen,
+                        'Flag': flag,
+                    }
+        except struct.error:
+            pass
+        except IOError:
+            pass
+
+    def close(self):
+        if self.mm:
+            self.mm.close()
+            self.mm = None
+
+        if self.fp:
+            self.fp.close()
+            self.fp = None
+
+    def namelist(self):
+        if len(self.tocs):
+            return self.tocs.keys()
+
+        return []
+
+    def read(self, fname):
+        try:
+            toc = self.tocs[fname]
+            start = toc['Data Pos']
+            size = toc['Data Length']
+            flag = toc['Flag']
+
+            data = self.mm[start:start+size]
+
+            if flag:
+                data = zlib.decompress(data)
+
+            return data
+        except (KeyError, zlib.error) as e:
+            pass
+
+        return None
+
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -38,10 +129,10 @@ class KavMain:
 
         info['author'] = 'Kei Choi'  # 제작자
         info['version'] = '1.0'  # 버전
-        info['title'] = 'Zip Archive Engine'  # 엔진 설명
-        info['kmd_name'] = 'zip'  # 엔진 파일 이름
-        info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
-        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        info['title'] = 'CArchive Engine'  # 엔진 설명
+        info['kmd_name'] = 'carch'  # 엔진 파일 이름
+        # info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
+        # info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -55,7 +146,7 @@ class KavMain:
         if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
             zfile = self.handle.get(filename, None)
         else:
-            zfile = zipfile.ZipFile(filename)  # zip 파일 열기
+            zfile = CArchiveFile(filename)  # pyz 파일 열기
             self.handle[filename] = zfile
 
         return zfile
@@ -69,33 +160,15 @@ class KavMain:
     # 리턴값 : {파일 포맷 분석 정보} or None
     # ---------------------------------------------------------------------
     def format(self, filehandle, filename, filename_ex):
-        ret = {}
+        fileformat = {}  # 포맷 정보를 담을 공간
 
         mm = filehandle
-        if mm[0:4] == 'PK\x03\x04':  # 헤더 체크
-            try:
-                zfile = zipfile.ZipFile(filename)  # zip 파일 열기
-                names = zfile.namelist()
-                zfile.close()
-            except zipfile.BadZipfile:
-                names = None
-
-            # 파일 포맷은 ZIP이지만 특수 포맷인지를 한번 더 체크한다.
-            if names is not None:
-                for name in names:
-                    n = name.lower()
-                    if n == 'classes.dex':
-                        ret['ff_apk'] = 'apk'
-                    elif n == 'xl/workbook.xml':
-                        ret['ff_ooxml'] = 'xlsx'
-                    elif n == 'word/document.xml':
-                        ret['ff_ooxml'] = 'docx'
-                    elif n == 'ppt/presentation.xml':
-                        ret['ff_ooxml'] = 'pptx'
-
-                if len(ret) == 0:
-                    ret['ff_zip'] = 'zip'
-
+        
+        # CArchive는 파일 뒤에 Magic이 존재하므로
+        # 압축 파일 이름 중에 Attached 된 형태일때만 CArchive Magic 검사
+        if filename_ex.find('Attached') != -1:   
+            if mm[-4096:].rfind(MAGIC) != -1:  # 헤더 체크
+                ret = {'ff_carch': 'CArchive'}
                 return ret
 
         return None
@@ -110,12 +183,12 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 ZIP 포맷이 있는가?
-        if 'ff_zip' in fileformat:
+        # 미리 분석된 파일 포맷중에 CArchive 포맷이 있는가?
+        if 'ff_carch' in fileformat:
             zfile = self.__get_handle(filename)
 
             for name in zfile.namelist():
-                file_scan_list.append(['arc_zip', name])
+                file_scan_list.append(['arc_carch', name])
             # zfile.close()
 
         return file_scan_list
@@ -128,13 +201,10 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id == 'arc_zip':
+        if arc_engine_id == 'arc_carch':
             zfile = self.__get_handle(arc_name)
-            try:
-                data = zfile.read(fname_in_arc)
-                return data
-            except zipfile.BadZipfile:
-                pass
+            data = zfile.read(fname_in_arc)
+            return data
 
         return None
 
@@ -147,34 +217,3 @@ class KavMain:
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
-
-    # ---------------------------------------------------------------------
-    # mkarc(self, arc_engine_id, arc_name, file_infos)
-    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
-    #         arc_name      - 최종적으로 압축될 압축 파일 이름
-    #         file_infos    - 압축 대상 파일 정보 구조체
-    # 리턴값 : 압축 성공 여부 (True or False)
-    # ---------------------------------------------------------------------
-    def mkarc(self, arc_engine_id, arc_name, file_infos):
-        if arc_engine_id == 'arc_zip':
-            zfile = zipfile.ZipFile(arc_name, 'w')
-            # print '[-] zip :', arc_name
-
-            for file_info in file_infos:
-                rname = file_info.get_filename()
-                try:
-                    with open(rname, 'rb') as fp:
-                        buf = fp.read()
-                        # print '[-] filename :', rname, len(buf)
-                        # print '[-] rname :',
-                        a_name = file_info.get_filename_in_archive()
-                        zfile.writestr(a_name, buf)
-                except IOError:
-                    # print file_info.get_filename_in_archive()
-                    pass
-
-            zfile.close()
-            # print '[-] close()\n'
-            return True
-
-        return False

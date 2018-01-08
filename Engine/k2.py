@@ -11,7 +11,11 @@ import csv
 import xml.etree.cElementTree as ET
 import json
 import email
-import yara
+
+try:
+    import yara
+except ImportError:
+    pass
 
 # -------------------------------------------------------------------------
 # 실제 임포트 모듈
@@ -24,6 +28,9 @@ import urllib
 import time
 import struct
 import datetime
+import gzip
+import re
+import tempfile
 from optparse import OptionParser
 import kavcore.k2engine
 import kavcore.k2const
@@ -39,13 +46,16 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.28'
-KAV_BUILDDATE = 'Sep 04 2017'
+KAV_VERSION = '0.29'
+KAV_BUILDDATE = 'Jan 08 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
 g_delta_time = None  # 검사 시간
+display_scan_result = {'Prev': {}, 'Next': {}}  # 중복 출력을 막기 위한 구조체
+display_update_result = ''  # 압축 결과를 출력하기 위한 구조체
 
+PLUGIN_ERROR = False  # 플러인 엔진 로딩 실패 시 출력을 예쁘게 하기 위해 사용한 변수
 
 # -------------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
@@ -123,16 +133,19 @@ if os.name == 'nt':
 
 
     def cprint(msg, color):
-        if not NOCOLOR:  # 색깔 설정
-            default_colors = get_text_attr()
-            default_bg = default_colors & 0x00F0
+        try:
+            if not NOCOLOR:  # 색깔 설정
+                default_colors = get_text_attr()
+                default_bg = default_colors & 0x00F0
 
-            set_text_attr(color | default_bg)
-            sys.stdout.write(msg)
-            set_text_attr(default_colors)
-        else:  # 색깔 설정 없음
-            sys.stdout.write(msg)
-            sys.stdout.flush()
+                set_text_attr(color | default_bg)
+                sys.stdout.write(msg)
+                set_text_attr(default_colors)
+            else:  # 색깔 설정 없음
+                sys.stdout.write(msg)
+                sys.stdout.flush()
+        except IOError:
+            pass
 else:
     def cprint(msg, color):
         sys.stdout.write(msg)
@@ -384,7 +397,7 @@ def print_options():
              --no-color        don't print with color
              --move            move infected files in quarantine folder
              --update          update
-             --verbose         enabling verbose mode
+             --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
         -?,  --help            this help
                                * = default option'''
@@ -400,15 +413,21 @@ def update_kicomav():
     print
 
     try:
-        url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update/'  # 서버 주소를 나중에 바꿔야 한다.
+        url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
         down_list = get_download_list(url)
+        is_k2_exe_update = 'k2.exe' in down_list
 
         while len(down_list) != 0:
             filename = down_list.pop(0)
+
             # 파일 한개씩 업데이트 한다.
-            download_file(url, filename, hook)
+            if filename != 'k2.exe':
+                download_file(url, filename, gz=True, fnhook=hook)
+
+        if is_k2_exe_update:
+            k2temp_path = download_file_k2(url, 'k2.exe', gz=True, fnhook=hook)
 
         # 업데이트 완료 메시지 출력
         cprint('\n[', FOREGROUND_GREY)
@@ -417,6 +436,10 @@ def update_kicomav():
 
         # 업데이트 설정 파일 삭제
         os.remove('update.cfg')
+
+        # k2.exe의 경우 최종 업데이트 프로그램 실행
+        if is_k2_exe_update:
+            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', os.path.abspath('')))
     except KeyboardInterrupt:
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
@@ -429,14 +452,18 @@ def hook(blocknumber, blocksize, totalsize):
 
 
 # 한개의 파일을 다운로드 한다.
-def download_file(url, filename, fnhook=None):
+def download_file(url, filename, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
     rurl += filename.replace('\\', '/')
+    if gz:
+        rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.abspath('') + os.sep + filename
+    pwd = os.path.join(os.path.abspath(''), filename)
+    if gz:
+        pwd += '.gz'
 
     if fnhook is not None:
         cprint(filename + ' ', FOREGROUND_GREY)
@@ -444,8 +471,46 @@ def download_file(url, filename, fnhook=None):
     # 파일을 다운로드 한다
     urllib.urlretrieve(rurl, pwd, fnhook)
 
+    if gz:
+        data = gzip.open(pwd, 'rb').read()
+        fname = os.path.join(os.path.abspath(''), filename)
+        open(fname, 'wb').write(data)
+        os.remove(pwd)  # gz 파일은 삭제한다.
+
     if fnhook is not None:
         cprint(' update\n', FOREGROUND_GREEN)
+
+
+# k2.exe를 다운로드 한다.
+def download_file_k2(url, filename, gz=False, fnhook=None):
+    rurl = url
+
+    # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
+    rurl += filename.replace('\\', '/')
+    if gz:
+        rurl += '.gz'
+
+    # 저장해야 할 파일의 전체 경로를 구한다
+    pwd = os.path.join(os.path.abspath(''), filename)
+    if gz:
+        pwd += '.gz'
+
+    if fnhook is not None:
+        cprint(filename + ' ', FOREGROUND_GREY)
+
+    # 파일을 다운로드 한다
+    urllib.urlretrieve(rurl, pwd, fnhook)
+
+    if gz:
+        data = gzip.open(pwd, 'rb').read()
+        fname = tempfile.mktemp(prefix='ktmp') + '.exe'
+        open(fname, 'wb').write(data)
+        os.remove(pwd)  # gz 파일은 삭제한다.
+
+    if fnhook is not None:
+        cprint(' update\n', FOREGROUND_GREEN)
+
+    return fname
 
 
 # 업데이트 해야 할 파일의 목록을 구한다
@@ -454,23 +519,24 @@ def get_download_list(url):
 
     pwd = os.path.abspath('')
 
-    # 업데이트 설정 파일을 다운로드 한다
-    download_file(url, 'update.cfg')
+    try:
+        # 업데이트 설정 파일을 다운로드 한다
+        download_file(url, 'update.cfg')
 
-    fp = open('update.cfg', 'r')
+        buf = open('update.cfg', 'r').read()
+        p_lists = re.compile(r'([A-Fa-f0-9]{64}) (.+)')
+        lines = p_lists.findall(buf)
 
-    while True:
-        line = fp.readline().strip()
-        if not line:
-            break
-        t = line.split(' ')  # 업데이트 목록 한개를 구한다
+        for line in lines:
+            fhash = line[0]
+            fname = line[1]
 
-        # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
-        if chek_need_update(pwd + os.sep + t[1], t[0]) == 1:
-            # 다르면 업데이트 목록에 추가
-            down_list.append(t[1])
-
-    fp.close()
+            # 업데이트 설정 파일의 해시와 로컬의 해시를 비교한다
+            if chek_need_update(os.path.join(pwd, fname), fhash) == 1:
+                # 다르면 업데이트 목록에 추가
+                down_list.append(fname)
+    except:
+        pass
 
     return down_list
 
@@ -592,6 +658,7 @@ def display_line(filename, message, message_color):
 # -------------------------------------------------------------------------
 def scan_callback(ret_value):
     global g_options
+    global display_scan_result  # 출력을 잠시 보류하는 구조체
 
     import kernel
 
@@ -623,8 +690,41 @@ def scan_callback(ret_value):
             message = 'ok'
             message_color = FOREGROUND_GREY | FOREGROUND_INTENSITY
 
-    display_line(disp_name, message, message_color)
-    log_print('%s\t%s\n' % (disp_name, message))
+    # 정상일 경우에는 /<...> path명에 의해 중복 발생 가능성 있음
+    # 그래서 중복을 출력하지 않도록 조정함
+    if message == 'ok':  
+        d_prev = display_scan_result.get('Prev', {})
+        if d_prev == {}:
+            d_prev['disp_name'] = disp_name
+            d_prev['message'] = message
+            d_prev['message_color'] = message_color
+        elif d_prev['disp_name'] != disp_name:
+            d_next = display_scan_result.get('Next', {})
+            if d_next == {}:
+                d_next['disp_name'] = disp_name
+                d_next['message'] = message
+                d_next['message_color'] = message_color
+            elif d_next['disp_name'] != disp_name:
+                # Next가 존재하고 새로운 출력 대상이 왔는데 Next와 다르면...
+                # Prev는 출력, Next는 Prev로, 새로운 대상은 Next에 저장
+                if d_next['disp_name'] != disp_name:
+                    # Prev는 출력
+                    display_line(d_prev['disp_name'], d_prev['message'], d_prev['message_color'])
+                    log_print('%s\t%s\n' % (d_prev['disp_name'], d_prev['message']))
+
+                    # Next는 Prev로
+                    d_prev['disp_name'] = d_next['disp_name']
+                    d_prev['message'] = d_next['message']
+                    d_prev['message_color'] = d_next['message_color']
+
+                    # 새로운 대상은 Next에
+                    d_next['disp_name'] = disp_name
+                    d_next['message'] = message
+                    d_next['message_color'] = message_color
+                else:  # Next와 추가 대상이 같으면 그대로 둠
+                    pass
+    else:  # 악성코드 발견이면 저장된 모든 출력 대상을 출력한다.
+        print_display_scan_result(disp_name, message, message_color)
 
     if g_options.opt_move is False and g_options.opt_prompt:  # 프롬프트 옵션이 설정되었나?
         while True and ret_value['result']:
@@ -654,6 +754,30 @@ def scan_callback(ret_value):
         return kavcore.k2const.K2_ACTION_DELETE
 
     return kavcore.k2const.K2_ACTION_IGNORE
+
+
+# display_scan_result 구조체 결과물을 출력한다.
+def print_display_scan_result(disp_name, message, message_color):
+    global display_scan_result  # 출력을 잠시 보류하는 구조체
+
+    # Prev 출력
+    d_prev = display_scan_result.get('Prev', {})
+    if d_prev != {} and d_prev['disp_name'] != disp_name:
+        display_line(d_prev['disp_name'], d_prev['message'], d_prev['message_color'])
+        log_print('%s\t%s\n' % (d_prev['disp_name'], d_prev['message']))
+        display_scan_result['Prev'] = {}  # Prev 초기화
+
+    # Next 출력
+    d_next = display_scan_result.get('Next', {})
+    if d_next != {} and d_next['disp_name'] != disp_name:
+        display_line(d_next['disp_name'], d_next['message'], d_next['message_color'])
+        log_print('%s\t%s\n' % (d_next['disp_name'], d_next['message']))
+        display_scan_result['Next'] = {}  # Prev 초기화
+
+    # 마지막 결과물 출력
+    if disp_name:
+        display_line(disp_name, message, message_color)
+        log_print('%s\t%s\n' % (disp_name, message))
 
 
 # -------------------------------------------------------------------------
@@ -690,19 +814,35 @@ def disinfect_callback(ret_value, action_type):
 # -------------------------------------------------------------------------
 # update의 콜백 함수
 # -------------------------------------------------------------------------
-def update_callback(ret_file_info):
+def update_callback(ret_file_info, is_success):
+    global display_update_result
+
+    # 출력되지 못한 결과물을 출력한다.
+    print_display_scan_result(None, None, None)
+
     if ret_file_info.is_modify():  # 수정되었다면 결과 출력
-        disp_name = ret_file_info.get_filename()
-
-        if os.path.exists(disp_name):
-            message = 'updated'
+        if len(ret_file_info.get_additional_filename()) != 0:
+            disp_name = '%s (%s)' % (ret_file_info.get_master_filename(), ret_file_info.get_additional_filename())
         else:
-            message = 'deleted'
+            disp_name = '%s' % (ret_file_info.get_master_filename())
 
-        message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
+        if is_success:
+            if os.path.exists(ret_file_info.get_filename()):
+                message = 'updated'
+            else:
+                message = 'deleted'
 
-        display_line(disp_name, message, message_color)
-        log_print('%s\t%s\n' % (disp_name, message))
+            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
+        else:
+            message = 'update failed'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+
+        if display_update_result != disp_name:  # 이전 출력물과 동일하면 출력하지 않음
+            display_line(disp_name, message, message_color)
+            log_print('%s\t%s\n' % (disp_name, message))
+
+            display_update_result = disp_name
+
 
 '''
 def update_callback1(ret_file_info):
@@ -749,6 +889,22 @@ def quarantine_callback(filename, is_success):
 
     display_line(disp_name, message, message_color)
     log_print('%s\t%s\n' % (disp_name, message))
+
+
+# -------------------------------------------------------------------------
+# 플러그인 엔진 로딩 실패 시 콜백 함수
+# -------------------------------------------------------------------------
+def import_error_callback(module_name):
+    global PLUGIN_ERROR
+
+    if not PLUGIN_ERROR:
+        PLUGIN_ERROR = True
+        print
+
+    if kavcore.k2const.K2DEBUG:
+        print_error('Invalid plugin: \'%s.py\'' % module_name)
+    else:
+        print_error('Invalid plugin: \'%s.kmd\'' % module_name)
 
 
 # -------------------------------------------------------------------------
@@ -858,11 +1014,18 @@ def main():
     # 백신 엔진 구동
     k2 = kavcore.k2engine.Engine()  # 엔진 클래스
 
-    plugins_path = os.path.split(os.path.abspath(sys.argv[0]))[0] + os.sep + 'plugins'
-    if not k2.set_plugins(plugins_path):  # 플러그인 엔진 설정
+    # 프로그램이 실행중인 폴더
+    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
+
+    # 플러그인 엔진 설정
+    plugins_path = os.path.join(k2_pwd, 'plugins')
+    if not k2.set_plugins(plugins_path):
         print
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
+
+    # 임시 폴더 설정
+    k2.set_temppath(k2_pwd)
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:
@@ -872,10 +1035,13 @@ def main():
 
     kav.set_options(options)  # 옵션을 설정
 
-    if not kav.init():  # 전체 플러그인 엔진 초기화
+    if not kav.init(import_error_callback):  # 전체 플러그인 엔진 초기화
         print
         print_error('KICOM Anti-Virus Engine init')
         return 0
+
+    if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
+        print 
 
     # 엔진 버전을 출력
     c = kav.get_version()
@@ -883,11 +1049,11 @@ def main():
     cprint(msg, FOREGROUND_GREY)
 
     # 진단/치료 가능한 악성코드 수 출력
-    num_sig = kav.get_signum()
-    msg = 'Signature number: %d\n\n' % num_sig
+    num_sig = format(kav.get_signum(), ',')
+    msg = 'Signature number: %s\n\n' % num_sig
     cprint(msg, FOREGROUND_GREY)
 
-    log_print('# Signature number: %d\n' % num_sig)
+    log_print('# Signature number: %s\n' % num_sig)
     log_print('#\n\n')  # 로그 파일 헤더 끝...
 
     if options.opt_vlist is True:  # 악성코드 리스트 출력?
@@ -906,6 +1072,9 @@ def main():
                 if os.path.exists(scan_path):  # 폴더 혹은 파일가 존재하는가?
                     kav.scan(scan_path, scan_callback, disinfect_callback, update_callback, quarantine_callback)
                 else:
+                    # 출력되지 못한 결과물을 출력한다.
+                    print_display_scan_result(None, None, None)
+
                     print_error('Invalid path: \'%s\'' % scan_path)
 
             # 검사 종료 시간 체크
@@ -913,6 +1082,9 @@ def main():
 
             global g_delta_time
             g_delta_time = end_time - start_time
+
+            # 출력되지 못한 결과물을 출력한다.
+            print_display_scan_result(None, None, None)
 
             # 악성코드 검사 결과 출력
             ret = kav.get_result()

@@ -2,35 +2,27 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+import os
 import mmap
+import struct
 import kernel
 import kavutil
 import pe
 
-
 HEADERS = \
-    '\x4D\x5A\x90\x00\x02\x00\x00\x00\x04\x00\x0F\x00' \
-    '\xFF\xFF\x00\x00\xB0\x00\x00\x00\x00\x00\x00\x00' \
-    '\x40\x00\x1A\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-    '\x00\x01\x00\x00\x0E\x1F\xB4\x09\xBA\x0D\x00\xCD' \
-    '\x21\xB4\x4C\xCD\x21\x54\x68\x69\x73\x20\x66\x69' \
-    '\x6C\x65\x20\x77\x61\x73\x20\x63\x72\x65\x61\x74' \
-    '\x65\x64\x20\x62\x79\x20\x4B\x69\x63\x6F\x6D\x41' \
-    '\x56\x20\x66\x6F\x72\x20\x69\x6E\x74\x65\x72\x6E' \
-    '\x61\x6C\x20\x75\x73\x65\x20\x61\x6E\x64\x20\x73' \
-    '\x68\x6F\x75\x6C\x64\x20\x6E\x6F\x74\x20\x62\x65' \
-    '\x20\x72\x75\x6E\x2E\x0D\x0A\x4B\x69\x63\x6F\x6D' \
-    '\x41\x56\x20\x2D\x20\x41\x6E\x20\x6F\x70\x65\x6E' \
-    '\x20\x73\x6F\x75\x72\x63\x65\x28\x47\x50\x4C\x20' \
-    '\x76\x32\x29\x20\x61\x6E\x74\x69\x76\x69\x72\x75' \
-    '\x73\x20\x65\x6E\x67\x69\x6E\x65\x20\x64\x65\x73' \
-    '\x69\x67\x6E\x65\x64\x20\x66\x6F\x72\x20\x64\x65' \
-    '\x74\x65\x63\x74\x69\x6E\x67\x20\x6D\x61\x6C\x77' \
-    '\x61\x72\x65\x20\x61\x6E\x64\x20\x64\x69\x73\x69' \
-    '\x6E\x66\x65\x63\x74\x69\x6E\x67\x20\x69\x74\x2E' \
-    '\x0D\x0A\x24\x00'
+    '\x4D\x5A\x90\x00\x02\x00\x00\x00\x04\x00\x0F\x00\xFF\xFF\x00\x00' \
+    '\xB0\x00\x00\x00\x00\x00\x00\x00\x40\x00\x1A\x00\x00\x00\x00\x00' \
+    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
+    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xD0\x00\x00\x00' \
+    '\x0E\x1F\xB4\x09\xBA\x0D\x00\xCD\x21\xB4\x4C\xCD\x21\x54\x68\x69' \
+    '\x73\x20\x66\x69\x6C\x65\x20\x77\x61\x73\x20\x63\x72\x65\x61\x74' \
+    '\x65\x64\x20\x62\x79\x20\x4B\x69\x63\x6F\x6D\x41\x56\x2E\x20\x0D' \
+    '\x0A\x43\x6F\x70\x79\x72\x69\x67\x68\x74\x20\x28\x63\x29\x20\x31' \
+    '\x39\x39\x35\x2D\x32\x30\x31\x37\x20\x4B\x65\x69\x20\x43\x68\x6F' \
+    '\x69\x2E\x20\x41\x6C\x6C\x20\x72\x69\x67\x68\x74\x73\x20\x72\x65' \
+    '\x73\x65\x72\x76\x65\x64\x2E\x0D\x0A\x4B\x69\x63\x6F\x6D\x41\x56' \
+    '\x20\x57\x65\x62\x20\x3A\x20\x68\x74\x74\x70\x3A\x2F\x2F\x77\x77' \
+    '\x77\x2E\x6B\x69\x63\x6F\x6D\x61\x76\x2E\x63\x6F\x6D\x0D\x0A\x24'
 
 UPX_NRV2B = '\x11\xdb\x11\xc9\x01\xdb\x75\x07\x8b\x1e\x83\xee\xfc'
 UPX_NRV2D = '\x83\xf0\xff\x74\x78\xd1\xf8\x89\xc5\xeb\x0b\x01\xdb'
@@ -39,19 +31,9 @@ UPX_LZMA1 = '\x56\x83\xc3\x04\x53\x50\xc7\x03\x03\x00\x02\x00\x90'
 UPX_LZMA2 = '\x56\x83\xc3\x04\x53\x50\xc7\x03\x03\x00\x02\x00\x90'
 
 
-def int32(iv):
-    if iv & 0x80000000:
-        iv += (-0x100000000)
-    return iv
-
-
-def uint32(iv):
-    return iv & 0xFFFFFFFF
-
-
 def PESALIGN(o, a):
     if a:
-        ret = ((o / a + ((o % a) != 0))*a)
+        ret = ((o / a + (o % a != 0)) * a)
     else:
         ret = o
 
@@ -59,7 +41,7 @@ def PESALIGN(o, a):
 
 
 def ROR(x, n, bits=32):
-    mask = (2L**n) - 1
+    mask = (2L ** n) - 1
     mask_bits = x & mask
     return (x >> n) | (mask_bits << (bits - n))
 
@@ -71,24 +53,25 @@ def ROL(x, n, bits=32):
 def checkpe(dst, dsize, pehdr):
     try:
         if kavutil.get_uint32(dst, pehdr) != 0x4550:
-            raise ValueError
+            raise SystemError
 
-        valign = kavutil.get_uint32(dst, pehdr+0x38)
+        valign = kavutil.get_uint32(dst, pehdr + 0x38)
         if not valign:
-            raise ValueError
+            raise SystemError
 
-        sectcnt = kavutil.get_uint32(dst, pehdr+6)
+        sectcnt = kavutil.get_uint16(dst, pehdr + 6)
         if not sectcnt:
-            raise ValueError
+            raise SystemError
 
         sections_pos = pehdr + 0xF8
 
         if (sections_pos + (sectcnt * 0x28)) > dsize:
-            raise ValueError
-    except ValueError:
+            raise SystemError
+    except:
         sections_pos = 0
         valign = 0
         sectcnt = 0
+        pass
 
     return sections_pos, valign, sectcnt
 
@@ -105,9 +88,12 @@ def ModifyCallAddr(src, dest, ep, upx0, upx1, baseaddr):
                 break
 
             if ord(src[pos]) == 0xE9 and \
-                    ord(src[pos + 3]) == 0xFF and ord(src[pos + 4]) == 0xFF and \
-                    ord(src[pos + 5]) == 0x5E and ord(src[pos + 6]) == 0x89 and \
-                    ord(src[pos + 7]) == 0xF7 and ord(src[pos + 8]) == 0xB9:
+                    ord(src[pos + 3]) == 0xFF and \
+                    ord(src[pos + 4]) == 0xFF and \
+                    ord(src[pos + 5]) == 0x5E and \
+                    ord(src[pos + 6]) == 0x89 and \
+                    ord(src[pos + 7]) == 0xF7 and \
+                    ord(src[pos + 8]) == 0xB9:
                 call_count = kavutil.get_uint32(src, pos + 9)
                 break
             else:
@@ -151,11 +137,6 @@ def ModifyCallAddr(src, dest, ep, upx0, upx1, baseaddr):
                 pos += 1
 
         dst += dest[dcur:]
-        '''
-        fp = open('call.dmp', 'wb')
-        fp.write(dst)
-        fp.close()
-        '''
     except:
         return None
 
@@ -175,24 +156,23 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
                             ord(src[ep - upx1 + valign - 1]) == 0xBE:
                 break
 
-        if not valign and (ep - upx1 + len(HEADERS) < ssize - 8):
+        if not valign and (ep - upx1 + 0x80 < ssize - 8):
             i = 0
             while True:
-                b1 = ord(src[ep - upx1 + len(HEADERS) + 0 + i])
-                b2 = ord(src[ep - upx1 + len(HEADERS) + 1 + i])
+                b1 = ord(src[ep - upx1 + 0x80 + 0 + i])
+                b2 = ord(src[ep - upx1 + 0x80 + 1 + i])
 
                 if b1 == 0x8D and b2 == 0xBE:
-                    b3 = ord(src[ep - upx1 + len(HEADERS) + 6 + i])
-                    b4 = ord(src[ep - upx1 + len(HEADERS) + 7 + i])
+                    b3 = ord(src[ep - upx1 + 0x80 + 6 + i])
+                    b4 = ord(src[ep - upx1 + 0x80 + 7 + i])
 
                     if b3 == 0x8B and b4 == 0x07:
-                        valign = len(HEADERS) + i + 2
+                        valign = 0x80 + i + 2
                         break
                 i += 1
 
         if valign and ISCONTAINED(0, ssize, ep - upx1 + valign, 4):
-            dst_imports = kavutil.get_uint32(src, ep - upx1 + valign)
-            # dst_imports = struct.unpack('<l', src[ep - upx1 + valign:ep - upx1 + valign + 4])[0]
+            dst_imports = struct.unpack('<l', src[ep - upx1 + valign:ep - upx1 + valign + 4])[0]
 
             realstuffsz = dst_imports
 
@@ -201,8 +181,7 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
             else:
                 pehdr = dst_imports
 
-                while (pehdr + 8 < dsize) and kavutil.get_uint32(dst, pehdr):
-                # while (pehdr + 8 < dsize) and (struct.unpack('<l', dst[pehdr:pehdr + 4])[0]):
+                while (pehdr + 8 < dsize) and (struct.unpack('<l', dst[pehdr:pehdr + 4])[0]):
                     pehdr += 8
                     while (pehdr + 2 < dsize) and ord(dst[pehdr]):
                         pehdr += 1
@@ -297,6 +276,16 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
     return upx_d
 
 
+def int32(iv):
+    if iv & 0x80000000:
+        iv = -0x100000000 + iv
+    return iv
+
+
+def uint32(iv):
+    return iv & 0xFFFFFFFF
+
+
 def ISCONTAINED(bb, bb_size, sb, sb_size):
     c1 = bb_size > 0
     c2 = sb_size > 0
@@ -320,7 +309,7 @@ def doubleebx(src, myebx, scur, ssize):
         if not (oldebx & 0x7fffffff):
             if not ISCONTAINED(0, ssize, scur, 4):
                 return -1, myebx, scur
-            oldebx = struct.unpack('<L', src[scur:scur + 4])[0]
+            oldebx = kavutil.get_uint32(src, scur)
             myebx = uint32(oldebx * 2 + 1)
             scur += 4
         return (oldebx >> 31), myebx, scur
@@ -421,8 +410,7 @@ def upx_inflate2b(src, dsize, ep, upx0, upx1, baseaddr):
             backsize += 1
 
             if not ISCONTAINED(0, dsize, dcur + unp_offset, backsize) or \
-                    not ISCONTAINED(0, dsize, dcur, backsize) or \
-                    unp_offset >= 0:
+                    not ISCONTAINED(0, dsize, dcur, backsize) or unp_offset >= 0:
                 raise SystemError
 
             for i in range(backsize):
@@ -438,21 +426,9 @@ def upx_inflate2b(src, dsize, ep, upx0, upx1, baseaddr):
         # Call 주소 조정
         dest = ModifyCallAddr(src, dest, ep, upx0, upx1, baseaddr)
 
-        '''
-        fp = open('upx_img.dmp', 'wb')
-        fp.write(dest)
-        fp.close()
-        '''
-
         # PE 파일로 조립하기
         magic = [0x108, 0x110, 0xd5, 0]
         dest = RebuildPE(src, ssize, dest, dsize, ep, upx0, upx1, magic, dcur)
-
-        '''
-        fp = open('upx_build.dmp', 'wb')
-        fp.write(dest)
-        fp.close()
-        '''
 
         ret = 0
     except:
@@ -473,6 +449,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -534,6 +511,17 @@ class KavMain:
                     arc_name = 'arc_upx!nrv2e'
                 else:
                     raise ValueError
+
+                if self.verbose:
+                    print '-' * 79
+                    kavutil.vprint('Engine')
+                    kavutil.vprint(None, 'Engine', 'upx.kmd')
+                    kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
+
+                    print
+                    kavutil.vprint('UPX : only support \'nrv2b\' compress method.')
+                    kavutil.vprint(None, 'Compress Method', arc_name.split('!')[-1])
+                    print
 
                 name = 'UPX'
                 file_scan_list.append([arc_name, name])
@@ -617,10 +605,19 @@ class KavMain:
                 unpack_data = ''  # UPX 해제된 이미지
 
                 if arc_engine_id[8:] == 'nrv2b':  # UPX 알고리즘 중 nrv2b 압축인가?
-                    ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1, pe_img)
+                    try:
+                        ret_val, unpack_data = upx_inflate2b(data, dsize, pe_ep, upx0, upx1, pe_img)
+                    except OverflowError:
+                        raise ValueError
 
                 if unpack_data == '':  # 압축 해제 실패
                     raise ValueError
+
+                if self.verbose:
+                    kavutil.vprint('Decompress')
+                    kavutil.vprint(None, 'Compressed Size', '%d' % len(data))
+                    kavutil.vprint(None, 'Decompress Size', '%d' % len(unpack_data))
+                    print
 
                 data = unpack_data
             except IOError:

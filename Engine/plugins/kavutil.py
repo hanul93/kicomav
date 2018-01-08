@@ -9,6 +9,7 @@ import glob
 import marshal
 import time
 import math
+import zlib
 
 
 # -------------------------------------------------------------------------
@@ -55,7 +56,7 @@ class PatternMD5:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
-        fl = glob.glob(plugins_path + os.sep + '*.s??')
+        fl = glob.glob(os.path.join(plugins_path, '*.s??'))
         fl.sort()
         for name in fl:
             obj = p_md5_pattern_ext.search(name)
@@ -125,12 +126,16 @@ class PatternMD5:
                         continue
 
                     for off in p2_offs:
-                        if self.sig_p2s[sig_key][idx][off] == sig_p2:  # 2차 패턴 발견
+                        offs = self.sig_p2s[sig_key][idx][off]
+                        sig2 = offs[0]  # 2차 패턴
+                        name_off = offs[1]  # 악성코드 이름 오프셋
+
+                        if sig2 == sig_p2:  # 2차 패턴 발견
                             # 이름 패턴이 로딩되어 있지 않다면..
                             if self.__load_sig_ex(self.sig_names, 'n', sig_key, idx) is False:
                                 continue
 
-                            return self.sig_names[sig_key][idx][off]  # 악성코드 이름 리턴
+                            return self.sig_names[sig_key][idx][name_off]  # 악성코드 이름 리턴
 
         self.__save_mem()  # 메모리 용량을 낮추기 위해 사용
         return None
@@ -145,7 +150,7 @@ class PatternMD5:
         try:
             data = open(fname, 'rb').read()
             if data[0:4] == 'KAVS':
-                sp = marshal.loads(data[12:])
+                sp = marshal.loads(zlib.decompress(data[12:]))
                 return sp
         except IOError:
             return None
@@ -164,7 +169,7 @@ class PatternMD5:
         if not (sig_key in sig_dict) or not (idx in sig_dict[sig_key]):
             # 패턴 로딩
             try:
-                name_fname = self.plugins + os.sep + '%s.%s%s' % (sig_key, sig_prefix, idx)
+                name_fname = os.path.join(self.plugins, '%s.%s%s' % (sig_key, sig_prefix, idx))
                 sp = self.__load_sig(name_fname)
                 if sp is None:
                     return False
@@ -215,7 +220,7 @@ class PatternMD5:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(self.plugins + os.sep + '%s.n??' % sig_key)
+        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
 
         for fname in fl:
             try:
@@ -235,7 +240,7 @@ class PatternMD5:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(self.plugins + os.sep + '%s.n??' % sig_key)
+        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
 
         for fname in fl:
             try:
@@ -475,6 +480,23 @@ def get_uint32(buf, off):
 def get_uint64(buf, off):
     return struct.unpack('<Q', buf[off:off+8])[0]
 
+
+# -------------------------------------------------------------------------
+# normal_vname(vname):
+# 주어진 악성코드 이름의 특수 문자를 처리한다.
+# 입력값 : vname - 악성코드 이름
+#         platform - Win32, MSIL 등
+# 리턴값 : 새로운 악성코드 이름
+# -------------------------------------------------------------------------
+def normal_vname(vname, platform=None):
+    # vname = vname.replace('<n>', 'not-a-virus:')
+    vname = vname.replace('<n>', '')
+    
+    if platform:
+        vname = vname.replace('<p>', platform)
+
+    return vname
+        
 
 # ----------------------------------------------------------------------------
 # Feature를 위한 로직

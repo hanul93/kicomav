@@ -11,7 +11,7 @@ meta:
         $string3 = "(VirtualProtect)" nocase
         $string4 = "(ExitProcess)" nocase
     condition:
-        (@string1 < @regex1) and (3 of ($string2, $string3, $string4))
+        all of them
 }
 
 
@@ -27,7 +27,7 @@ meta:
         $string1 = "putinterval def" nocase
         $string2 = "repeat" nocase
     condition:
-        $regex1 in (0..256) and $regex2 in (0x17000..filesize) and (@string1 < @string2)
+        $regex1 in (0..256) and $regex2 in (0x17000..filesize) and (2 of ($string1, $string2))
 }
 
 
@@ -42,5 +42,5 @@ meta:
         $string1 = "4 mod get xor put" nocase
         $string2 = "exec" nocase
     condition:
-        (@string1 < @string2) and (@string1 < @regex1)
+        all of them
 }

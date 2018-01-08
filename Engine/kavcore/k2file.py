@@ -2,6 +2,59 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+import os
+import glob
+import tempfile
+
+
+# ---------------------------------------------------------------------
+# K2Tempfile 클래스
+# ---------------------------------------------------------------------
+class K2Tempfile:
+    def __init__(self, path=None):
+        if not path:  # 임시 폴더 설정이 없으면 운영체제의 임시 폴더로 설정
+            self.temp_path = tempfile.gettempdir()
+        else:
+            i = 0
+            pid = os.getpid()
+
+            while i < 5:
+                self.temp_path = os.path.join(path, 'tmp%05x' % pid)
+                if not os.path.exists(self.temp_path):
+                    try:
+                        os.mkdir(self.temp_path)
+                        break
+                    except (IOError, WindowsError) as e:
+                        pass
+
+                pid += 1
+                i += 1  # 5번만 폴더 만들기 시도
+            else:
+                self.temp_path = tempfile.gettempdir()
+
+    def gettempdir(self):
+        return self.temp_path
+
+    def mktemp(self):
+        return tempfile.mktemp(prefix='ktmp', dir=self.temp_path)
+
+    def removetempdir(self):
+        tpath = os.path.join(self.temp_path, 'ktmp*')
+        fl = glob.glob(tpath)
+        try:
+            for name in fl:
+                if os.path.isfile(name):
+                    os.remove(name)
+            else:
+                os.rmdir(self.temp_path)
+                self.temp_path = None
+                return True
+        except (IOError, WindowsError) as e:  # 기타 삭제 오류 처리
+            pass
+
+        return False
+
+
 # -------------------------------------------------------------------------
 # FileStruct 클래스
 # -------------------------------------------------------------------------
