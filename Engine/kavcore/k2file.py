@@ -24,7 +24,7 @@ class K2Tempfile:
                     try:
                         os.mkdir(self.temp_path)
                         break
-                    except (IOError, WindowsError) as e:
+                    except (IOError, OSError) as e:
                         pass
 
                 pid += 1
@@ -49,7 +49,7 @@ class K2Tempfile:
                 os.rmdir(self.temp_path)
                 self.temp_path = None
                 return True
-        except (IOError, WindowsError) as e:  # 기타 삭제 오류 처리
+        except (IOError, OSError) as e:  # 기타 삭제 오류 처리
             pass
 
         return False

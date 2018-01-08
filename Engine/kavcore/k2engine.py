@@ -103,7 +103,7 @@ class Engine:
                     module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
                     try:
                         os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
-                    except WindowsError:
+                    except OSError:
                         pass
                 else:
                     k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
@@ -655,7 +655,7 @@ class EngineInstance:
 
                 shutil.move(filename, t_quarantine_fname)  # 격리소로 이동
                 is_success = True
-            except (shutil.Error, WindowsError) as e:
+            except (shutil.Error, OSError) as e:
                 pass
 
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
@@ -791,7 +791,7 @@ class EngineInstance:
                 try:
                     os.remove(t_fname)
                     # print '[*] Remove :', t_fname
-                except WindowsError:
+                except OSError:
                     pass
         return ret_file_info
 
@@ -833,7 +833,7 @@ class EngineInstance:
                 os.remove(d_fname)
                 d_ret = True
                 self.result['Deleted_files'] += 1  # 삭제 파일 수
-            except (IOError, WindowsError) as e:
+            except (IOError, OSError) as e:
                 d_ret = False
 
         t_file_info.set_modify(d_ret)  # 치료(수정/삭제) 여부 표시
@@ -948,7 +948,7 @@ class EngineInstance:
                 fp.close()
 
             return ret
-        except (IOError, EngineKnownError, WindowsError) as e:
+        except (IOError, EngineKnownError, OSError) as e:
             pass
 
         return False
@@ -1167,7 +1167,7 @@ class EngineInstance:
                         ret.update(ff)
                 except AttributeError:
                     pass
-        except (IOError, EngineKnownError, ValueError, WindowsError) as e:
+        except (IOError, EngineKnownError, ValueError, OSError) as e:
             pass
 
         if mm:
