@@ -57,21 +57,14 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        # 악성코드 DDE 패턴 (https://blog.nviso.be/2017/10/11/detecting-dde-in-ms-office-documents/)
-        self.dde_ptns = []
+        s = r'dde(auto)?\b[\d\D]+?<w:fldChar\s+?w:fldCharType="end"\/>'
+        self.p_dde1 = re.compile(s, re.IGNORECASE)
 
-        s = r'<w:fldChar\s+?w:fldCharType="begin"\/>.+?\b[Dd][Dd][Ee][Aa][Uu][Tt][Oo]\b.+?<w:fldChar\s+?w:fldCharType="end"\/>'
-        self.dde_ptns.append(re.compile(s))
+        s = r'\<[\d\D]+?\>'
+        self.p_tag = re.compile(s)
 
-        s = r'<w:fldChar\s+?w:fldCharType="begin"\/>.+?\b[Dd][Dd][Ee]\b.+?<w:fldChar\s+?w:fldCharType="end"\/>'
-        self.dde_ptns.append(re.compile(s))
-
-        # 의심 명령어
-        s = r'<w:instrText>(.+?)</w:instrText>'
-        self.cmd1 = re.compile(s, re.IGNORECASE)
-
-        s = r'<w:fldSimple\s+?w:instr=\s*?"(.+?)"'
-        self.cmd2 = re.compile(s, re.IGNORECASE)  # QUOTE  Case
+        s = r'\x13\s*dde(auto)?\b[^\x00]+'
+        self.p_dde2 = re.compile(s, re.IGNORECASE)
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -101,30 +94,26 @@ class KavMain:
                     data = get_zip_data(filename, 'word/document.xml')
 
                     if data:
-                        for p in self.dde_ptns:
-                            s = p.search(data)
-                            if s:
-                                src = s.group()
+                        s = self.p_dde1.search(data)
+                        if s:
+                            off = s.span()[0]
+                            end = s.span()[1]
 
-                                # Case 1
-                                cmds = self.cmd1.findall(src)
-                                for cmd in cmds:
-                                    t = cmd.lower()
-                                    if is_include_exe(t):
-                                        return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
+                            buf = data[off:end]
+                            if len(buf):
+                                t = self.p_tag.sub('', buf).lower()
+                                if t.find('\\system\\cmd.exe'):
+                                    return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
+            elif filename_ex.lower() == 'worddocument':
+                data = filehandle
+                s = self.p_dde2.search(data)
+                if s:
+                    buf = s.group()
+                    if len(buf):
+                        t = self.p_tag.sub('', buf).lower()
+                        if t.find('\\system\\cmd.exe'):
+                            return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
 
-                                # Case 2
-                                cmds = self.cmd2.findall(src)
-                                for cmd in cmds:
-                                    t = cmd.lower()
-                                    if t.find('quote') != -1:
-                                        t = t.replace('quote', '')
-                                        t = t.strip()
-                                        t1 = t.split(' ')
-                                        t2 = ''.join([chr(int(x)) for x in t1])
-                                        t3 = t2.lower()
-                                        if is_include_exe(t3):
-                                            return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
         except IOError:
             pass
 
