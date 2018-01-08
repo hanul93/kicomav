@@ -22,8 +22,14 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
 
-        cve_2010_3333 = r'\\\bsv\b.*?(\d+);'
-        self.prog_cve_2010_3333 = re.compile(cve_2010_3333)
+        cve_2010_3333_magic = r'\bpfragments\b'
+        self.cve_2010_3333_magic = re.compile(cve_2010_3333_magic, re.IGNORECASE)
+
+        cve_2010_3333_1 = r'pfragments\b[\d\D]*?\\sv\b[\d\D]*?(\d+)|\\sv\b[\d\D]*?(\d+)[\d\D]*?pfragments\b'
+        self.prog_cve_2010_3333_1 = re.compile(cve_2010_3333_1, re.IGNORECASE)
+
+        cve_2010_3333_2 = r'\\sn[\W]{1,20}?pfragments\b'
+        self.prog_cve_2010_3333_2 = re.compile(cve_2010_3333_2, re.IGNORECASE)
 
         cve_2014_1761 = r'\\listoverridecount(\d+)'
         self.prog_cve_2014_1761 = re.compile(cve_2014_1761, re.IGNORECASE)
@@ -53,29 +59,39 @@ class KavMain:
         mm = filehandle
 
         if mm[:4] == '{\\rt':  # RTF 파일
-            # CVE-2010-3333
-            t = self.prog_cve_2010_3333.search(mm)
-            if t:
-                val = int(t.groups()[0])
-                if val != 2 and val != 4 and val != 8:
-                    if self.verbose:
-                        print '[*] RTF :', val
+            # 검색 속도를 위해 pfragments가 존재하는지 먼저 확인
+            if self.cve_2010_3333_magic.search(mm):
+                # CVE-2010-3333 (1)
+                t = self.prog_cve_2010_3333_1.search(mm)
+                if t:
+                    val = int(max(t.groups()))
 
-                    return True, 'Exploit.RTF.CVE-2010-3333', 0, kernel.INFECTED
+                    if val != 2 and val != 4 and val != 8:
+                        if self.verbose:
+                            print '[*] RTF :', val
+
+                        return True, 'Exploit.RTF.CVE-2010-3333.a', 0, kernel.INFECTED
+
+                # CVE-2010-3333 (2)
+                t = self.prog_cve_2010_3333_2.search(mm)
+                if t:
+                    return True, 'Exploit.RTF.CVE-2010-3333.b', 0, kernel.INFECTED
 
             # CVE-2014-1761
             t = self.prog_cve_2014_1761.search(mm)
             if t:
-                val = t.groups()[0]
+                val = int(t.groups()[0])
+
                 if self.verbose:
                     print '[*] RTF :', val
 
-                t1 = re.findall(r'{\\lfolevel}', mm)
-                if t1:
-                    if self.verbose:
-                        print '[*] N :', len(t1)
-                    if len(t1) > int(val):
-                        return True, 'Exploit.RTF.CVE-2014-1761', 0, kernel.INFECTED
+                if val >= 25:
+                    t1 = re.findall(r'{\\lfolevel}', mm)
+                    if t1:
+                        if self.verbose:
+                            print '[*] N :', len(t1)
+                        if len(t1) > val:
+                            return True, 'Exploit.RTF.CVE-2014-1761', 0, kernel.INFECTED
         else:
             if kavutil.is_textfile(mm[:4096]):
                 t = self.prog_eps_dropper.search(mm)
@@ -112,7 +128,8 @@ class KavMain:
         vlist = list()  # 리스트형 변수 선언
 
         # 진단/치료하는 악성코드 이름 등록
-        vlist.append('Exploit.RTF.CVE-2010-3333')
+        vlist.append('Exploit.RTF.CVE-2010-3333.a')
+        vlist.append('Exploit.RTF.CVE-2010-3333.b')
         vlist.append('Exploit.RTF.CVE-2014-1761')
         vlist.append('Trojan.PS.Agent')
 
@@ -130,6 +147,6 @@ class KavMain:
         info['version'] = '1.1'  # 버전
         info['title'] = 'RTF Engine'  # 엔진 설명
         info['kmd_name'] = 'rtf'  # 엔진 파일 이름
-        info['sig_num'] = 2  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
