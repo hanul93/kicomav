@@ -11,6 +11,7 @@ import csv
 import xml.etree.cElementTree as ET
 import json
 import email
+from backports import lzma
 
 try:
     import yara
