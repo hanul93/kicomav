@@ -896,8 +896,10 @@ class EngineInstance:
                 fp.close()
 
             return ret, vname, mid, scan_state, eid
-        except (EngineKnownError, ValueError, KeyboardInterrupt) as e:
+        except (EngineKnownError, ValueError) as e:
             pass
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
         except:
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
