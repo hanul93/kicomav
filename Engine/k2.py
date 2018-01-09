@@ -525,7 +525,7 @@ def get_download_list(url):
         download_file(url, 'update.cfg')
 
         buf = open('update.cfg', 'r').read()
-        p_lists = re.compile(r'([A-Fa-f0-9]{64}) (.+)')
+        p_lists = re.compile(r'([A-Fa-f0-9]{40}) (.+)')
         lines = p_lists.findall(buf)
 
         for line in lines:
