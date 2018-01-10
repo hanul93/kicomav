@@ -45,6 +45,16 @@ def is_include_exe(s):
     return False
 
 
+def InstrSub(obj):
+    text = obj.groups()[0]
+
+    off = text.find('QUOTE')  # QUOTE가 존재하나?
+    if off != -1:
+        t = text[off+5:].strip().split(' ')
+        text = ''.join([chr(int(x)) for x in t])
+
+    return text
+
 # -------------------------------------------------------------------------
 # KavMain 클래스
 # -------------------------------------------------------------------------
@@ -57,8 +67,17 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        s = r'dde(auto)?\b[\d\D]+?<w:fldChar\s+?w:fldCharType="end"\/>'
-        self.p_dde1 = re.compile(s, re.IGNORECASE)
+        s = r'"begin"(.+?)"end"'
+        self.p_dde_text = re.compile(s, re.IGNORECASE)
+
+        s = r'<w:fldSimple\s+?w:instr=\s*?"(.+?)"\s*>'
+        self.p_instr = re.compile(s, re.IGNORECASE)
+
+        s = r'\bdde(auto)?\b'
+        self.p_dde = re.compile(s, re.IGNORECASE)
+
+        s = r'\\system32\b(.+)\.exe'
+        self.p_cmd = re.compile(s, re.IGNORECASE)
 
         s = r'\<[\d\D]+?\>'
         self.p_tag = re.compile(s)
@@ -94,15 +113,28 @@ class KavMain:
                     data = get_zip_data(filename, 'word/document.xml')
 
                     if data:
-                        s = self.p_dde1.search(data)
-                        if s:
-                            off = s.span()[0]
-                            end = s.span()[1]
+                        # TEXT 영역을 추출한다.
+                        texts = self.p_dde_text.findall(data)
+                        if len(texts):
+                            buf = ''
+                            for text in texts:
+                                # 앞쪽 begin Tag 제거
+                                off = text.find('>')
+                                text = text[off+1:]
 
-                            buf = data[off:end]
+                                # 뒤쪽 end Tag 제거
+                                off = text.rfind('<')
+                                text = text[:off]
+
+                                # instr를 처리한다.
+                                text = self.p_instr.sub(InstrSub, text)
+
+                                # 모든 Tag 삭제
+                                buf += self.p_tag.sub('', text) + '\n'
+
+                            # print buf
                             if len(buf):
-                                t = self.p_tag.sub('', buf).lower()
-                                if t.find('\\\\system32\\\\cmd.exe') != -1:
+                                if self.p_dde.search(buf) and self.p_cmd.search(buf):
                                     return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
             elif filename_ex.lower() == 'worddocument':
                 data = filehandle
@@ -110,10 +142,8 @@ class KavMain:
                 if s:
                     buf = s.group()
                     if len(buf):
-                        t = self.p_tag.sub('', buf).lower()
-                        if t.find('\\\\system32\\\\cmd.exe') != -1:
+                        if self.p_dde.search(buf) and self.p_cmd.search(buf):
                             return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
-
         except IOError:
             pass
 
