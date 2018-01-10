@@ -92,6 +92,7 @@ class NSIS:
     TYPE_LZMA = 0
     TYPE_BZIP = 1
     TYPE_ZLIB = 2
+    TYPE_COPY = 3
 
     def __init__(self, filename, verbose):
         self.verbose = verbose
@@ -170,14 +171,18 @@ class NSIS:
                 # print comp_type
                 if comp_type == self.TYPE_LZMA:
                     try:  # 전체 압축한 경우인지 확인해 본다.
-                        data = pylzma.decompress(fdata)
+                        obj = pylzma.decompressobj(maxlength=12)
+                        data = obj.decompress(fdata)
                     except TypeError:
                         pass
                 elif comp_type == self.TYPE_ZLIB:
-                    try:
-                        data = zlib.decompress(fdata, -15)
-                    except zlib.error:
-                        pass
+                    if kavutil.get_uint32(self.body_data, foff) & 0x80000000 == 0x80000000:
+                        try:
+                            data = zlib.decompress(fdata, -15)
+                        except zlib.error:
+                            pass
+                    else:
+                        data = fdata  # TYPE_COPY
             return data
         else:
             return None
@@ -229,7 +234,8 @@ class NSIS:
         comp_success = True
         if comp_type == self.TYPE_LZMA:
             try:  # 전체 압축한 경우인지 확인해 본다.
-                uncmp_data = pylzma.decompress(self.mm[off:off+size])
+                obj = pylzma.decompressobj(maxlength=12)
+                uncmp_data = obj.decompress(self.mm[0x1c:])
             except TypeError:
                 comp_success = False
         elif comp_type == self.TYPE_ZLIB:
@@ -429,6 +435,7 @@ class NSISHeader:
         fl.sort()
         return fl
 
+
 # -------------------------------------------------------------------------
 # KavMain 클래스
 # -------------------------------------------------------------------------
@@ -466,7 +473,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'NSIS Engine'  # 엔진 설명
         info['kmd_name'] = 'nsis'  # 엔진 파일 이름
 
