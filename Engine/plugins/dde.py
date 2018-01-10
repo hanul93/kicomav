@@ -102,7 +102,7 @@ class KavMain:
                             buf = data[off:end]
                             if len(buf):
                                 t = self.p_tag.sub('', buf).lower()
-                                if t.find('\\system\\cmd.exe'):
+                                if t.find('\\\\system32\\\\cmd.exe') != -1:
                                     return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
             elif filename_ex.lower() == 'worddocument':
                 data = filehandle
@@ -111,7 +111,7 @@ class KavMain:
                     buf = s.group()
                     if len(buf):
                         t = self.p_tag.sub('', buf).lower()
-                        if t.find('\\system\\cmd.exe'):
+                        if t.find('\\\\system32\\\\cmd.exe') != -1:
                             return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
 
         except IOError:
