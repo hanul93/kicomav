@@ -4,8 +4,189 @@
 
 import os
 import re
+import mmap
 import kernel
 import kavutil
+
+
+# -------------------------------------------------------------------------
+# objdata 추출 관련 함수들
+# -------------------------------------------------------------------------
+p_rtf_tags = re.compile(r'\\([^\\{}]*)')
+p_rtf_tag = re.compile(r'\\\s*(#|\*|[a-z\x00]*)(\d*)(.*)', re.I)
+p_obj_tag = re.compile(r'\\objdata\b', re.I)
+
+
+# {} 개수를 체크해서 최종 닫혀진 괄호까지의 데이터를 추출한다.
+def extract_data(buf):
+    return __sub_extract_data(buf)[0]
+
+
+def join_data(tag, num, data):
+    s = ''
+    if tag:
+        s += tag
+    if num:
+        s += num
+    if data:
+        s += data
+
+    return s
+
+
+def __keyword_sub(obj):
+    s = ''
+
+    tag, num, data = obj.groups()
+
+    if tag.strip() in ['#', '*', '']:
+        s += join_data(None, num, data)
+    elif tag == 'bin':
+        n = int(num, 16)
+        d = data.lstrip()
+
+        s += join_data(None, None, d[:n].encode('hex') + d[n:])
+    else:
+        pass
+        # print '[*] Key :', tag
+        # s += join_data(None, None, data)
+
+    return s
+
+
+def __keyword_process(data):
+    s = ''
+
+    buf_len = len(data)
+    off = 0
+
+    while off < buf_len:
+        c = data[off]
+        if c == '\\':
+            p = p_rtf_tags.match(data[off:])
+            if p:
+                t = p.group()
+                x = p_rtf_tag.sub(__keyword_sub, t)
+                s += x
+                off += len(t)
+        else:
+            s += c
+            off += 1
+
+    return s
+
+
+def __sub_extract_data(data):
+    ret = ''
+
+    len_buf = len(data)
+    off = 0
+    while off < len_buf:
+        c = data[off]
+        off += 1
+
+        if c == '{':
+            x, l = __sub_extract_data(data[off:])
+            ret += x
+            off += l
+        elif c == '}':
+            return ret, off
+        elif c == '\\':
+            p = p_rtf_tags.search(data[off - 1:])
+            if p:
+                x = p.group()
+                xx = __keyword_process(x)
+                ret += xx
+                off += len(x) - 1
+        else:
+            ret += c
+
+    if len(ret):
+        return ret, off
+
+
+# -------------------------------------------------------------------------
+# RtfFile 클래스
+# -------------------------------------------------------------------------
+class RtfFile:
+    def __init__(self, filename, verbose=False):
+        self.verbose = verbose  # 디버깅용
+        self.filename = filename
+        self.fp = None
+        self.mm = None
+
+        self.p = re.compile(r'[A-Fa-f0-9]+')
+
+        self.num_objdata = 0  # RTF에 삽입된 objdata의 수
+        self.objdata = {}  # objdata
+        self.parse()
+
+    def parse(self):
+        try:
+            self.fp = open(self.filename, 'rb')
+            self.mm = mmap.mmap(self.fp.fileno(), 0, access=mmap.ACCESS_READ)
+
+            mm = self.mm
+
+            if mm[:4] != '{\\rt':  # 헤더 체크
+                self.close()
+                return None
+
+            self.num_objdata = len(p_obj_tag.findall(mm))
+            if self.verbose:
+                print '[*] objdata : %d' % self.num_objdata
+
+            # objdata를 추출한다.
+            i = 1
+            for obj in p_obj_tag.finditer(mm):
+                end_off = obj.span()[1]
+                data = extract_data(mm[end_off:])
+
+                hex_data = ''.join(self.p.findall(data))
+
+                if hex_data[:16] == '0105000002000000':  # Magic
+                    h = hex_data
+                    name_len = int(h[22:24] + h[20:22] + h[18:20] + h[16:18], 16)
+                    name = h[24:24 + (name_len * 2) - 2].decode('hex')
+                    off = 24 + (name_len * 2) + 16  # Unknown 4Byte * 2
+                    data_len = int(h[off + 6:off + 8] + h[off + 4:off + 6] + h[off + 2:off + 4] + h[off:off + 2], 16)
+
+                    if self.verbose:
+                        print name_len
+                        print name
+                        print hex(data_len)
+
+                    t = h[24 + (name_len * 2) + 24:24 + (name_len * 2) + 24 + (data_len * 2)]
+
+                    if self.verbose:
+                        print hex(len(t))
+
+                    obj_name = 'RTF #%d' % i
+                    self.objdata[obj_name] = t.decode('hex')
+                    i += 1
+        except IOError:
+            pass
+
+    def close(self):
+        if self.mm:
+            self.mm.close()
+            self.mm = None
+
+        if self.fp:
+            self.fp.close()
+            self.fp = None
+
+    def namelist(self):
+        names = []
+
+        if len(self.objdata):
+            names = self.objdata.keys()
+            names.sort()
+
+        return names
+
+    def read(self, fname):
+        return self.objdata.get(fname, None)
 
 
 # -------------------------------------------------------------------------
@@ -21,6 +202,7 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
+        self.handle = {}  # 압축 파일 핸들
 
         cve_2010_3333_magic = r'\bpfragments\b'
         self.cve_2010_3333_magic = re.compile(cve_2010_3333_magic, re.IGNORECASE)
@@ -169,3 +351,62 @@ class KavMain:
         info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = RtfFile(filename)  # rtf 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
+
+    # ---------------------------------------------------------------------
+    # arclist(self, filename, fileformat)
+    # 압축 파일 내부의 파일 목록을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    #          fileformat - 파일 포맷 분석 정보
+    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # ---------------------------------------------------------------------
+    def arclist(self, filename, fileformat):
+        file_scan_list = []  # 검사 대상 정보를 모두 가짐
+
+        # 미리 분석된 파일 포맷중에 RTF 포맷이 있는가?
+        if 'ff_rtf' in fileformat:
+            zfile = self.__get_handle(filename)
+
+            for name in zfile.namelist():
+                file_scan_list.append(['arc_rtf', name])
+
+        return file_scan_list
+
+    # ---------------------------------------------------------------------
+    # unarc(self, arc_engine_id, arc_name, fname_in_arc)
+    # 입력값 : arc_engine_id - 압축 엔진 ID
+    #          arc_name      - 압축 파일
+    #          fname_in_arc   - 압축 해제할 파일 이름
+    # 리턴값 : 압축 해제된 내용 or None
+    # ---------------------------------------------------------------------
+    def unarc(self, arc_engine_id, arc_name, fname_in_arc):
+        if arc_engine_id == 'arc_rtf':
+            zfile = self.__get_handle(arc_name)
+            data = zfile.read(fname_in_arc)
+            return data
+
+        return None
+
+    # ---------------------------------------------------------------------
+    # arcclose(self)
+    # 압축 파일 핸들을 닫는다.
+    # ---------------------------------------------------------------------
+    def arcclose(self):
+        for fname in self.handle.keys():
+            zfile = self.handle[fname]
+            zfile.close()
+            self.handle.pop(fname)
