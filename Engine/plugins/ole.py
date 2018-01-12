@@ -442,6 +442,7 @@ class OleFile:
     # PPS Tree의 유효성을 체크한다. (내장)
     # ---------------------------------------------------------------------
     def __valid_pps_tree(self):
+        scaned_pps_node = [0]  # 이미 분석한 노드의 경우 더이상 분석하지 않기 위해 처리
         f = []
 
         if len(self.pps) == 0:  # 분석된 PPS가 없으면 종료
@@ -449,6 +450,7 @@ class OleFile:
 
         if self.pps[0]['Dir'] != 0xffffffff and self.pps[0]['Type'] == 5:
             f.append(self.pps[0]['Dir'])
+            scaned_pps_node.append(self.pps[0]['Dir'])
             self.pps[0]['Valid'] = True
 
         if len(f) == 0:  # 정상적인 PPS가 없음
@@ -471,13 +473,25 @@ class OleFile:
             self.pps[x]['Valid'] = True
 
             if self.pps[x]['Prev'] != 0xffffffff:
-                f.append(self.pps[x]['Prev'])
+                if self.pps[x]['Prev'] in scaned_pps_node:
+                    self.pps[x]['Prev'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Prev'])
+                    scaned_pps_node.append(self.pps[x]['Prev'])
 
             if self.pps[x]['Next'] != 0xffffffff:
-                f.append(self.pps[x]['Next'])
+                if self.pps[x]['Next'] in scaned_pps_node:
+                    self.pps[x]['Next'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Next'])
+                    scaned_pps_node.append(self.pps[x]['Next'])
 
             if self.pps[x]['Dir'] != 0xffffffff:
-                f.append(self.pps[x]['Dir'])
+                if self.pps[x]['Dir'] in scaned_pps_node:
+                    self.pps[x]['Dir'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Dir'])
+                    scaned_pps_node.append(self.pps[x]['Dir'])
 
         return True
 
