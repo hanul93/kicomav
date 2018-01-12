@@ -47,6 +47,24 @@ class KavMain:
         return 0  # 플러그인 엔진 종료 성공
 
     # ---------------------------------------------------------------------
+    # format(self, filehandle, filename, filename_ex)
+    # 파일 포맷을 분석한다.
+    # 입력값 : filehandle - 파일 핸들
+    #          filename   - 파일 이름
+    #          filename_ex - 압축 파일 내부 파일 이름
+    # 리턴값 : {파일 포맷 분석 정보} or None
+    # ---------------------------------------------------------------------
+    def format(self, filehandle, filename, filename_ex):
+        ret = {}
+
+        mm = filehandle
+
+        if mm[:4] == '{\\rt':  # RTF 파일
+            ret['ff_rtf'] = 'RTF'
+
+        return ret
+
+    # ---------------------------------------------------------------------
     # scan(self, filehandle, filename, fileformat)
     # 악성코드를 검사한다.
     # 입력값 : filehandle  - 파일 핸들
@@ -58,7 +76,8 @@ class KavMain:
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
         mm = filehandle
 
-        if mm[:4] == '{\\rt':  # RTF 파일
+        # 미리 분석된 파일 포맷중에 RTF 포맷이 있는가?
+        if 'ff_rtf' in fileformat:
             # 검색 속도를 위해 pfragments가 존재하는지 먼저 확인
             if self.cve_2010_3333_magic.search(mm):
                 # CVE-2010-3333 (1)
