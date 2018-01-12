@@ -321,6 +321,13 @@ class OleFile:
             print
             kavutil.HexDump().Buffer(self.root, 0, 0x80)
 
+        # CVE-2012-0158 검사하기
+        # Root Entry에 ListView.2의 CLSID가 존재함
+        # 참고 : https://securelist.com/the-curious-case-of-a-cve-2012-0158-exploit/37158/
+        if self.root[0x50:0x60] == '\x4B\xF0\xD1\xBD\x8B\x85\xD1\x11\xB1\x6A\x00\xC0\xF0\x28\x36\x28':
+            self.exploit.append('Exploit.OLE.CVE-2012-0158')
+            return False
+
         # sbd 읽기
         sbd_startblock = kavutil.get_uint32(self.mm, 0x3c)
         num_of_sbd_blocks = kavutil.get_uint32(self.mm, 0x40)
