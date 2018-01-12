@@ -353,7 +353,12 @@ class OleFile:
             t_size = min(kavutil.get_uint16(pps, 0x40), 0x40)
 
             if t_size != 0:
-                p['Name'] = DecodeStreamName(pps[0:t_size-2]).decode('UTF-16LE', 'replace')
+                # 출력시 이름이 깨질 가능성이 큼
+                if ord(pps[0]) & 0xF0 == 0x00 and ord(pps[1]) == 0x00:
+                    name = '_\x00' + pps[2:t_size-2]
+                else:
+                    name = pps[0:t_size-2]
+                p['Name'] = DecodeStreamName(name).decode('UTF-16LE', 'replace')
             else:
                 p['Name'] = ''
 
