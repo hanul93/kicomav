@@ -228,7 +228,7 @@ class PatternMD5:
                 if buf[0:4] == 'KAVS':
                     sig_num += get_uint32(buf, 4)
             except IOError:
-                return None
+                continue
 
         return sig_num
 
