@@ -73,10 +73,9 @@ class ASN1:
         if val & 0x80 == 0:
             return val, 2
         else:
-            data_type = {1: 'B', 2: 'H', 4: 'L'}
             data_len = val & 0x7f
 
-            val = struct.unpack('>' + data_type[data_len], data[2:2+data_len])[0]
+            val = int(data[2:2 + data_len].encode('hex'), 16)
             return val, 2+data_len
 
     # ASN1의 데이터를 얻는다.
