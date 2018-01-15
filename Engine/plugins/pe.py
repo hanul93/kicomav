@@ -140,6 +140,7 @@ p_str = re.compile(r'[^\x00]+')  # NULL 문자 직전까지 복사
 class PE:
     def __init__(self, mm, verbose, filename):
         self.filename = filename
+        self.filesize = os.path.getsize(filename)
         self.verbose = verbose
         self.mm = mm
         self.sections = []  # 모든 섹션 정보 담을 리스트
@@ -263,6 +264,9 @@ class PE:
                 try:
                     rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
 
+                    if rsrc_off > self.filesize:
+                        raise ValueError
+
                     if len(mm[rsrc_off:rsrc_off + rsrc_size]) != rsrc_size:  # 충분한 리소스가 존재하지 않음
                         raise ValueError
 
@@ -286,6 +290,9 @@ class PE:
 
                             # Name ID
                             name_id_off = (name_id_off & 0x7FFFFFFF) + rsrc_off
+                            if name_id_off > self.filesize:
+                                raise ValueError
+
                             num_name_id_name = kavutil.get_uint16(mm, name_id_off + 0xC)
                             num_name_id_id = kavutil.get_uint16(mm, name_id_off + 0xE)
 
@@ -296,6 +303,9 @@ class PE:
                                 # 리소스 영역의 최종 이름 생성
                                 if name_id_id & 0x80000000 == 0x80000000:
                                     string_off = (name_id_id & 0x7FFFFFFF) + rsrc_off
+                                    if string_off > self.filesize:
+                                        raise ValueError
+
                                     len_name = kavutil.get_uint16(mm, string_off)
                                     rsrc_name_id_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
                                     string_name = rsrc_type_name + '/' + rsrc_name_id_name
@@ -304,6 +314,9 @@ class PE:
 
                                 # Language
                                 language_off = (language_off & 0x7FFFFFFF) + rsrc_off
+                                if language_off > self.filesize:
+                                    raise ValueError
+
                                 num_language_name = kavutil.get_uint16(mm, language_off + 0xC)
                                 num_language_id = kavutil.get_uint16(mm, language_off + 0xE)
 
@@ -315,7 +328,12 @@ class PE:
 
                                     data_rva = kavutil.get_uint32(mm, data_entry_off)
                                     data_off, _ = self.rva_to_off(data_rva)
+                                    if data_off > self.filesize:
+                                        continue
+
                                     data_size = kavutil.get_uint32(mm, data_entry_off + 4)
+                                    if data_size > self.filesize:
+                                        continue
 
                                     if data_size > 8192:  # 최소 8K 이상인 리소스만 데이터로 추출
                                         if 'Resource_UserData' in pe_format:
