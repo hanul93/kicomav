@@ -31,6 +31,7 @@ def vprint(header, section=None, msg=None):
 # 악성코드 패턴 인스턴스
 # -------------------------------------------------------------------------
 handle_pattern_md5 = None  # 악성코드 패턴 핸들 (MD5 해시)
+handle_pattern_vdb = None  # 악성코드 패턴 핸들 (VDB)
 
 # -------------------------------------------------------------------------
 # 정규표현식 컴파일
@@ -249,6 +250,217 @@ class PatternMD5:
                 return None
 
         return sig_vname
+
+
+# -------------------------------------------------------------------------
+# PatternVDB
+# -------------------------------------------------------------------------
+class PatternVDB:
+    # ---------------------------------------------------------------------
+    # __init__(self, plugins_path)
+    # 악성코드 패턴을 초기화한다.
+    # 인력값 : plugins_path - 악성코드 패턴의 위치
+    # ---------------------------------------------------------------------
+    def __init__(self, plugins_path):
+        self.sig_sizes = {}
+        self.sig_p1s = {}
+        self.sig_p2s = {}
+        self.sig_names = {}
+        self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
+        self.plugins = plugins_path
+
+        fl = glob.glob(os.path.join(plugins_path, 've.s??'))
+        fl.sort()
+        for name in fl:
+            obj = p_md5_pattern_ext.search(name)
+            if obj:
+                idx = obj.groups()[0]  # ex:01
+                sig_key = os.path.split(name)[1].lower().split('.')[0]  # ex:script
+                sp = self.__load_sig(name)
+                if sp is None:
+                    continue
+
+                if len(sp):  # 로딩된 패턴이 1개 이상이면...
+                    if not (sig_key in self.sig_sizes):
+                        self.sig_sizes[sig_key] = {}
+
+                    for psize in sp.keys():
+                        if psize in self.sig_sizes[sig_key]:
+                            self.sig_sizes[sig_key][psize][idx].append(psize)
+                        else:
+                            self.sig_sizes[sig_key][psize] = {idx: sp[psize]}
+
+    # ---------------------------------------------------------------------
+    # match_size(self, sig_key, sig_size)
+    # 지정한 악성코드 패턴을 해당 크기가 존재하는지 확인한다.
+    # 인력값 : sig_key  - 지정한 악성코드 패턴
+    #      : sig_size - 크기
+    # 리턴값 : 악성코드 패턴 내부에 해당 크기가 존재하는지 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def match_size(self, sig_key, sig_size):
+        sig_key = sig_key.lower()  # 대문자로 입력될 가능성 때문에 모두 소문자로 변환
+
+        if sig_key in self.sig_sizes:  # sig_key가 로딩되어 있나?
+            if sig_size in self.sig_sizes[sig_key].keys():
+                return self.sig_sizes[sig_key][sig_size]
+
+        return None
+
+    # ---------------------------------------------------------------------
+    # get_cs1(self, ve_id, idx)
+    # 1차 패턴을 읽는다.
+    # 입력값 : ve_id - ve 패턴의 파일
+    #      : idx   - 내부 인덱스
+    # 리턴값 : 1차 패턴
+    # ---------------------------------------------------------------------
+    def get_cs1(self, ve_id, idx):
+        sig_key = 've'
+
+        if self.__load_sig_ex(self.sig_p1s, 'i', sig_key, ve_id):
+            return self.sig_p1s[sig_key][ve_id][idx]
+
+        return None
+
+    # ---------------------------------------------------------------------
+    # get_cs2(self, ve_id, idx)
+    # 2차 패턴을 읽는다.
+    # 입력값 : ve_id - ve 패턴의 파일
+    #      : idx   - 내부 인덱스
+    # 리턴값 : 2차 패턴
+    # ---------------------------------------------------------------------
+    def get_cs2(self, ve_id, idx):
+        sig_key = 've'
+
+        if self.__load_sig_ex(self.sig_p2s, 'c', sig_key, ve_id):
+            return self.sig_p2s[sig_key][ve_id][idx]
+
+        return None
+
+    # ---------------------------------------------------------------------
+    # get_vname(self, ve_id, vname_id)
+    # 악설코드 이름을 리턴한다.
+    # 입력값 : ve_id    - ve 패턴의 파일
+    #      : vname_id - 내부 인덱스
+    # 리턴값 : 1차 패턴
+    # ---------------------------------------------------------------------
+    def get_vname(self, ve_id, vname_id):
+        sig_key = 've'
+
+        if self.__load_sig_ex(self.sig_names, 'n', sig_key, ve_id):
+            return self.sig_names[sig_key][ve_id][vname_id]
+
+        return None
+
+    # ---------------------------------------------------------------------
+    # __load_sig(self, fname)
+    # 악성코드 패턴을 로딩한다
+    # 인력값 : fname - 악성코드 패틴 파일 이름
+    # 리턴값 : 악성코드 패턴 자료 구조
+    # ---------------------------------------------------------------------
+    def __load_sig(self, fname):
+        try:
+            data = open(fname, 'rb').read()
+            if data[0:4] == 'KAVS':
+                sp = marshal.loads(zlib.decompress(data[12:]))
+                return sp
+        except IOError:
+            return None
+
+    # ---------------------------------------------------------------------
+    # __load_sig_ex(self, sig_dict, sig_prefix, sig_key, idx)
+    # 악성코드 패턴을 로딩한다.
+    # 단, 어떤 자료구조에 로딩되는지의 여부도 결정할 수 있다.
+    # 인력값 : sig_dict - 악성코드 패틴이 로딩될 자료 구조
+    #         sig_prefix - 악성코드 패턴 이름 중 확장자 prefix
+    #         sig_key    - 악성코드 패턴 이름 중 파일 이름
+    #         idx        - 악성코드 패턴 이름 중 확장자 번호
+    # 리턴값 : 악성코드 패턴 로딩 성공 여부
+    # ---------------------------------------------------------------------
+    def __load_sig_ex(self, sig_dict, sig_prefix, sig_key, idx):  # (self.sig_names, 'n', 'script', '01')
+        if not (sig_key in sig_dict) or not (idx in sig_dict[sig_key]):
+            # 패턴 로딩
+            try:
+                name_fname = os.path.join(self.plugins, '%s.%s%s' % (sig_key, sig_prefix, idx))
+                sp = self.__load_sig(name_fname)
+                if sp is None:
+                    return False
+            except IOError:
+                return False
+
+            sig_dict[sig_key] = {idx: sp}
+
+        # 현재 시간을 sig_time에 기록한다.
+        if not (sig_key in self.sig_times):
+            self.sig_times[sig_key] = {}
+
+        if not (sig_prefix in self.sig_times[sig_key]):
+            self.sig_times[sig_key][sig_prefix] = {}
+
+        self.sig_times[sig_key][sig_prefix][idx] = time.time()
+
+        return True
+
+    # ---------------------------------------------------------------------
+    # __save_mem(self)
+    # 오랫동안 사용하지 않은 악성코드 패턴을 메모리에서 제거한다.
+    # ---------------------------------------------------------------------
+    def __save_mem(self):
+        # 정리해야 할 패턴이 있을까? (3분 이상 사용되지 않은 패턴)
+        n = time.time()
+        for sig_key in self.sig_times.keys():
+            for sig_prefix in self.sig_times[sig_key].keys():
+                for idx in self.sig_times[sig_key][sig_prefix].keys():
+                    # print '[-]', n - self.sig_times[sig_key][sig_prefix][idx]
+                    if n - self.sig_times[sig_key][sig_prefix][idx] > 4:  # (3 * 60) :
+                        # print '[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx)
+                        if sig_prefix == 'i':  # 1차 패턴
+                            self.sig_p1s[sig_key].pop(idx)
+                        elif sig_prefix == 'c':  # 2차 패턴
+                            self.sig_p2s[sig_key].pop(idx)
+                        elif sig_prefix == 'n':  # 악성코드 이름 패턴
+                            self.sig_names[sig_key].pop(idx)
+
+                        self.sig_times[sig_key][sig_prefix].pop(idx)  # 시간
+
+    # ---------------------------------------------------------------------
+    # get_sig_num(self, sig_key)
+    # 주어진 sig_key에 해당하는 악성코드 패턴의 누적된 수를 알려준다.
+    # 입력값 : sig_key - 악성코드 패턴 이름 (ex:script)
+    # 리턴값 : 악성코드 패턴 수
+    # ---------------------------------------------------------------------
+    def get_sig_num(self, sig_key):
+        sig_num = 0
+
+        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+
+        for fname in fl:
+            try:
+                buf = open(fname, 'rb').read(12)
+                if buf[0:4] == 'KAVS':
+                    sig_num += get_uint32(buf, 4)
+            except IOError:
+                continue
+
+        return sig_num
+
+    # ---------------------------------------------------------------------
+    # get_sig_vlist(self, sig_key)
+    # 주어진 sig_key에 해당하는 악성코드 패턴의 악성코드 이름를 알려준다.
+    # 입력값 : sig_key - 악성코드 패턴 이름 (ex:script)
+    # 리턴값 : 악성코드 이름
+    # ---------------------------------------------------------------------
+    def get_sig_vlist(self, sig_key):
+        sig_vname = []
+        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+
+        for fname in fl:
+            try:
+                sig_vname += self.__load_sig(fname)
+            except IOError:
+                return None
+
+        return sig_vname
+
 
 # -------------------------------------------------------------------------
 # AhoCorasick 클래스
@@ -491,12 +703,12 @@ def get_uint64(buf, off):
 def normal_vname(vname, platform=None):
     # vname = vname.replace('<n>', 'not-a-virus:')
     vname = vname.replace('<n>', '')
-    
+
     if platform:
         vname = vname.replace('<p>', platform)
 
     return vname
-        
+
 
 # ----------------------------------------------------------------------------
 # Feature를 위한 로직
@@ -583,7 +795,10 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         # 악성코드 패턴 초기화
         global handle_pattern_md5
+        global handle_pattern_vdb
+
         handle_pattern_md5 = PatternMD5(plugins_path)
+        handle_pattern_vdb = PatternVDB(plugins_path)
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -604,7 +819,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'KicomAV Utility Library'  # 엔진 설명
         info['kmd_name'] = 'kavutil'  # 엔진 파일 이름
 
