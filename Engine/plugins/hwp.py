@@ -75,6 +75,9 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.handle = {}
         self.hwp_ole = re.compile('bindata/bin\d+\.ole$', re.IGNORECASE)
+
+        s = r'n\x00e\x00w\x00(\x20\x00)+A\x00c\x00t\x00i\x00v\x00e\x00X\x00O\x00b\x00j\x00e\x00c\x00t\x00'
+        self.hwp_js = re.compile(s, re.IGNORECASE)
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -94,11 +97,11 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'HWP Engine'  # 엔진 설명
         info['kmd_name'] = 'hwp'  # 엔진 파일 이름
         info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료는 삭제로...
-        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
 
@@ -111,6 +114,9 @@ class KavMain:
         vlist = list()  # 리스트형 변수 선언
 
         vlist.append('Exploit.HWP.Generic')  # 진단/치료하는 악성코드 이름 등록
+        vlist.append('Exploit.JS.Agent.gen')  # 진단/치료하는 악성코드 이름 등록
+
+        vlist.sort()
 
         return vlist
 
@@ -135,6 +141,9 @@ class KavMain:
                 ret, tagid = scan_hwp_recoard(mm, len(mm))
                 if ret is False:  # 레코드 추적 실패
                     return True, 'Exploit.HWP.Generic.%02X' % tagid, 0, kernel.INFECTED
+        elif filename_ex.lower().find('scripts/defaultjscript') >= 0:
+            if self.hwp_js.search(mm):
+                return True, 'Exploit.JS.Agent.gen', 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
