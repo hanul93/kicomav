@@ -410,14 +410,14 @@ def print_options():
 # update_kicomav()
 # 키콤백신 최신 버전을 업데이트 한다
 # -------------------------------------------------------------------------
-def update_kicomav():
+def update_kicomav(path):
     print
 
     try:
         url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
-        down_list = get_download_list(url)
+        down_list = get_download_list(url, path)
         is_k2_exe_update = 'k2.exe' in down_list
 
         while len(down_list) != 0:
@@ -425,10 +425,10 @@ def update_kicomav():
 
             # 파일 한개씩 업데이트 한다.
             if filename != 'k2.exe':
-                download_file(url, filename, gz=True, fnhook=hook)
+                download_file(url, filename, path, gz=True, fnhook=hook)
 
         if is_k2_exe_update:
-            k2temp_path = download_file_k2(url, 'k2.exe', gz=True, fnhook=hook)
+            k2temp_path = download_file_k2(url, 'k2.exe', path, gz=True, fnhook=hook)
 
         # 업데이트 완료 메시지 출력
         cprint('\n[', FOREGROUND_GREY)
@@ -436,7 +436,7 @@ def update_kicomav():
         cprint(']\n', FOREGROUND_GREY)
 
         # 업데이트 설정 파일 삭제
-        os.remove('update.cfg')
+        os.remove(os.path.join(path, 'update.cfg'))
 
         # k2.exe의 경우 최종 업데이트 프로그램 실행
         if is_k2_exe_update:
@@ -453,7 +453,7 @@ def hook(blocknumber, blocksize, totalsize):
 
 
 # 한개의 파일을 다운로드 한다.
-def download_file(url, filename, gz=False, fnhook=None):
+def download_file(url, filename, path, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
@@ -462,7 +462,8 @@ def download_file(url, filename, gz=False, fnhook=None):
         rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.join(os.path.abspath(''), filename)
+    pwd = os.path.join(path, filename)
+
     if gz:
         pwd += '.gz'
 
@@ -474,7 +475,7 @@ def download_file(url, filename, gz=False, fnhook=None):
 
     if gz:
         data = gzip.open(pwd, 'rb').read()
-        fname = os.path.join(os.path.abspath(''), filename)
+        fname = os.path.join(path, filename)
         open(fname, 'wb').write(data)
         os.remove(pwd)  # gz 파일은 삭제한다.
 
@@ -483,7 +484,7 @@ def download_file(url, filename, gz=False, fnhook=None):
 
 
 # k2.exe를 다운로드 한다.
-def download_file_k2(url, filename, gz=False, fnhook=None):
+def download_file_k2(url, filename, path, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
@@ -492,7 +493,7 @@ def download_file_k2(url, filename, gz=False, fnhook=None):
         rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.join(os.path.abspath(''), filename)
+    pwd = os.path.join(path, filename)
     if gz:
         pwd += '.gz'
 
@@ -515,16 +516,16 @@ def download_file_k2(url, filename, gz=False, fnhook=None):
 
 
 # 업데이트 해야 할 파일의 목록을 구한다
-def get_download_list(url):
+def get_download_list(url, path):
     down_list = []
 
-    pwd = os.path.abspath('')
+    pwd = path
 
     try:
         # 업데이트 설정 파일을 다운로드 한다
-        download_file(url, 'update.cfg')
+        download_file(url, 'update.cfg', pwd)
 
-        buf = open('update.cfg', 'r').read()
+        buf = open(os.path.join(pwd, 'update.cfg'), 'r').read()
         p_lists = re.compile(r'([A-Fa-f0-9]{40}) (.+)')
         lines = p_lists.findall(buf)
 
@@ -973,11 +974,14 @@ def main():
         print 'Error: %s' % args  # 에러 메시지가 담겨 있음
         return 0
 
+    # 프로그램이 실행중인 폴더
+    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
+
     # Help 옵션을 사용한 경우 또는 인자 값이 없는 경우
     if options.opt_help or not args:
         # 인자 값이 없는 업데이트 상황?
         if options.opt_update:
-            update_kicomav()
+            update_kicomav(k2_pwd)
             return 0
 
         if not options.opt_vlist:  # 악성코드 리스트 출력이면 인자 값이 없어도 Help 안보여줌
@@ -1014,9 +1018,6 @@ def main():
 
     # 백신 엔진 구동
     k2 = kavcore.k2engine.Engine()  # 엔진 클래스
-
-    # 프로그램이 실행중인 폴더
-    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
 
     # 플러그인 엔진 설정
     plugins_path = os.path.join(k2_pwd, 'plugins')
