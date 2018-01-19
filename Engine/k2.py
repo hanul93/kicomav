@@ -48,7 +48,7 @@ if os.name == 'nt':
 # 주요 상수
 # -------------------------------------------------------------------------
 KAV_VERSION = '0.29'
-KAV_BUILDDATE = 'Jan 08 2018'
+KAV_BUILDDATE = 'Jan 19 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -1026,7 +1026,7 @@ def main():
         return 0
 
     # 임시 폴더 설정
-    k2.set_temppath(k2_pwd)
+    k2.set_temppath()
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:
