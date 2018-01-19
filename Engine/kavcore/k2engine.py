@@ -64,6 +64,11 @@ class Engine:
         # 키콤백신이 만든 임시 파일 모두 제거
         self.temp_path.removetempdir()
 
+        try:  # 해당 pid 폴더도 삭제한다.
+            shutil.rmtree(self.temp_path.temp_path)
+        except OSError:
+            pass
+
     # ---------------------------------------------------------------------
     # set_plugins(self, plugins_path)
     # 주어진 경로에서 플러그인 엔진을 로딩 준비한다.
@@ -146,12 +151,10 @@ class Engine:
     # ---------------------------------------------------------------------
     # set_temppath(self, temp_path)
     # 주어진 임시 폴더를 설정한다.
-    # 인자값 : temp_path - 임시 폴더 클래스
-    # 리턴값 : 성공 여부
     # ---------------------------------------------------------------------
-    def set_temppath(self, temp_path):
+    def set_temppath(self):
         # 임시 폴더를 지정한다.
-        self.temp_path = k2file.K2Tempfile(temp_path)
+        self.temp_path = k2file.K2Tempfile()
 
     # ---------------------------------------------------------------------
     # create_instance(self)
