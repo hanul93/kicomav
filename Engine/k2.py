@@ -48,7 +48,7 @@ if os.name == 'nt':
 # 주요 상수
 # -------------------------------------------------------------------------
 KAV_VERSION = '0.29'
-KAV_BUILDDATE = 'Jan 19 2018'
+KAV_BUILDDATE = 'Jan 23 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -440,7 +440,7 @@ def update_kicomav(path):
 
         # k2.exe의 경우 최종 업데이트 프로그램 실행
         if is_k2_exe_update:
-            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', os.path.abspath('')))
+            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', path))
     except KeyboardInterrupt:
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
