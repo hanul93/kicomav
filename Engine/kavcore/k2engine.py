@@ -56,6 +56,8 @@ class Engine:
         # 키콤백신이 만든 임시 파일 모두 제거 (운영체제의 임시 폴더를 초기화)
         k2file.K2Tempfile().removetempdir()
 
+        self.__set_temppath()  # 임시 폴더 초기화
+
     # ---------------------------------------------------------------------
     # __del__(self)
     # 클래스를 종료 한다.
@@ -149,10 +151,10 @@ class Engine:
         return True
 
     # ---------------------------------------------------------------------
-    # set_temppath(self)
+    # __set_temppath(self)
     # 주어진 임시 폴더를 설정한다.
     # ---------------------------------------------------------------------
-    def set_temppath(self):
+    def __set_temppath(self):
         # 임시 폴더를 지정한다.
         self.temp_path = k2file.K2Tempfile()
 
