@@ -171,7 +171,7 @@ class KavMain:
 
                     for i, cs in enumerate(flag[1]):
                         # kavutil.vprint(None, 'CS = %02X' % cs_pos[i], cs)
-                        msg = 'CS = %02x : %s\n' % (cs_size[i], cs)
+                        msg = 'CS = %02x : %08x\n' % (cs_size[i], int(cs))
                         fp.write(msg)
                     fp.write('\n')
 
@@ -234,12 +234,8 @@ class KavMain:
     # ---------------------------------------------------------------------
     def __get_data_crc32(self, buf, flag, off, size):
         crc32s = []
-        for base_offs in self.flags_off[flag]:
-            if isinstance(base_offs, types.ListType):
-                for base_off in base_offs:
-                    crc32s.append(int(gen_checksum(buf, base_off+off, size), 16))
-            else:
-                crc32s.append(int(gen_checksum(buf, base_offs + off, size), 16))
+        for base_off in self.flags_off[flag]:
+            crc32s.append(int(gen_checksum(buf, base_off + off, size), 16))
 
         return crc32s
 
