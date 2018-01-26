@@ -332,15 +332,18 @@ class KavMain:
                         ret['ff_zip'] = 'zip'
             except zipfile.BadZipfile:
                 zfile = NZipFile(filename)
-                if zfile.parse():
-                    zsize = zfile.get_zipsize()
-                    fsize = os.path.getsize(filename)
-                    zfile.close()
+                try:
+                    if zfile.parse():
+                        zsize = zfile.get_zipsize()
+                        fsize = os.path.getsize(filename)
+                        zfile.close()
 
-                    if zsize < fsize and zsize != 0:
-                        # 파이썬 ZipFile로 해제되지 않는 파일 처리
-                        # zip 파일 뒤에 attach 된 데이터가 있으면 오류 발생
-                        ret['ff_attach_zip'] = (zsize, fsize - zsize)
+                        if zsize < fsize and zsize != 0:
+                            # 파이썬 ZipFile로 해제되지 않는 파일 처리
+                            # zip 파일 뒤에 attach 된 데이터가 있으면 오류 발생
+                            ret['ff_attach_zip'] = (zsize, fsize - zsize)
+                except BadZipTagError:
+                    pass
 
             return ret
 
