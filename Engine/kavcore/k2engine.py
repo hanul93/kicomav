@@ -874,7 +874,10 @@ class EngineInstance:
             filename = file_struct.get_filename()  # 검사 대상 파일 이름 추출
             filename_ex = file_struct.get_additional_filename()  # 압축 내부 파일명
 
-            # 파일 크기가 0이면 악성코드 검사를 할 필요가 없다.
+            # 파일이 아니거나 크기가 0이면 악성코드 검사를 할 필요가 없다.
+            if os.path.isfile(filename) is False:
+                raise EngineKnownError('File is not found!')
+
             if os.path.getsize(filename) == 0:
                 raise EngineKnownError('File Size is Zero!')
 
