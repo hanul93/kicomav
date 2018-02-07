@@ -419,6 +419,28 @@ class PE:
                     pe_format['CERTIFICATE_Offset'] = cert_off
                     pe_format['CERTIFICATE_Size'] = cert_size
 
+            # Debug 정보 분석
+            try:
+                debug_rva = self.data_directories[image_directory_entry.DEBUG].VirtualAddress  # RVA
+                debug_size = self.data_directories[image_directory_entry.DEBUG].Size  # 크기
+                if debug_size < 0x1C:
+                    raise ValueError
+            except (IndexError, ValueError) as e:
+                debug_rva = 0
+                debug_size = 0
+
+            if debug_rva:  # Debug 정보 존재
+                t = self.rva_to_off(debug_rva)[0]
+                debug_off = kavutil.get_uint32(mm, t + 0x18)
+                debug_size = kavutil.get_uint32(mm, t + 0x10)
+
+                debug_data = mm[debug_off:debug_off + debug_size]
+
+                if debug_data[:4] == 'RSDS':
+                    pe_format['PDB_Name'] = debug_data[0x18:]
+                else:
+                    pe_format['PDB_Name'] = 'Not support Type : %s' % debug_data[:4]
+
             if self.verbose:
                 print '-' * 79
                 kavutil.vprint('Engine')
@@ -461,6 +483,10 @@ class PE:
                 print
                 kavutil.HexDump().Buffer(mm[:], pe_format['EntryPointRaw'], 0x80)
                 print
+                if 'PDB_Name' in pe_format:
+                    kavutil.vprint('PDB Information')
+                    kavutil.vprint(None, 'Name', '%s' % repr(pe_format['PDB_Name']))
+                    print
 
         except ValueError:
             return None
@@ -516,7 +542,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.1'  # 버전
+        info['version'] = '1.2'  # 버전
         info['title'] = 'PE Engine'  # 엔진 설명
         info['kmd_name'] = 'pe'  # 엔진 파일 이름
 
