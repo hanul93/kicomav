@@ -36,7 +36,7 @@ class ASN1:
     def parse(self):
         return self.__parse_asn1(self.data)
 
-    def __parse_asn1(self, data):
+    def __parse_asn1(self, data, deep=0):
         ret = []
 
         d = data
@@ -45,7 +45,9 @@ class ASN1:
             t, l, d1, off = self.get_asn1_data(d)
 
             if self.is_constructed(t):
-                ret.append(self.__parse_asn1(d1))
+                deep += 1
+                ret.append(self.__parse_asn1(d1, deep))
+                deep -= 1
             else:
                 x1 = self.hex_string(d1)
                 ttype = t & 0x1f
@@ -57,6 +59,9 @@ class ASN1:
                     ret.append(d1)
                 else:
                     ret.append(x1)
+
+            if deep ==0:
+                break
 
             d = d[off+l:]
 
