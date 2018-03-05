@@ -377,11 +377,17 @@ class NSISHeader:
         off = self.nh.entries
 
         for i in range(self.nh.entries_num):
-            nr = StructNsisRecord()
-            memmove(addressof(nr), self.header_data[off:], sizeof(nr))
-            off += sizeof(nr)
+            # nr = StructNsisRecord()
+            # memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+            # off += sizeof(nr)  # 28Byte
 
-            if nr.which == 20:  # EW_EXTRACTFILE
+            val = self.header_data[off:off + 4]
+
+            # if nr.which == 20:  # EW_EXTRACTFILE
+            if val == '\x14\x00\x00\x00':  # EW_EXTRACTFILE
+                nr = StructNsisRecord()
+                memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+
                 dt = ''
                 try:
                     ft_dec = struct.unpack('>Q', struct.pack('>ll', nr.parm4, nr.parm3))[0]
@@ -397,7 +403,11 @@ class NSISHeader:
                 file_offset = nr.parm2
 
                 self.files[file_name] = (file_offset, dt, nr.which)
-            elif nr.which == 62:  # EW_WRITEUNINSTALLER
+            # elif nr.which == 62:  # EW_WRITEUNINSTALLER
+            elif val == '\x3e\x00\x00\x00':  # EW_WRITEUNINSTALLER
+                nr = StructNsisRecord()
+                memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+
                 file_name = self.__get_string(nr.parm0).replace('\\', '/')
                 file_offset = nr.parm1
 
@@ -407,6 +417,8 @@ class NSISHeader:
                 # print hex(nr.parm5)
 
                 self.files[file_name] = (file_offset, '', nr.which)
+
+            off += 28
 
     def parse(self):
         if self.header_data:  # 이미 분석되었다면 분석하지 않는다.
