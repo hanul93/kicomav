@@ -12,15 +12,15 @@ import cryptolib
 
 BYTE = ctypes.c_ubyte
 WORD = ctypes.c_ushort
-DWORD = ctypes.c_ulong
+DWORD = ctypes.c_uint
 FLOAT = ctypes.c_float
 LPBYTE = ctypes.POINTER(ctypes.c_ubyte)
 LPTSTR = ctypes.POINTER(ctypes.c_char)
 HANDLE = ctypes.c_void_p
 PVOID = ctypes.c_void_p
 LPVOID = ctypes.c_void_p
-UINT_PTR = ctypes.c_ulong
-SIZE_T = ctypes.c_ulong
+UINT_PTR = ctypes.c_uint
+SIZE_T = ctypes.c_uint
 
 
 class DOS_HEADER(ctypes.Structure):
