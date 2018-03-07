@@ -36,6 +36,37 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 
 ***
 
+### v0.30 (May 07, 2018)
+
+* **Engine :**
+  * k2engine: Changed WindowsError exception handling to OSError exception handling
+  * k2engine: Modified Checking for malicious code to stop immediately via Ctrl+C
+  * k2file: Changed WindowsError exception handling to OSError exception handling
+  * k2file: Moved the path of the temporary folder
+
+* **Plugins Modules :**
+  * adware: Modified the data processing byte number in the ASN.1 parser
+  * cryptolib: Supported crc32
+  * dde: Changed malware pattern
+  * hwp: Added Exploit.JS.Agent.gen check function
+  * kavutil: Added malicious code pattern handling function of virus type
+  * kavutil: Fixed the error handling part of malicious code pattern number
+  * macro: Supported 32/64bit
+  * nsis: Improved decompression speed
+  * ole: Added CVE-2012-0158 pattern
+  * ole: Fixed infinite loop error during parsing
+  * pe: Supported 32/64bit
+  * pe: Added error handling for invalid resource size
+  * rtf: Added objdata extraction function
+  * rtf: Changed malicious code patterns
+  * upx: Fixed infinite loop error
+  * ve: New support (scan for malware of virus types)
+
+* **Command Line Interface :**
+  * k2: Added color mode in Linux/Mac
+  * k2: Fixed an error when updating k2.exe from a folder where k2.exe does not exist (# 1455)
+  * k2: Fixed do not download k2.exe on platforms other than windows
+
 ### v0.29 (Jan 08, 2018)
 
 * **Engine :**
