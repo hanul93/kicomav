@@ -909,15 +909,13 @@ def quarantine_callback(filename, is_success):
 # -------------------------------------------------------------------------
 def import_error_callback(module_name):
     global PLUGIN_ERROR
+    global g_options
 
-    if not PLUGIN_ERROR:
-        PLUGIN_ERROR = True
-        print
-
-    if kavcore.k2const.K2DEBUG:
-        print_error('Invalid plugin: \'%s.py\'' % module_name)
-    else:
-        print_error('Invalid plugin: \'%s.kmd\'' % module_name)
+    if g_options.opt_debug:
+        if not PLUGIN_ERROR:
+            PLUGIN_ERROR = True
+            print
+            print_error('Invalid plugin: \'%s\'' % module_name)
 
 
 # -------------------------------------------------------------------------
@@ -1032,7 +1030,7 @@ def main():
 
     # 플러그인 엔진 설정
     plugins_path = os.path.join(k2_pwd, 'plugins')
-    if not k2.set_plugins(plugins_path):
+    if not k2.set_plugins(plugins_path, import_error_callback):
         print
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
@@ -1050,8 +1048,9 @@ def main():
         print_error('KICOM Anti-Virus Engine init')
         return 0
 
-    if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
-        print 
+    if options.opt_debug:
+        if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
+            print
 
     # 엔진 버전을 출력
     c = kav.get_version()

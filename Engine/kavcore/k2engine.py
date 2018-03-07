@@ -77,7 +77,7 @@ class Engine:
     # 인자값 : plugins_path - 플러그인 엔진 경로
     # 리턴값 : 성공 여부
     # ---------------------------------------------------------------------
-    def set_plugins(self, plugins_path):
+    def set_plugins(self, plugins_path, callback_fn=None):
         # 플러그인 경로를 저장한다.
         self.plugins_path = plugins_path
 
@@ -122,6 +122,9 @@ class Engine:
                     # 메모리 로딩에 성공한 KMD에서 플러그 엔진의 시간 값 읽기
                     # 최신 업데이트 날짜가 된다.
                     self.__get_last_kmd_build_time(k)
+                else:  # 메모리 로딩 실패
+                    if isinstance(callback_fn, types.FunctionType):
+                        callback_fn(name)
             except IOError:
                 pass
             except k2kmdfile.KMDFormatError:  # 다른키로 암호호화 한 엔진은 무시
@@ -909,6 +912,10 @@ class EngineInstance:
         except KeyboardInterrupt:
             raise KeyboardInterrupt
         except:
+            if k2const.K2DEBUG:
+                import traceback
+                print traceback.format_exc()
+                raw_input('>>')
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
