@@ -434,7 +434,7 @@ def update_kicomav(path):
             if filename != 'k2.exe':
                 download_file(url, filename, path, gz=True, fnhook=hook)
 
-        if is_k2_exe_update:
+        if os.name == 'nt' and is_k2_exe_update:
             k2temp_path = download_file_k2(url, 'k2.exe', path, gz=True, fnhook=hook)
 
         # 업데이트 완료 메시지 출력
@@ -446,7 +446,7 @@ def update_kicomav(path):
         os.remove(os.path.join(path, 'update.cfg'))
 
         # k2.exe의 경우 최종 업데이트 프로그램 실행
-        if is_k2_exe_update:
+        if os.name == 'nt' and is_k2_exe_update:
             os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', path))
     except KeyboardInterrupt:
         cprint('\n[', FOREGROUND_GREY)
