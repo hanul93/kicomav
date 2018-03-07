@@ -61,30 +61,20 @@ PLUGIN_ERROR = False  # 플러인 엔진 로딩 실패 시 출력을 예쁘게 �
 # -------------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
 # -------------------------------------------------------------------------
-FOREGROUND_BLACK = 0x0000
-FOREGROUND_BLUE = 0x0001
-FOREGROUND_GREEN = 0x0002
-FOREGROUND_CYAN = 0x0003
-FOREGROUND_RED = 0x0004
-FOREGROUND_MAGENTA = 0x0005
-FOREGROUND_YELLOW = 0x0006
-FOREGROUND_GREY = 0x0007
-FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
-
-BACKGROUND_BLACK = 0x0000
-BACKGROUND_BLUE = 0x0010
-BACKGROUND_GREEN = 0x0020
-BACKGROUND_CYAN = 0x0030
-BACKGROUND_RED = 0x0040
-BACKGROUND_MAGENTA = 0x0050
-BACKGROUND_YELLOW = 0x0060
-BACKGROUND_GREY = 0x0070
-BACKGROUND_INTENSITY = 0x0080  # background color is intensified.
-
 NOCOLOR = False  # 색깔 옵션값
 
 
 if os.name == 'nt':
+    FOREGROUND_BLACK = 0x0000
+    FOREGROUND_BLUE = 0x0001
+    FOREGROUND_GREEN = 0x0002
+    FOREGROUND_CYAN = 0x0003
+    FOREGROUND_RED = 0x0004
+    FOREGROUND_MAGENTA = 0x0005
+    FOREGROUND_YELLOW = 0x0006
+    FOREGROUND_GREY = 0x0007
+    FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
+
     from ctypes import windll, Structure, c_short, c_ushort, byref
 
     SHORT = c_short
@@ -148,8 +138,25 @@ if os.name == 'nt':
         except IOError:
             pass
 else:
+    FOREGROUND_BLACK = 0x0000
+    FOREGROUND_RED = 0x0001
+    FOREGROUND_GREEN = 0x0002
+    FOREGROUND_YELLOW = 0x0003
+    FOREGROUND_BLUE = 0x0004
+    FOREGROUND_MAGENTA = 0x0005
+    FOREGROUND_CYAN = 0x0006
+    FOREGROUND_GREY = 0x0007
+    FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
+
+    COLOR_RESET = '\033[0m'  # Text Reset
+
     def cprint(msg, color):
-        sys.stdout.write(msg)
+        if color & FOREGROUND_INTENSITY == FOREGROUND_INTENSITY:
+            color &= 0x7
+            str_color = '\033[0;%2Xm' % (0x90 + color)
+        else:
+            str_color = '\033[0;%2Xm' % (0x30 + color)
+        sys.stdout.write(str_color + msg + COLOR_RESET)
         sys.stdout.flush()
 
 
