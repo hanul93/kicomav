@@ -452,6 +452,10 @@ def update_kicomav(path):
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
+    except:
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update faild', FOREGROUND_RED | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
 
 
 # 업데이트 진행율 표시
