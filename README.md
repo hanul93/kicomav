@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/k2_full_2.png">
 
-# KicomAV v0.29
+# KicomAV v0.30
 
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
@@ -38,7 +38,7 @@ C:\kicomav\Release> python k2.py [path] [options]
 ```
 C:\kicomav\Release> python k2.py
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+KICOM Anti-Virus II (for WIN32) Ver 0.30 (May 07 2018)
 Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -71,7 +71,7 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release>k2.py --update
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+KICOM Anti-Virus II (for WIN32) Ver 0.30 (May 07 2018)
 Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
 
@@ -90,11 +90,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py .
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+KICOM Anti-Virus II (for WIN32) Ver 0.30 (May 07 2018)
 Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jan  8 07:50:42 2018 UTC
-Signature number: 1,675
+Last updated Wed Mar  7 00:14:58 2018 UTC
+Signature number: 2,052
 
 C:\kicomav\Relea ... 08ecba90d0cd778  infected : Trojan-Ransom.Win32.Snocry.cxu
 C:\kicomav\Release\ ... 218e8a8d7eb93df1003  infected : Trojan.Win32.Agent.icgh
@@ -119,11 +119,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py sample\test.zip -r -I
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+KICOM Anti-Virus II (for WIN32) Ver 0.30 (May 07 2018)
 Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jan  8 07:50:42 2018 UTC
-Signature number: 1,675
+Last updated Wed Mar  7 00:14:58 2018 UTC
+Signature number: 2,052
 
 C:\kicomav\Release\sample\test.zip  ok
 C:\kicomav\Relea ... .zip (dummy.txt)  infected : Dummy-Test-File (not a virus)
@@ -148,11 +148,11 @@ C:\kicomav\Release> _
 ```
 C:\kicomav\Release> python k2.py -V
 ------------------------------------------------------------
-KICOM Anti-Virus II (for WIN32) Ver 0.29 (Jan 08 2018)
+KICOM Anti-Virus II (for WIN32) Ver 0.30 (May 07 2018)
 Copyright (C) 1995-2018 Kei Choi. All rights reserved.
 ------------------------------------------------------------
-Last updated Thu Jan  8 07:50:42 2018 UTC
-Signature number: 1,675
+Last updated Wed Mar  7 00:14:58 2018 UTC
+Signature number: 2,052
 
 Dummy-Test-File (not a virus)                      [dummy.kmd]
 EICAR-Test-File (not a virus)                      [eicar.kmd]
