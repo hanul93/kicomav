@@ -42,9 +42,15 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
-from ctypes import *
-from ctypes.wintypes import BOOL
-from functools import wraps
+
+try:
+    from ctypes import *
+    from ctypes.wintypes import BOOL
+    from functools import wraps
+
+    LOAD_WINTYPES = True
+except ImportError:
+    LOAD_WINTYPES = False
 
 import sys
 import kernel
@@ -739,6 +745,10 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.handle = {}
+
+        if not LOAD_WINTYPES:
+            return -1
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------

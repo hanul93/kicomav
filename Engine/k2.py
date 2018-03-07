@@ -13,6 +13,7 @@ import json
 import email
 
 try:
+    from backports import lzma
     import yara
 except ImportError:
     pass
@@ -46,8 +47,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.29'
-KAV_BUILDDATE = 'Jan 08 2018'
+KAV_VERSION = '0.30'
+KAV_BUILDDATE = 'May 07 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -60,30 +61,20 @@ PLUGIN_ERROR = False  # 플러인 엔진 로딩 실패 시 출력을 예쁘게 �
 # -------------------------------------------------------------------------
 # 콘솔에 색깔 출력을 위한 클래스 및 함수들
 # -------------------------------------------------------------------------
-FOREGROUND_BLACK = 0x0000
-FOREGROUND_BLUE = 0x0001
-FOREGROUND_GREEN = 0x0002
-FOREGROUND_CYAN = 0x0003
-FOREGROUND_RED = 0x0004
-FOREGROUND_MAGENTA = 0x0005
-FOREGROUND_YELLOW = 0x0006
-FOREGROUND_GREY = 0x0007
-FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
-
-BACKGROUND_BLACK = 0x0000
-BACKGROUND_BLUE = 0x0010
-BACKGROUND_GREEN = 0x0020
-BACKGROUND_CYAN = 0x0030
-BACKGROUND_RED = 0x0040
-BACKGROUND_MAGENTA = 0x0050
-BACKGROUND_YELLOW = 0x0060
-BACKGROUND_GREY = 0x0070
-BACKGROUND_INTENSITY = 0x0080  # background color is intensified.
-
 NOCOLOR = False  # 색깔 옵션값
 
 
 if os.name == 'nt':
+    FOREGROUND_BLACK = 0x0000
+    FOREGROUND_BLUE = 0x0001
+    FOREGROUND_GREEN = 0x0002
+    FOREGROUND_CYAN = 0x0003
+    FOREGROUND_RED = 0x0004
+    FOREGROUND_MAGENTA = 0x0005
+    FOREGROUND_YELLOW = 0x0006
+    FOREGROUND_GREY = 0x0007
+    FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
+
     from ctypes import windll, Structure, c_short, c_ushort, byref
 
     SHORT = c_short
@@ -147,8 +138,25 @@ if os.name == 'nt':
         except IOError:
             pass
 else:
+    FOREGROUND_BLACK = 0x0000
+    FOREGROUND_RED = 0x0001
+    FOREGROUND_GREEN = 0x0002
+    FOREGROUND_YELLOW = 0x0003
+    FOREGROUND_BLUE = 0x0004
+    FOREGROUND_MAGENTA = 0x0005
+    FOREGROUND_CYAN = 0x0006
+    FOREGROUND_GREY = 0x0007
+    FOREGROUND_INTENSITY = 0x0008  # foreground color is intensified.
+
+    COLOR_RESET = '\033[0m'  # Text Reset
+
     def cprint(msg, color):
-        sys.stdout.write(msg)
+        if color & FOREGROUND_INTENSITY == FOREGROUND_INTENSITY:
+            color &= 0x7
+            str_color = '\033[0;%2Xm' % (0x90 + color)
+        else:
+            str_color = '\033[0;%2Xm' % (0x30 + color)
+        sys.stdout.write(str_color + msg + COLOR_RESET)
         sys.stdout.flush()
 
 
@@ -409,14 +417,15 @@ def print_options():
 # update_kicomav()
 # 키콤백신 최신 버전을 업데이트 한다
 # -------------------------------------------------------------------------
-def update_kicomav():
+def update_kicomav(path):
     print
 
     try:
         url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
+        # url = 'http://127.0.0.1:8011/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
-        down_list = get_download_list(url)
+        down_list = get_download_list(url, path)
         is_k2_exe_update = 'k2.exe' in down_list
 
         while len(down_list) != 0:
@@ -424,10 +433,10 @@ def update_kicomav():
 
             # 파일 한개씩 업데이트 한다.
             if filename != 'k2.exe':
-                download_file(url, filename, gz=True, fnhook=hook)
+                download_file(url, filename, path, gz=True, fnhook=hook)
 
-        if is_k2_exe_update:
-            k2temp_path = download_file_k2(url, 'k2.exe', gz=True, fnhook=hook)
+        if os.name == 'nt' and is_k2_exe_update:
+            k2temp_path = download_file_k2(url, 'k2.exe', path, gz=True, fnhook=hook)
 
         # 업데이트 완료 메시지 출력
         cprint('\n[', FOREGROUND_GREY)
@@ -435,14 +444,18 @@ def update_kicomav():
         cprint(']\n', FOREGROUND_GREY)
 
         # 업데이트 설정 파일 삭제
-        os.remove('update.cfg')
+        os.remove(os.path.join(path, 'update.cfg'))
 
         # k2.exe의 경우 최종 업데이트 프로그램 실행
-        if is_k2_exe_update:
-            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', os.path.abspath('')))
+        if os.name == 'nt' and is_k2_exe_update:
+            os.spawnv(os.P_NOWAIT, k2temp_path, (k2temp_path, 'k2', path))
     except KeyboardInterrupt:
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
+        cprint(']\n', FOREGROUND_GREY)
+    except:
+        cprint('\n[', FOREGROUND_GREY)
+        cprint('Update faild', FOREGROUND_RED | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
 
 
@@ -452,7 +465,7 @@ def hook(blocknumber, blocksize, totalsize):
 
 
 # 한개의 파일을 다운로드 한다.
-def download_file(url, filename, gz=False, fnhook=None):
+def download_file(url, filename, path, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
@@ -461,7 +474,8 @@ def download_file(url, filename, gz=False, fnhook=None):
         rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.join(os.path.abspath(''), filename)
+    pwd = os.path.join(path, filename)
+
     if gz:
         pwd += '.gz'
 
@@ -473,7 +487,7 @@ def download_file(url, filename, gz=False, fnhook=None):
 
     if gz:
         data = gzip.open(pwd, 'rb').read()
-        fname = os.path.join(os.path.abspath(''), filename)
+        fname = os.path.join(path, filename)
         open(fname, 'wb').write(data)
         os.remove(pwd)  # gz 파일은 삭제한다.
 
@@ -482,7 +496,7 @@ def download_file(url, filename, gz=False, fnhook=None):
 
 
 # k2.exe를 다운로드 한다.
-def download_file_k2(url, filename, gz=False, fnhook=None):
+def download_file_k2(url, filename, path, gz=False, fnhook=None):
     rurl = url
 
     # 업데이트 설정 파일에 있는 목록을 URL 주소로 변환한다
@@ -491,7 +505,7 @@ def download_file_k2(url, filename, gz=False, fnhook=None):
         rurl += '.gz'
 
     # 저장해야 할 파일의 전체 경로를 구한다
-    pwd = os.path.join(os.path.abspath(''), filename)
+    pwd = os.path.join(path, filename)
     if gz:
         pwd += '.gz'
 
@@ -514,17 +528,17 @@ def download_file_k2(url, filename, gz=False, fnhook=None):
 
 
 # 업데이트 해야 할 파일의 목록을 구한다
-def get_download_list(url):
+def get_download_list(url, path):
     down_list = []
 
-    pwd = os.path.abspath('')
+    pwd = path
 
     try:
         # 업데이트 설정 파일을 다운로드 한다
-        download_file(url, 'update.cfg')
+        download_file(url, 'update.cfg', pwd)
 
-        buf = open('update.cfg', 'r').read()
-        p_lists = re.compile(r'([A-Fa-f0-9]{64}) (.+)')
+        buf = open(os.path.join(pwd, 'update.cfg'), 'r').read()
+        p_lists = re.compile(r'([A-Fa-f0-9]{40}) (.+)')
         lines = p_lists.findall(buf)
 
         for line in lines:
@@ -692,7 +706,7 @@ def scan_callback(ret_value):
 
     # 정상일 경우에는 /<...> path명에 의해 중복 발생 가능성 있음
     # 그래서 중복을 출력하지 않도록 조정함
-    if message == 'ok':  
+    if message == 'ok':
         d_prev = display_scan_result.get('Prev', {})
         if d_prev == {}:
             d_prev['disp_name'] = disp_name
@@ -844,36 +858,6 @@ def update_callback(ret_file_info, is_success):
             display_update_result = disp_name
 
 
-'''
-def update_callback1(ret_file_info):
-    global g_infp_path
-
-    if g_options.opt_move:  # 격리 옵션이 설정되었나?
-        # 마스터 파일만 격리 조치하면 됨
-        if ret_file_info.is_modify():  # 격리를 위해 가짜로 수정된것 처럼 처리
-            disp_name = ret_file_info.get_master_filename()
-            try:
-                shutil.move(disp_name, g_infp_path)
-                message = 'quarantined'
-                message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
-            except shutil.Error:
-                message = 'quarantine failed'
-                message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
-
-            display_line(disp_name, message, message_color)
-            log_print('%s\t%s\n' % (disp_name, message))
-    else:
-        if ret_file_info.is_modify():  # 수정되었다면 결과 출력
-            disp_name = ret_file_info.get_filename()
-
-            message = 'updated'
-            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
-
-            display_line(disp_name, message, message_color)
-            log_print('%s\t%s\n' % (disp_name, message))
-'''
-
-
 # -------------------------------------------------------------------------
 # quarantine 콜백 함수
 # -------------------------------------------------------------------------
@@ -896,15 +880,13 @@ def quarantine_callback(filename, is_success):
 # -------------------------------------------------------------------------
 def import_error_callback(module_name):
     global PLUGIN_ERROR
+    global g_options
 
-    if not PLUGIN_ERROR:
-        PLUGIN_ERROR = True
-        print
-
-    if kavcore.k2const.K2DEBUG:
-        print_error('Invalid plugin: \'%s.py\'' % module_name)
-    else:
-        print_error('Invalid plugin: \'%s.kmd\'' % module_name)
+    if g_options.opt_debug:
+        if not PLUGIN_ERROR:
+            PLUGIN_ERROR = True
+            print
+            print_error('Invalid plugin: \'%s\'' % module_name)
 
 
 # -------------------------------------------------------------------------
@@ -972,11 +954,14 @@ def main():
         print 'Error: %s' % args  # 에러 메시지가 담겨 있음
         return 0
 
+    # 프로그램이 실행중인 폴더
+    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
+
     # Help 옵션을 사용한 경우 또는 인자 값이 없는 경우
     if options.opt_help or not args:
         # 인자 값이 없는 업데이트 상황?
         if options.opt_update:
-            update_kicomav()
+            update_kicomav(k2_pwd)
             return 0
 
         if not options.opt_vlist:  # 악성코드 리스트 출력이면 인자 값이 없어도 Help 안보여줌
@@ -1014,18 +999,12 @@ def main():
     # 백신 엔진 구동
     k2 = kavcore.k2engine.Engine()  # 엔진 클래스
 
-    # 프로그램이 실행중인 폴더
-    k2_pwd = os.path.abspath(os.path.split(sys.argv[0])[0])
-
     # 플러그인 엔진 설정
     plugins_path = os.path.join(k2_pwd, 'plugins')
-    if not k2.set_plugins(plugins_path):
+    if not k2.set_plugins(plugins_path, import_error_callback):
         print
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
-
-    # 임시 폴더 설정
-    k2.set_temppath(k2_pwd)
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:
@@ -1040,8 +1019,9 @@ def main():
         print_error('KICOM Anti-Virus Engine init')
         return 0
 
-    if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
-        print 
+    if options.opt_debug:
+        if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
+            print
 
     # 엔진 버전을 출력
     c = kav.get_version()

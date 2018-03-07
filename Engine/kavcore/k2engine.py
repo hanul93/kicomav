@@ -56,6 +56,8 @@ class Engine:
         # 키콤백신이 만든 임시 파일 모두 제거 (운영체제의 임시 폴더를 초기화)
         k2file.K2Tempfile().removetempdir()
 
+        self.__set_temppath()  # 임시 폴더 초기화
+
     # ---------------------------------------------------------------------
     # __del__(self)
     # 클래스를 종료 한다.
@@ -64,13 +66,18 @@ class Engine:
         # 키콤백신이 만든 임시 파일 모두 제거
         self.temp_path.removetempdir()
 
+        try:  # 해당 pid 폴더도 삭제한다.
+            shutil.rmtree(self.temp_path.temp_path)
+        except OSError:
+            pass
+
     # ---------------------------------------------------------------------
     # set_plugins(self, plugins_path)
     # 주어진 경로에서 플러그인 엔진을 로딩 준비한다.
     # 인자값 : plugins_path - 플러그인 엔진 경로
     # 리턴값 : 성공 여부
     # ---------------------------------------------------------------------
-    def set_plugins(self, plugins_path):
+    def set_plugins(self, plugins_path, callback_fn=None):
         # 플러그인 경로를 저장한다.
         self.plugins_path = plugins_path
 
@@ -103,7 +110,7 @@ class Engine:
                     module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
                     try:
                         os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
-                    except WindowsError:
+                    except OSError:
                         pass
                 else:
                     k = k2kmdfile.KMD(kmd_path, pu)  # 모든 KMD 파일을 복호화한다.
@@ -115,6 +122,9 @@ class Engine:
                     # 메모리 로딩에 성공한 KMD에서 플러그 엔진의 시간 값 읽기
                     # 최신 업데이트 날짜가 된다.
                     self.__get_last_kmd_build_time(k)
+                else:  # 메모리 로딩 실패
+                    if isinstance(callback_fn, types.FunctionType):
+                        callback_fn(name)
             except IOError:
                 pass
             except k2kmdfile.KMDFormatError:  # 다른키로 암호호화 한 엔진은 무시
@@ -144,14 +154,12 @@ class Engine:
         return True
 
     # ---------------------------------------------------------------------
-    # set_temppath(self, temp_path)
+    # __set_temppath(self)
     # 주어진 임시 폴더를 설정한다.
-    # 인자값 : temp_path - 임시 폴더 클래스
-    # 리턴값 : 성공 여부
     # ---------------------------------------------------------------------
-    def set_temppath(self, temp_path):
+    def __set_temppath(self):
         # 임시 폴더를 지정한다.
-        self.temp_path = k2file.K2Tempfile(temp_path)
+        self.temp_path = k2file.K2Tempfile()
 
     # ---------------------------------------------------------------------
     # create_instance(self)
@@ -655,7 +663,7 @@ class EngineInstance:
 
                 shutil.move(filename, t_quarantine_fname)  # 격리소로 이동
                 is_success = True
-            except (shutil.Error, WindowsError) as e:
+            except (shutil.Error, OSError) as e:
                 pass
 
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
@@ -791,7 +799,7 @@ class EngineInstance:
                 try:
                     os.remove(t_fname)
                     # print '[*] Remove :', t_fname
-                except WindowsError:
+                except OSError:
                     pass
         return ret_file_info
 
@@ -833,7 +841,7 @@ class EngineInstance:
                 os.remove(d_fname)
                 d_ret = True
                 self.result['Deleted_files'] += 1  # 삭제 파일 수
-            except (IOError, WindowsError) as e:
+            except (IOError, OSError) as e:
                 d_ret = False
 
         t_file_info.set_modify(d_ret)  # 치료(수정/삭제) 여부 표시
@@ -869,7 +877,10 @@ class EngineInstance:
             filename = file_struct.get_filename()  # 검사 대상 파일 이름 추출
             filename_ex = file_struct.get_additional_filename()  # 압축 내부 파일명
 
-            # 파일 크기가 0이면 악성코드 검사를 할 필요가 없다.
+            # 파일이 아니거나 크기가 0이면 악성코드 검사를 할 필요가 없다.
+            if os.path.isfile(filename) is False:
+                raise EngineKnownError('File is not found!')
+
             if os.path.getsize(filename) == 0:
                 raise EngineKnownError('File Size is Zero!')
 
@@ -896,9 +907,15 @@ class EngineInstance:
                 fp.close()
 
             return ret, vname, mid, scan_state, eid
-        except (EngineKnownError, ValueError, KeyboardInterrupt) as e:
+        except (EngineKnownError, ValueError) as e:
             pass
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
         except:
+            if k2const.K2DEBUG:
+                import traceback
+                print traceback.format_exc()
+                raw_input('>>')
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
@@ -948,7 +965,7 @@ class EngineInstance:
                 fp.close()
 
             return ret
-        except (IOError, EngineKnownError, WindowsError) as e:
+        except (IOError, EngineKnownError, OSError) as e:
             pass
 
         return False
@@ -1167,7 +1184,7 @@ class EngineInstance:
                         ret.update(ff)
                 except AttributeError:
                     pass
-        except (IOError, EngineKnownError, ValueError, WindowsError) as e:
+        except (IOError, EngineKnownError, ValueError, OSError) as e:
             pass
 
         if mm:

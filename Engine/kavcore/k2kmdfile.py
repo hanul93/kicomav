@@ -326,11 +326,14 @@ class KMD(KMDConstants):
 # ---------------------------------------------------------------------
 def load(mod_name, buf):
     if buf[:4] == '03F30D0A'.decode('hex'):  # puc 시그너처가 존재하는가?
-        code = marshal.loads(buf[8:])  # pyc에서 파이썬 코드를 로딩한다.
-        module = imp.new_module(mod_name)  # 새로운 모듈 생성한다.
-        exec (code, module.__dict__)  # pyc 파이썬 코드와 모듈을 연결한다.
-        sys.modules[mod_name] = module  # 전역에서 사용가능하게 등록한다.
+        try:
+            code = marshal.loads(buf[8:])  # pyc에서 파이썬 코드를 로딩한다.
+            module = imp.new_module(mod_name)  # 새로운 모듈 생성한다.
+            exec (code, module.__dict__)  # pyc 파이썬 코드와 모듈을 연결한다.
+            sys.modules[mod_name] = module  # 전역에서 사용가능하게 등록한다.
 
-        return module
+            return module
+        except:
+            return None
     else:
         return None

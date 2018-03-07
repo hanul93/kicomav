@@ -197,10 +197,8 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
 
         if not pehdr and dend > (0xF8 + 0x28):
             pehdr = dend - 0xF8 - 0x28
-            if int32(pehdr) < 0:
-                raise SystemError
 
-            while True:
+            while int32(pehdr) > 0:
                 sections, valign, sectcnt = checkpe(dst, dsize, pehdr)
                 if sections:
                     break
@@ -271,7 +269,7 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
         for ch in newbuf:
             upx_d += ch
     except:
-        return None
+        return ''
 
     return upx_d
 
@@ -610,14 +608,17 @@ class KavMain:
                     except OverflowError:
                         raise ValueError
 
-                if unpack_data == '':  # 압축 해제 실패
-                    raise ValueError
-
                 if self.verbose:
                     kavutil.vprint('Decompress')
                     kavutil.vprint(None, 'Compressed Size', '%d' % len(data))
-                    kavutil.vprint(None, 'Decompress Size', '%d' % len(unpack_data))
+                    if unpack_data == '':  # 압축 해제 실패
+                        kavutil.vprint(None, 'Decompress Size', 'Error')
+                    else:
+                        kavutil.vprint(None, 'Decompress Size', '%d' % len(unpack_data))
                     print
+
+                if unpack_data == '':  # 압축 해제 실패
+                    raise ValueError
 
                 data = unpack_data
             except IOError:

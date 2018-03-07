@@ -353,7 +353,12 @@ class OleFile:
             t_size = min(kavutil.get_uint16(pps, 0x40), 0x40)
 
             if t_size != 0:
-                p['Name'] = DecodeStreamName(pps[0:t_size-2]).decode('UTF-16LE', 'replace')
+                # 출력시 이름이 깨질 가능성이 큼
+                if ord(pps[0]) & 0xF0 == 0x00 and ord(pps[1]) == 0x00:
+                    name = '_\x00' + pps[2:t_size-2]
+                else:
+                    name = pps[0:t_size-2]
+                p['Name'] = DecodeStreamName(name).decode('UTF-16LE', 'replace')
             else:
                 p['Name'] = ''
 
@@ -364,6 +369,20 @@ class OleFile:
             p['Start'] = kavutil.get_uint32(pps, 0x74)
             p['Size'] = kavutil.get_uint32(pps, 0x78)
             p['Valid'] = False
+
+            # CVE-2012-0158 검사하기
+            # pps에 ListView.2의 CLSID가 존재함
+            # 참고 : https://securelist.com/the-curious-case-of-a-cve-2012-0158-exploit/37158/
+            # 참고 : https://www.symantec.com/security_response/attacksignatures/detail.jsp?asid=25657
+            cve_clsids = ['\x4B\xF0\xD1\xBD\x8B\x85\xD1\x11\xB1\x6A\x00\xC0\xF0\x28\x36\x28',
+                          '\xE0\xF5\x6B\x99\x44\x80\x50\x46\xAD\xEB\x0B\x01\x39\x14\xE9\x9C',
+                          '\xE6\x3F\x83\x66\x83\x85\xD1\x11\xB1\x6A\x00\xC0\xF0\x28\x36\x28',
+                          '\x5F\xDC\x81\x91\x7D\xE0\x8A\x41\xAC\xA6\x8E\xEA\x1E\xCB\x8E\x9E',
+                          '\xB6\x90\x41\xC7\x89\x85\xD1\x11\xB1\x6A\x00\xC0\xF0\x28\x36\x28'
+                         ]
+            if pps[0x50:0x60] in cve_clsids:
+                self.exploit.append('Exploit.OLE.CVE-2012-0158')
+                return False
 
             self.pps.append(p)
 
@@ -423,6 +442,7 @@ class OleFile:
     # PPS Tree의 유효성을 체크한다. (내장)
     # ---------------------------------------------------------------------
     def __valid_pps_tree(self):
+        scaned_pps_node = [0]  # 이미 분석한 노드의 경우 더이상 분석하지 않기 위해 처리
         f = []
 
         if len(self.pps) == 0:  # 분석된 PPS가 없으면 종료
@@ -430,6 +450,7 @@ class OleFile:
 
         if self.pps[0]['Dir'] != 0xffffffff and self.pps[0]['Type'] == 5:
             f.append(self.pps[0]['Dir'])
+            scaned_pps_node.append(self.pps[0]['Dir'])
             self.pps[0]['Valid'] = True
 
         if len(f) == 0:  # 정상적인 PPS가 없음
@@ -452,13 +473,25 @@ class OleFile:
             self.pps[x]['Valid'] = True
 
             if self.pps[x]['Prev'] != 0xffffffff:
-                f.append(self.pps[x]['Prev'])
+                if self.pps[x]['Prev'] in scaned_pps_node:
+                    self.pps[x]['Prev'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Prev'])
+                    scaned_pps_node.append(self.pps[x]['Prev'])
 
             if self.pps[x]['Next'] != 0xffffffff:
-                f.append(self.pps[x]['Next'])
+                if self.pps[x]['Next'] in scaned_pps_node:
+                    self.pps[x]['Next'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Next'])
+                    scaned_pps_node.append(self.pps[x]['Next'])
 
             if self.pps[x]['Dir'] != 0xffffffff:
-                f.append(self.pps[x]['Dir'])
+                if self.pps[x]['Dir'] in scaned_pps_node:
+                    self.pps[x]['Dir'] = 0xffffffff
+                else:
+                    f.append(self.pps[x]['Dir'])
+                    scaned_pps_node.append(self.pps[x]['Dir'])
 
         return True
 
@@ -1483,12 +1516,29 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'OLE Library'  # 엔진 설명
         info['kmd_name'] = 'ole'  # 엔진 파일 이름
         info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
+
+    # ---------------------------------------------------------------------
+    # listvirus(self)
+    # 진단/치료 가능한 악성코드의 리스트를 알려준다.
+    # 리턴값 : 악성코드 리스트
+    # ---------------------------------------------------------------------
+    def listvirus(self):  # 진단 가능한 악성코드 리스트
+        vlist = list()  # 리스트형 변수 선언
+
+        vlist.append('Exploit.OLE.CVE-2012-0158')  # 진단/치료하는 악성코드 이름 등록
+        vlist.append('Exploit.OLE.CVE-2003-0820')
+        vlist.append('Exploit.OLE.CVE-2003-0347')
+
+        vlist.sort()
+
+        return vlist
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)

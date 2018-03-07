@@ -28,15 +28,15 @@ except ImportError:
 BYTE = c_ubyte
 WORD = c_ushort
 LONG = c_long
-DWORD = c_ulong
+DWORD = c_uint
 FLOAT = c_float
 LPBYTE = POINTER(c_ubyte)
 LPTSTR = POINTER(c_char)
 HANDLE = c_void_p
 PVOID = c_void_p
 LPVOID = c_void_p
-UINT_PTR = c_ulong
-SIZE_T = c_ulong
+UINT_PTR = c_uint
+SIZE_T = c_uint
 
 class StructNsisHeader(Structure):
     _pack_ = 1
@@ -92,6 +92,7 @@ class NSIS:
     TYPE_LZMA = 0
     TYPE_BZIP = 1
     TYPE_ZLIB = 2
+    TYPE_COPY = 3
 
     def __init__(self, filename, verbose):
         self.verbose = verbose
@@ -170,14 +171,18 @@ class NSIS:
                 # print comp_type
                 if comp_type == self.TYPE_LZMA:
                     try:  # 전체 압축한 경우인지 확인해 본다.
-                        data = pylzma.decompress(fdata)
+                        obj = pylzma.decompressobj(maxlength=12)
+                        data = obj.decompress(fdata)
                     except TypeError:
                         pass
                 elif comp_type == self.TYPE_ZLIB:
-                    try:
-                        data = zlib.decompress(fdata, -15)
-                    except zlib.error:
-                        pass
+                    if kavutil.get_uint32(self.body_data, foff) & 0x80000000 == 0x80000000:
+                        try:
+                            data = zlib.decompress(fdata, -15)
+                        except zlib.error:
+                            pass
+                    else:
+                        data = fdata  # TYPE_COPY
             return data
         else:
             return None
@@ -229,7 +234,8 @@ class NSIS:
         comp_success = True
         if comp_type == self.TYPE_LZMA:
             try:  # 전체 압축한 경우인지 확인해 본다.
-                uncmp_data = pylzma.decompress(self.mm[off:off+size])
+                obj = pylzma.decompressobj(maxlength=12)
+                uncmp_data = obj.decompress(self.mm[0x1c:])
             except TypeError:
                 comp_success = False
         elif comp_type == self.TYPE_ZLIB:
@@ -371,11 +377,17 @@ class NSISHeader:
         off = self.nh.entries
 
         for i in range(self.nh.entries_num):
-            nr = StructNsisRecord()
-            memmove(addressof(nr), self.header_data[off:], sizeof(nr))
-            off += sizeof(nr)
+            # nr = StructNsisRecord()
+            # memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+            # off += sizeof(nr)  # 28Byte
 
-            if nr.which == 20:  # EW_EXTRACTFILE
+            val = self.header_data[off:off + 4]
+
+            # if nr.which == 20:  # EW_EXTRACTFILE
+            if val == '\x14\x00\x00\x00':  # EW_EXTRACTFILE
+                nr = StructNsisRecord()
+                memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+
                 dt = ''
                 try:
                     ft_dec = struct.unpack('>Q', struct.pack('>ll', nr.parm4, nr.parm3))[0]
@@ -391,7 +403,11 @@ class NSISHeader:
                 file_offset = nr.parm2
 
                 self.files[file_name] = (file_offset, dt, nr.which)
-            elif nr.which == 62:  # EW_WRITEUNINSTALLER
+            # elif nr.which == 62:  # EW_WRITEUNINSTALLER
+            elif val == '\x3e\x00\x00\x00':  # EW_WRITEUNINSTALLER
+                nr = StructNsisRecord()
+                memmove(addressof(nr), self.header_data[off:], sizeof(nr))
+
                 file_name = self.__get_string(nr.parm0).replace('\\', '/')
                 file_offset = nr.parm1
 
@@ -401,6 +417,8 @@ class NSISHeader:
                 # print hex(nr.parm5)
 
                 self.files[file_name] = (file_offset, '', nr.which)
+
+            off += 28
 
     def parse(self):
         if self.header_data:  # 이미 분석되었다면 분석하지 않는다.
@@ -428,6 +446,7 @@ class NSISHeader:
 
         fl.sort()
         return fl
+
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -466,7 +485,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'NSIS Engine'  # 엔진 설명
         info['kmd_name'] = 'nsis'  # 엔진 파일 이름
 
