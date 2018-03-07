@@ -47,8 +47,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.29'
-KAV_BUILDDATE = 'Jan 25 2018'
+KAV_VERSION = '0.30'
+KAV_BUILDDATE = 'May 07 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -422,6 +422,7 @@ def update_kicomav(path):
 
     try:
         url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
+        # url = 'http://127.0.0.1:8011/'  # 서버 주소를 나중에 바꿔야 한다.
 
         # 업데이트해야 할 파일 목록을 구한다.
         down_list = get_download_list(url, path)
@@ -705,7 +706,7 @@ def scan_callback(ret_value):
 
     # 정상일 경우에는 /<...> path명에 의해 중복 발생 가능성 있음
     # 그래서 중복을 출력하지 않도록 조정함
-    if message == 'ok':  
+    if message == 'ok':
         d_prev = display_scan_result.get('Prev', {})
         if d_prev == {}:
             d_prev['disp_name'] = disp_name
@@ -855,36 +856,6 @@ def update_callback(ret_file_info, is_success):
             log_print('%s\t%s\n' % (disp_name, message))
 
             display_update_result = disp_name
-
-
-'''
-def update_callback1(ret_file_info):
-    global g_infp_path
-
-    if g_options.opt_move:  # 격리 옵션이 설정되었나?
-        # 마스터 파일만 격리 조치하면 됨
-        if ret_file_info.is_modify():  # 격리를 위해 가짜로 수정된것 처럼 처리
-            disp_name = ret_file_info.get_master_filename()
-            try:
-                shutil.move(disp_name, g_infp_path)
-                message = 'quarantined'
-                message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
-            except shutil.Error:
-                message = 'quarantine failed'
-                message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
-
-            display_line(disp_name, message, message_color)
-            log_print('%s\t%s\n' % (disp_name, message))
-    else:
-        if ret_file_info.is_modify():  # 수정되었다면 결과 출력
-            disp_name = ret_file_info.get_filename()
-
-            message = 'updated'
-            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
-
-            display_line(disp_name, message, message_color)
-            log_print('%s\t%s\n' % (disp_name, message))
-'''
 
 
 # -------------------------------------------------------------------------
