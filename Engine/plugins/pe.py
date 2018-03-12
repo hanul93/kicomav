@@ -279,14 +279,16 @@ class PE:
                         name_id_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i * 8))
 
                         # Type이 사용자가 정의한 이름 or RCDATA?
-                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA:
+                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA or type_id == 0:
                             if type_id & 0x80000000 == 0x80000000:
                                 # 사용자가 정의한 이름 추출
                                 string_off = (type_id & 0x7FFFFFFF) + rsrc_off
                                 len_name = kavutil.get_uint16(mm, string_off)
                                 rsrc_type_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
-                            else:
+                            elif type_id == 0xA:
                                 rsrc_type_name = 'RCDATA'
+                            else:
+                                rsrc_type_name = '%d' % type_id
 
                             # Name ID
                             name_id_off = (name_id_off & 0x7FFFFFFF) + rsrc_off
