@@ -57,6 +57,10 @@ class PatternMD5:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
+        # 각 악성코드별 시그너처의 개수 : 예) adware:1개, emalware:39개
+        # 이는 향후 (size % 개수) + 1을 해서 size가 어느 그룹에 존재하는지를 확인하게 됨
+        self.sig_group_count = {}
+
         fl = glob.glob(os.path.join(plugins_path, '*.s??'))
         fl.sort()
         for name in fl:
@@ -69,14 +73,22 @@ class PatternMD5:
                     continue
 
                 if len(sp):  # 로딩된 패턴이 1개 이상이면...
-                    if not (sig_key in self.sig_sizes):
-                        self.sig_sizes[sig_key] = {}
+                    # 그룹 개수 추가
+                    self.sig_group_count[sig_key] = self.sig_group_count.get(sig_key, 0) + 1
 
+                    # 악성코드 패턴 크기를 담는다.
+                    if sig_key in self.sig_sizes:
+                        self.sig_sizes[sig_key].update(dict.fromkeys(sp))
+                    else:
+                        self.sig_sizes[sig_key] = dict.fromkeys(sp)
+
+                    '''
                     for psize in list(sp):
                         if psize in self.sig_sizes[sig_key]:
                             self.sig_sizes[sig_key][psize].append(idx)
                         else:
                             self.sig_sizes[sig_key][psize] = [idx]
+                    '''
 
     # ---------------------------------------------------------------------
     # match_size(self, sig_key, sig_size)
@@ -106,7 +118,8 @@ class PatternMD5:
         sig_key = sig_key.lower()  # 대문자로 입력될 가능성 때문에 모두 소문자로 변환
 
         if self.match_size(sig_key, sig_size):  # 크기가 존재하는가?
-            idxs = self.sig_sizes[sig_key][sig_size]  # 어떤 파일에 1차 패턴이 존재하는지 확인
+            # idxs = self.sig_sizes[sig_key][sig_size]  # 어떤 파일에 1차 패턴이 존재하는지 확인
+            idxs = ['%02d' % ((sig_size % self.sig_group_count[sig_key]) + 1)]
 
             fmd5 = sig_md5.decode('hex')
             sig_p1 = fmd5[:6]  # 1차 패턴
@@ -167,7 +180,10 @@ class PatternMD5:
     # 리턴값 : 악성코드 패턴 로딩 성공 여부
     # ---------------------------------------------------------------------
     def __load_sig_ex(self, sig_dict, sig_prefix, sig_key, idx):  # (self.sig_names, 'n', 'script', '01')
-        if not (sig_key in sig_dict) or not (idx in sig_dict[sig_key]):
+        if not (sig_key in sig_dict):
+            sig_dict[sig_key] = {}
+
+        if not (idx in sig_dict[sig_key]):
             # 패턴 로딩
             try:
                 name_fname = os.path.join(self.plugins, '%s.%s%s' % (sig_key, sig_prefix, idx))
@@ -177,7 +193,7 @@ class PatternMD5:
             except IOError:
                 return False
 
-            sig_dict[sig_key] = {idx: sp}
+            sig_dict[sig_key][idx] = sp
 
         # 현재 시간을 sig_time에 기록한다.
         if not (sig_key in self.sig_times):
@@ -201,7 +217,7 @@ class PatternMD5:
             for sig_prefix in self.sig_times[sig_key].keys():
                 for idx in self.sig_times[sig_key][sig_prefix].keys():
                     # print '[-]', n - self.sig_times[sig_key][sig_prefix][idx]
-                    if n - self.sig_times[sig_key][sig_prefix][idx] > 4:  # (3 * 60) :
+                    if n - self.sig_times[sig_key][sig_prefix][idx] > 3 * 60:
                         # print '[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx)
                         if sig_prefix == 'i':  # 1차 패턴
                             self.sig_p1s[sig_key].pop(idx)
