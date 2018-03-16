@@ -497,7 +497,7 @@ class PE:
 
     def rva_to_off(self, t_rva):
         for section in self.sections:
-            size = section['VirtualSize']
+            size = section['SizeRawData']
             rva = section['RVA']
 
             if rva <= t_rva < rva + size:
