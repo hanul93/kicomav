@@ -85,7 +85,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Virus Engine'  # 엔진 설명
         info['kmd_name'] = 've'  # 엔진 파일 이름
-        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve')   # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve') + 1  # 진단/치료 가능한 악성코드 수
 
         return info
 
@@ -96,12 +96,14 @@ class KavMain:
     # ---------------------------------------------------------------------
     def listvirus(self):  # 진단 가능한 악성코드 리스트
         vlist = kavutil.handle_pattern_vdb.get_sig_vlist('ve')
-        vlist.sort()
 
         vlists = []
+        vlists.append('Virus.Win32.Small.a')
+
         for vname in vlist:
             vlists.append(kavutil.normal_vname(vname))
 
+        vlists.sort()
         return vlists
 
     # ---------------------------------------------------------------------
@@ -118,6 +120,10 @@ class KavMain:
             self.flags_off = {}
             flags = []
             mm = filehandle
+
+            # Virus.Win32.Small.a 검사
+            if self.__scan_virus_win32_small_a(filehandle, fileformat):
+                return True, 'Virus.Win32.Small.a', 0, kernel.INFECTED
 
             # Flag별 Signature를 만든다.
             # Flag - 0 : 파일의 처음
@@ -262,3 +268,32 @@ class KavMain:
                 return kavutil.normal_vname(vname)
 
         return None
+
+    # ---------------------------------------------------------------------
+    # Virus.Win32.Small.a 검사한다.
+    # 리턴값 : True(발견) or False(미발견)
+    # ---------------------------------------------------------------------
+    def __scan_virus_win32_small_a(self, mm, fileformat):
+        if 'ff_pe' in fileformat:
+            ff = fileformat['ff_pe']['pe']
+            ep_off = ff['EntryPointRaw']
+
+            if cryptolib.crc32(mm[ep_off:ep_off + 12]) == '4d49a25f':
+                v_rva = kavutil.get_uint32(mm, ep_off + 12) + 1  # 악성코드 RVA
+                v_rva -= ff['ImageBase']
+
+                # v_rva가 마지막 섹션에 속하는 값인지 확인한다.
+                sec = ff['Sections'][-1]
+                if sec['RVA'] <= v_rva <= sec['RVA'] + sec['VirtualSize']:
+                    pe_file_align = ff['FileAlignment']
+                    if pe_file_align:
+                        foff = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+                    else:
+                        foff = sec['PointerRawData']
+
+                    v_off = v_rva - sec['RVA'] + foff
+
+                    if cryptolib.crc32(mm[v_off:v_off + 0x30]) == '8d964738':
+                        return True
+
+        return False
