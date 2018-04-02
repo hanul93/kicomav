@@ -1551,9 +1551,23 @@ class KavMain:
     def format(self, filehandle, filename, filename_ex):
         ret = {}
 
+        mm = filehandle
+
         # OLE 헤더와 동일
-        if filehandle[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':
+        if mm[:8] == '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1':
             ret['ff_ole'] = 'OLE'
+
+            # OLE 뒤에 첨부된 파일이 있는지를 조사한다.
+            fsize = len(mm)
+
+            bsize = 1 << kavutil.get_uint16(mm, 0x1e)
+            rsize = (fsize / bsize) * bsize
+            if fsize > rsize:
+                fileformat = {  # 포맷 정보를 담을 공간
+                    'Attached_Pos': rsize,
+                    'Attached_Size': fsize - rsize
+                }
+                ret['ff_attach'] = fileformat
 
         return ret
 
