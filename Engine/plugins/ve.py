@@ -85,7 +85,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Virus Engine'  # 엔진 설명
         info['kmd_name'] = 've'  # 엔진 파일 이름
-        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve') + 1  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve') + 2  # 진단/치료 가능한 악성코드 수
 
         return info
 
@@ -99,6 +99,7 @@ class KavMain:
 
         vlists = []
         vlists.append('Virus.Win32.Small.a')
+        vlists.append('Virus.Win32.SuperThreat.b')
 
         for vname in vlist:
             vlists.append(kavutil.normal_vname(vname))
@@ -122,8 +123,9 @@ class KavMain:
             mm = filehandle
 
             # Virus.Win32.Small.a 검사
-            if self.__scan_virus_win32_small_a(filehandle, fileformat):
-                return True, 'Virus.Win32.Small.a', 0, kernel.INFECTED
+            ret, vname = self.__scan_virus_win32_small_a(filehandle, fileformat)
+            if ret:
+                return True, vname, 0, kernel.INFECTED
 
             # Flag별 Signature를 만든다.
             # Flag - 0 : 파일의 처음
@@ -293,7 +295,10 @@ class KavMain:
 
                     v_off = v_rva - sec['RVA'] + foff
 
-                    if cryptolib.crc32(mm[v_off:v_off + 0x30]) == '8d964738':
-                        return True
+                    x = cryptolib.crc32(mm[v_off:v_off + 0x30])
+                    if x == '8d964738':
+                        return True, 'Virus.Win32.Small.a'
+                    elif x == '00000000' or x == 'f288b395':  # 파일이 깨진 경우이거나 모든 값이 0인 경우이다.
+                        return True, 'Virus.Win32.SuperThreat.b'
 
-        return False
+        return False, None
