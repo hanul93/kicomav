@@ -31,6 +31,10 @@ class KavMain:
 
         try:
             self.rules = yara.compile(os.path.join(plugins_path, 'yaraex.yar'))
+
+            self.rule_count = 0  # Rule 개수
+            for t in self.rules:
+                self.rule_count += 1
         except:
             if self.verbose:
                 print '[*] ERROR : YARA Rule compile'
@@ -58,6 +62,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Yara Engine'  # 엔진 설명
         info['kmd_name'] = 'yaraex'  # 엔진 파일 이름
+        info['sig_num'] = self.rule_count  # 진단/치료 가능한 악성코드 수
 
         return info
 
