@@ -693,16 +693,22 @@ def scan_callback(ret_value):
     if ret_value['result']:
         if ret_value['scan_state'] == kernel.INFECTED:
             state = 'infected'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
         elif ret_value['scan_state'] == kernel.SUSPECT:
             state = 'suspect'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
         elif ret_value['scan_state'] == kernel.WARNING:
             state = 'warning'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+        elif ret_value['scan_state'] == kernel.IDENTIFIED:
+            state = 'identified'
+            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
         else:
             state = 'unknown'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
 
         vname = ret_value['virus_name']
         message = '%s : %s' % (state, vname)
-        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else:
         if ret_value['scan_state'] == kernel.ERROR:
             message = ret_value['virus_name']
