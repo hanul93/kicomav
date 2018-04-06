@@ -686,7 +686,8 @@ def scan_callback(ret_value):
     fs = ret_value['file_struct']
 
     if len(fs.get_additional_filename()) != 0:
-        disp_name = '%s (%s)' % (fs.get_master_filename(), fs.get_additional_filename())
+        f2 = convert_display_filename(fs.get_additional_filename())
+        disp_name = '%s (%s)' % (fs.get_master_filename(), f2)
     else:
         disp_name = '%s' % (fs.get_master_filename())
 
