@@ -134,7 +134,7 @@ image_directory_entry = enum('EXPORT', 'IMPORT', 'RESOURCE', 'EXCEPTION', 'SECUR
                              'IAT', 'DELAY_IMPORT', 'COM_DESCRIPTOR', 'RESERVED')
 
 
-p_str = re.compile(r'[^\x00]+')  # NULL 문자 직전까지 복사
+p_str = re.compile(r'[^\x00]*')  # NULL 문자 직전까지 복사
 
 
 class PE:
