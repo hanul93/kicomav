@@ -262,12 +262,14 @@ class PE:
 
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
-                    rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
+                    rsrc_off, rsrc_idx = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
 
                     if rsrc_off > self.filesize:
                         raise ValueError
 
-                    if len(mm[rsrc_off:rsrc_off + rsrc_size]) != rsrc_size:  # 충분한 리소스가 존재하지 않음
+                    t_size = self.sections[rsrc_idx]['SizeRawData']
+                    if not (len(mm[rsrc_off:rsrc_off + rsrc_size]) == rsrc_size or \
+                        len(mm[rsrc_off:rsrc_off + t_size]) == t_size):  # 충분한 리소스가 존재하지 않음
                         raise ValueError
 
                     # Type 체크
