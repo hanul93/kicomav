@@ -19,6 +19,7 @@ import cryptolib
 # 1 : 실행 위치 (DOS-EP)
 # 2 : 실행 위치 (PE-EP)
 # 3 : 각 섹션의 처음 (PE, ELF 등)
+# 4 : Attach의 처음
 # Checksum1 : Flag, Offset, Length, CRC32
 # Checksum2 : Flag, Offset, Length, CRC32
 # MalwareName
@@ -153,6 +154,16 @@ class KavMain:
                                   gen_checksums(mm[foff:foff+0x80])])
                     flag3_off.append(foff)
                 self.flags_off[3] = flag3_off
+
+            # Attach 영역이 존재하는가?
+            if 'ff_attach' in fileformat:
+                # Flag - 4 : Attach 영역
+                pos = fileformat['ff_attach']['Attached_Pos']
+                size = fileformat['ff_attach']['Attached_Size']
+                if size > 0x80:
+                    flags.append([int('0004' + mm[pos:pos+2].encode('hex'), 16),
+                                  gen_checksums(mm[pos:pos + 0x80])])
+                    self.flags_off[4] = [pos]
 
             cs_size = [6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x18,
                       0x20, 0x28, 0x30, 0x38, 0x40, 0x48, 0x50, 0x58, 0x60,
