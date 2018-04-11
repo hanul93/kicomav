@@ -492,7 +492,7 @@ class PE:
                     kavutil.vprint(None, 'Name', '%s' % repr(pe_format['PDB_Name']))
                     print
 
-        except ValueError:
+        except (ValueError, struct.error) as e:
             return None
 
         return pe_format
