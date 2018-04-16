@@ -253,7 +253,9 @@ class KavMain:
     # ---------------------------------------------------------------------
     def __get_data_crc32(self, buf, flag, off, size):
         crc32s = []
-        for base_off in self.flags_off[flag]:
+
+        base_offs = self.flags_off.get(flag, [])
+        for base_off in base_offs:
             crc32s.append(int(gen_checksum(buf, base_off + off, size), 16))
 
         return crc32s
