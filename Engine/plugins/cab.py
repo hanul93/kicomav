@@ -872,7 +872,8 @@ class KavMain:
             zfile.close()
 
             cab_extract_path = self.temp_path.get(fname, None)
-            shutil.rmtree(cab_extract_path)
+            if os.path.exists(cab_extract_path):
+                shutil.rmtree(cab_extract_path)
 
             self.handle.pop(fname)
             self.temp_path.pop(fname)
