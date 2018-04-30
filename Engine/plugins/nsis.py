@@ -94,7 +94,7 @@ class NSIS:
     TYPE_ZLIB = 2
     TYPE_COPY = 3
 
-    def __init__(self, filename, verbose):
+    def __init__(self, filename, offset=0, verbose=False):
         self.verbose = verbose
         self.filename = filename
         self.fp = None
@@ -104,9 +104,22 @@ class NSIS:
         self.body_data = None
         self.case_type = 0
 
+        self.temp_name = None
+        self.start_offset = offset
+
     def parse(self):
-        self.fp = open(self.filename, 'rb')
-        fsize = os.path.getsize(self.filename)
+        self.temp_name = tempfile.mktemp(prefix='knsf')
+
+        # NSIS 위치 읽기
+        fp = open(self.filename, 'rb')
+        fp.seek(self.start_offset)
+        data = fp.read()
+        fp.close()
+
+        open(self.temp_name, 'wb').write(data)
+
+        self.fp = open(self.temp_name, 'rb')
+        fsize = os.path.getsize(self.temp_name)
         if fsize == 0:
             return False
 
@@ -260,6 +273,10 @@ class NSIS:
 
     def __del(self):
         self.close()
+
+        if self.temp_name:
+            os.unlink(self.temp_name)
+
 
 class NSISHeader:
     def __init__(self, data):
@@ -497,34 +514,15 @@ class KavMain:
     # 입력값 : filename   - 파일 이름
     # 리턴값 : 압축 파일 핸들
     # ---------------------------------------------------------------------
-    def __get_handle(self, filename):
+    def __get_handle(self, filename, offset=0):
         if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
             zfile = self.handle.get(filename, None)
         else:
-            zfile = NSIS(filename, self.verbose)  # nsis 파일 열기
+            zfile = NSIS(filename, offset, self.verbose)  # nsis 파일 열기
             if zfile.parse():
                 self.handle[filename] = zfile
-            else:
-                None
 
         return zfile
-
-    # ---------------------------------------------------------------------
-    # format(self, filehandle, filename, filename_ex)
-    # 파일 포맷을 분석한다.
-    # 입력값 : filehandle - 파일 핸들
-    #          filename   - 파일 이름
-    #          filename_ex - 압축 파일 내부 파일 이름
-    # 리턴값 : {파일 포맷 분석 정보} or None
-    # ---------------------------------------------------------------------
-    def format(self, filehandle, filename, filename_ex):
-        ret = {}
-
-        mm = filehandle
-        if mm[4:20] == '\xEF\xBE\xAD\xDENullsoftInst':
-            ret = {'ff_nsis': 'NSIS'}
-
-        return ret
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
@@ -538,7 +536,8 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 ff_nsis 포맷이 있는가?
         if 'ff_nsis' in fileformat:
-            zfile = self.__get_handle(filename)
+            off = fileformat['ff_nsis']['Offset']
+            zfile = self.__get_handle(filename, off)
 
             for name in zfile.namelist():
                 file_scan_list.append(['arc_nsis', name])

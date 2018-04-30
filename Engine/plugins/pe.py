@@ -527,6 +527,20 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
+
+        # NSIS 코드 패턴
+        '''
+        81 7D DC EF BE AD DE                          cmp     [ebp+var_24], 0DEADBEEFh
+        75 69                                         jnz     short loc_402D79
+        81 7D E8 49 6E 73 74                          cmp     [ebp+var_18], 'tsnI'
+        75 60                                         jnz     short loc_402D79
+        81 7D E4 73 6F 66 74                          cmp     [ebp+var_1C], 'tfos'
+        75 57                                         jnz     short loc_402D79
+        81 7D E0 4E 75 6C 6C                          cmp     [ebp+var_20], 'lluN'
+        '''
+
+        self.p_nsis = '817DDCEFBEADDE7569817DE8496E7374'.decode('hex')
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -606,11 +620,38 @@ class KavMain:
             attach_size = file_size - pe_size
 
         if pe_size < file_size and pe_size != 0:
-            fileformat = {  # 포맷 정보를 담을 공간
-                'Attached_Pos': pe_size,
-                'Attached_Size': attach_size
-            }
-            ret['ff_attach'] = fileformat
+            mm = filehandle
+
+            # NSIS 코드가 .text 영역에 존재하는지 체크한다.
+            text_sec = pe_format['Sections'][0]
+            if pe_file_align:
+                off = (text_sec['PointerRawData'] / pe_file_align) * pe_file_align
+            else:
+                off = text_sec['PointerRawData']
+            size = text_sec['SizeRawData']
+
+            if size:
+                if mm[off:off + size].find(self.p_nsis) != -1:
+                    # PE 파일에 뒤쪽에 데이터가 있다면 NSIS 파일인지 분석하기
+                    i = 1
+                    while True:
+                        t = mm[i * 0x200 + 4:i * 0x200 + 20]
+                        if len(t) != 16:
+                            break
+
+                        if t == '\xEF\xBE\xAD\xDENullsoftInst':
+                            ret['ff_nsis'] = {'Offset': i * 0x200}
+                            break
+
+                        i += 1
+
+            # Attach 처리하기 (단 NSIS가 존재하면 처리하지 않음)
+            if not('ff_nsis' in ret):
+                fileformat = {  # 포맷 정보를 담을 공간
+                    'Attached_Pos': pe_size,
+                    'Attached_Size': attach_size
+                }
+                ret['ff_attach'] = fileformat
 
         return ret
 
