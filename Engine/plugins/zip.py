@@ -5,6 +5,7 @@
 import struct
 import zlib
 import os
+import py7zlib
 
 import zipfile
 import kernel
@@ -297,6 +298,15 @@ class KavMain:
 
         return zfile
 
+    def __get_handle_7z(self, filename):
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            zfile = self.handle.get(filename, None)
+        else:
+            zfile = py7zlib.Archive7z(open(filename, 'rb'))  # 7z 파일 열기
+            self.handle[filename] = zfile
+
+        return zfile
+
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
     # 파일 포맷을 분석한다.
@@ -346,6 +356,9 @@ class KavMain:
                     pass
 
             return ret
+        elif mm[0:4] == '7z\xbc\xaf':
+            ret['ff_7z'] = '7z'
+            return ret
 
         return None
 
@@ -370,6 +383,10 @@ class KavMain:
             off, zsize = fileformat['ff_attach_zip']
             file_scan_list.append(['arc_attach_zip:0:%d' % off, '#1'])
             file_scan_list.append(['arc_attach_zip:%d:%d' % (off, zsize), '#2'])
+        elif 'ff_7z' in fileformat:
+            zfile = self.__get_handle_7z(filename)
+            for name in zfile.filenames:
+                file_scan_list.append(['arc_7z', name])
 
         return file_scan_list
 
@@ -397,6 +414,16 @@ class KavMain:
                 fp.seek(off)
                 data = fp.read(size)
                 return data
+        elif arc_engine_id == 'arc_7z':
+            zfile = self.__get_handle_7z(arc_name)
+            cf = zfile.getmember(fname_in_arc)
+            try:
+                data = cf.read()
+                return data
+            except (ValueError, py7zlib.UnsupportedCompressionMethodError) as e:
+                # BCJ LZMA, BCJ2 LZMA를 py7zlib가 아직 지원하지 못함 (ver 0.4.9)
+                # LZMA 지원 체크 완료
+                pass
 
         return None
 
