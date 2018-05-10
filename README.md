@@ -35,21 +35,41 @@ C:\kicomav\Release> python k2.py [path] [options]
 
 **Example 1 :** KicomAV help Options 
 
+```
+C:\kicomav\Release> python k2.py
+```
+
 ![KicomAV_Run](http://www.hanul93.com/images/kicomav/k2_run.gif)
 
 **Example 2 :** Update for malware signatures
+
+```
+C:\kicomav\Release> python k2.py --update
+```
 
 ![KicomAV_Update](http://www.hanul93.com/images/kicomav/k2_update.gif)
 
 **Example 3 :** Scan for current path
 
+```
+C:\kicomav\Release> python k2.py . -I
+```
+
 ![KicomAV_Scan](http://www.hanul93.com/images/kicomav/k2_scan.gif)
 
 **Example 4 :** Scan for ZIP files
 
+```
+C:\kicomav\Release> python k2.py sample -r -I
+```
+
 ![KicomAV_Scan_Zip](http://www.hanul93.com/images/kicomav/k2_scan_zip.gif)
 
 **Example 5 :** Display Virus list
+
+```
+C:\kicomav\Release> python k2.py -V
+```
 
 ![KicomAV_Virus_list](http://www.hanul93.com/images/kicomav/k2_vlist.gif)
 
