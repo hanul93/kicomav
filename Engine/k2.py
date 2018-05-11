@@ -15,6 +15,7 @@ import email
 try:
     from backports import lzma
     import yara
+    import py7zlib
 except ImportError:
     pass
 
@@ -48,7 +49,7 @@ if os.name == 'nt':
 # 주요 상수
 # -------------------------------------------------------------------------
 KAV_VERSION = '0.30'
-KAV_BUILDDATE = 'May 07 2018'
+KAV_BUILDDATE = 'May 11 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
