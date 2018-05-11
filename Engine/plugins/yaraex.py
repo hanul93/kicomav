@@ -76,12 +76,13 @@ class KavMain:
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     # ---------------------------------------------------------------------
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
-        ret = self.rules.match(filename)
-        if len(ret):
-            for t in ret:
-                vname = t.meta.get('KicomAV', None)  # KicomAV meta 정보 확인
-                if vname:
-                    return True, vname, 0, kernel.INFECTED
+        if filename.lower().find('yaraex.yar') == -1:  # yara rule을 검사할 가능성 있음
+            ret = self.rules.match(filename)
+            if len(ret):
+                for t in ret:
+                    vname = t.meta.get('KicomAV', None)  # KicomAV meta 정보 확인
+                    if vname:
+                        return True, vname, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
