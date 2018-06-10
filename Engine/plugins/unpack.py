@@ -2,6 +2,7 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+import os
 import zlib
 import struct
 import kavutil
@@ -88,10 +89,12 @@ class KavMain:
 
         # 미리 분석된 파일 포맷중에 특정 포맷이 있는가?
         if 'ff_zlib' in fileformat:
-            file_scan_list.append(['arc_zlib', '<ZLIB>'])
+            # file_scan_list.append(['arc_zlib', '<ZLIB>'])
+            file_scan_list.append(['arc_zlib', 'Zlib'])
 
         if 'ff_embed_ole' in fileformat:
-            file_scan_list.append(['arc_embed_ole', '<EMBED_OLE>'])
+            # file_scan_list.append(['arc_embed_ole', '<EMBED_OLE>'])
+            file_scan_list.append(['arc_embed_ole', 'Embed'])
 
         return file_scan_list
 
