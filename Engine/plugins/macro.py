@@ -469,12 +469,15 @@ def dir_informationrecord(data, off, verbose=False):
 
 def dir_referencesrecord(data, off, verbose=False):
     while True:
+        _follow = False     # modify by sungho
         # NameRecord에는 2개의 레코드가 존재함
         t_data = get_record_size32(data, off)
         val = get_uint16(t_data, 0)
+
         if val != 0x0016:
             # raise Error('dir:ReferencesRecord:NameRecord #1')
             break
+
         off += len(t_data)
 
         if verbose:
@@ -492,25 +495,31 @@ def dir_referencesrecord(data, off, verbose=False):
             t_data = get_record_size32(data, off)
             off += len(t_data)
             t_data = get_record_size32(data, off)
-            if get_uint16(t_data, 0) == 0x002F:  # REFERENCECONTROL
+            val = get_uint16(data, off)     # modify by sungho
+            _follow = True
+
+        # modify by sungho
+        """ REFERENCEREGISTERED field is optional """
+        if val == 0x002F:  # REFERENCECONTROL
+            if _follow is False:
+                t_data = get_record_size32(data, off)
+            off += len(t_data)
+            t_data = get_record_size32(data, off)
+            if get_uint16(t_data, 0) == 0x0016:  # NameRecordExtended
                 off += len(t_data)
                 t_data = get_record_size32(data, off)
-                if get_uint16(t_data, 0) == 0x0016:  # NameRecordExtended
+                if get_uint16(t_data, 0) == 0x003E:  # NameRecordExtended:Reserved
                     off += len(t_data)
                     t_data = get_record_size32(data, off)
-                    if get_uint16(t_data, 0) == 0x003E:  # NameRecordExtended:Reserved
+                    if get_uint16(t_data, 0) == 0x0030:  # Reserved3
                         off += len(t_data)
-                        t_data = get_record_size32(data, off)
-                        if get_uint16(t_data, 0) == 0x0030:  # Reserved3
-                            off += len(t_data)
-                        else:
-                            raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:Reserved3')
                     else:
-                        raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:NameRecordExtended:Reserved')
+                        raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:Reserved3')
                 else:
-                    raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:NameRecordExtended')
+                    raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:NameRecordExtended:Reserved')
             else:
-                raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL')
+                raise Error('dir:ReferencesRecord:ReferenceRecord:REFERENCECONTROL:NameRecordExtended')
+
         elif val == 0x000D or val == 0x000E:  # REFERENCEPROJECT
             t_data = get_record_size32(data, off)
             off += len(t_data)
@@ -542,7 +551,8 @@ def dir_modulesrecord(data, off, verbose=False):
         t_data = get_record_size32(data, off)
         val = get_uint16(t_data, 0)
         if val != 0x0047:
-            raise Error('dir:ModulesRecord:NameUnicodeRecord')
+            continue        # modify by sungho
+            # raise Error('dir:ModulesRecord:NameUnicodeRecord')
         off += len(t_data)
 
         t_data = get_record_size32(data, off)
