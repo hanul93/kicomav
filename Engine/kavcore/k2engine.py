@@ -1075,7 +1075,10 @@ class EngineInstance:
                                 shutil.copy(rname, sig_fname)
 
                                 # sigtool.log 파일을 생성한다.
-                                msg = '%s : %s\n' % (sig_fname, rname_struct.get_additional_filename())
+                                t = rname_struct.get_additional_filename()
+                                if t[0] == '/' or t[0] == '\\':
+                                    t = t[1:]
+                                msg = '%s : %s\n' % (sig_fname, t)
                                 fp = open('sigtool.log', 'at')
                                 fp.write(msg)
                                 fp.close()
