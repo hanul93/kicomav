@@ -945,7 +945,7 @@ class EngineInstance:
             if k2const.K2DEBUG:
                 import traceback
                 print traceback.format_exc()
-                raw_input('>>')
+                # raw_input('>>')
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
