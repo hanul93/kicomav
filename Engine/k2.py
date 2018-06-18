@@ -647,8 +647,11 @@ def convert_display_filename(real_filename):
         display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
     else:
         display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
-    return display_filename
 
+    if display_filename[0] == '/' or display_filename[0] == '\\':
+        return display_filename[1:]
+    else:
+        return display_filename
 
 def display_line(filename, message, message_color):
     max_sizex = get_terminal_sizex() - 1
