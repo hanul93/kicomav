@@ -36,7 +36,33 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 
 ***
 
-### v0.30 (May 07, 2018)
+## v0.31 (Jun 18, 2018)
+
+* **Plugins Modules :**
+  * cab: Improved speed for cab file extract
+  * dde: Added a CVE-2017-0199 pattern
+  * egg: Fixed the problem that file name inside egg file is broken
+  * emalware: Added a Worm.Win32.Allaple.gen pattern
+  * html: Added scan function for Trojan.HTML.IFrame.a
+  * ishield: New support
+  * macro: Fixed parse of dir_referencesrecord
+  * ole: Added extraction of Ole's attach data
+  * olenative: Fixed a _OleNative Stream name
+  * pe: Fixed missing import API names
+  * pe: Fixed check to resource size
+  * rar: New support
+  * ve: Added New scan areas
+  * ve: Fixed crc32 of base offset
+  * yaraex: Fixed detect yara rule name
+  * yaraex: Fixed malware detection against yaraex.yar
+  * zip: Added 7z archive
+
+* **Command Line Interface :**
+  * k2: Added New status (IDENTIFIED)
+  * k2: Added New options (--copy, --qname)
+  * k2: Fixed file name assembly
+
+### v0.30 (Mar 07, 2018)
 
 * **Engine :**
   * k2engine: Changed WindowsError exception handling to OSError exception handling
