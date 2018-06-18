@@ -1,4 +1,4 @@
-## v0.30 (Jun 18, 2018)
+## v0.31 (Jun 18, 2018)
 
 * **Plugins Modules :**
   * cab: Improved speed for cab file extract
