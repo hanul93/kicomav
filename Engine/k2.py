@@ -15,6 +15,7 @@ import email
 try:
     from backports import lzma
     import yara
+    import py7zlib
 except ImportError:
     pass
 
@@ -47,8 +48,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.30'
-KAV_BUILDDATE = 'May 07 2018'
+KAV_VERSION = '0.31'
+KAV_BUILDDATE = 'Jun 18 2018'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -308,6 +309,9 @@ def define_options():
                       default=False)
     parser.add_option("-F", "--infp",
                       metavar="PATH", dest="infp_path")
+    parser.add_option("", "--qname",  # 격리시 악성코드 이름 부여
+                      action="store_true", dest="opt_qname",
+                      default=False)
     parser.add_option("-R", "--nor",
                       action="store_true", dest="opt_nor",
                       default=False)
@@ -328,6 +332,9 @@ def define_options():
                       default=False)
     parser.add_option("", "--move",
                       action="store_true", dest="opt_move",
+                      default=False)
+    parser.add_option("", "--copy",
+                      action="store_true", dest="opt_copy",
                       default=False)
     parser.add_option("", "--update",
                       action="store_true", dest="opt_update",
@@ -404,6 +411,7 @@ def print_options():
         -l,  --del             delete infected files
              --no-color        don't print with color
              --move            move infected files in quarantine folder
+             --copy            copy infected files in quarantine folder
              --update          update
              --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
@@ -639,8 +647,11 @@ def convert_display_filename(real_filename):
         display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
     else:
         display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
-    return display_filename
 
+    if display_filename[0] == '/' or display_filename[0] == '\\':
+        return display_filename[1:]
+    else:
+        return display_filename
 
 def display_line(filename, message, message_color):
     max_sizex = get_terminal_sizex() - 1
@@ -679,23 +690,30 @@ def scan_callback(ret_value):
     fs = ret_value['file_struct']
 
     if len(fs.get_additional_filename()) != 0:
-        disp_name = '%s (%s)' % (fs.get_master_filename(), fs.get_additional_filename())
+        f2 = convert_display_filename(fs.get_additional_filename())
+        disp_name = '%s (%s)' % (fs.get_master_filename(), f2)
     else:
         disp_name = '%s' % (fs.get_master_filename())
 
     if ret_value['result']:
         if ret_value['scan_state'] == kernel.INFECTED:
             state = 'infected'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
         elif ret_value['scan_state'] == kernel.SUSPECT:
             state = 'suspect'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
         elif ret_value['scan_state'] == kernel.WARNING:
             state = 'warning'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
+        elif ret_value['scan_state'] == kernel.IDENTIFIED:
+            state = 'identified'
+            message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
         else:
             state = 'unknown'
+            message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
 
         vname = ret_value['virus_name']
         message = '%s : %s' % (state, vname)
-        message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
     else:
         if ret_value['scan_state'] == kernel.ERROR:
             message = ret_value['virus_name']
@@ -861,14 +879,23 @@ def update_callback(ret_file_info, is_success):
 # -------------------------------------------------------------------------
 # quarantine 콜백 함수
 # -------------------------------------------------------------------------
-def quarantine_callback(filename, is_success):
+def quarantine_callback(filename, is_success, q_type):
+    import kernel
+
+    q_message = {
+        kavcore.k2const.K2_QUARANTINE_MOVE: ['quarantined', 'quarantine failed'],
+        kavcore.k2const.K2_QUARANTINE_COPY: ['copied', 'copy failed'],
+    }
+
+    msg = q_message[q_type]
+
     disp_name = filename
 
     if is_success:
-        message = 'quarantined'
+        message = msg[0]  # 성공
         message_color = FOREGROUND_GREEN | FOREGROUND_INTENSITY
     else:
-        message = 'quarantine failed'
+        message = msg[1]  # 실패
         message_color = FOREGROUND_RED | FOREGROUND_INTENSITY
 
     display_line(disp_name, message, message_color)

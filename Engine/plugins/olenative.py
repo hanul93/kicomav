@@ -121,7 +121,7 @@ class KavMain:
 
         mm = filehandle
 
-        if mm[:2] == '\x02\x00' and filename_ex.find('\x01Ole10Native') != -1:
+        if mm[:2] == '\x02\x00' and filename_ex.find('_Ole10Native') != -1:
             fileformat = analysis_ole10native(mm, self.verbose)
             if fileformat:
                 ret = {'ff_ole10native': fileformat}

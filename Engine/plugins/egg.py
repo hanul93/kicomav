@@ -3,6 +3,7 @@
 
 
 import os
+import sys
 import mmap
 import zlib
 import bz2
@@ -351,7 +352,8 @@ class EggFile:
         except:
             pass
 
-        return size, fname
+        fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+        return size, fname.decode('utf-8').encode(fsencoding)
 
     # -----------------------------------------------------------------
     # __EGG_Block_Header_Size__(self, data)

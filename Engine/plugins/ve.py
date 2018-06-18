@@ -19,6 +19,7 @@ import cryptolib
 # 1 : 실행 위치 (DOS-EP)
 # 2 : 실행 위치 (PE-EP)
 # 3 : 각 섹션의 처음 (PE, ELF 등)
+# 4 : Attach의 처음
 # Checksum1 : Flag, Offset, Length, CRC32
 # Checksum2 : Flag, Offset, Length, CRC32
 # MalwareName
@@ -34,7 +35,7 @@ def gen_checksums(buf):
     patterns = []
 
     # 처음 10개는 앞쪽 6, 7, 8, 9 ... 0xF
-    for i in range(6, 0x10):
+    for i in range(1, 0x10):
         patterns.append(int(gen_checksum(buf, 0, i), 16))
 
     # 나머지 15개는 0x10, 0x18, 0x20 ... 0x80
@@ -85,7 +86,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Virus Engine'  # 엔진 설명
         info['kmd_name'] = 've'  # 엔진 파일 이름
-        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve')   # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = kavutil.handle_pattern_vdb.get_sig_num('ve') + 2  # 진단/치료 가능한 악성코드 수
 
         return info
 
@@ -96,12 +97,15 @@ class KavMain:
     # ---------------------------------------------------------------------
     def listvirus(self):  # 진단 가능한 악성코드 리스트
         vlist = kavutil.handle_pattern_vdb.get_sig_vlist('ve')
-        vlist.sort()
 
         vlists = []
+        vlists.append('Virus.Win32.Small.a')
+        vlists.append('Virus.Win32.SuperThreat.b')
+
         for vname in vlist:
             vlists.append(kavutil.normal_vname(vname))
 
+        vlists.sort()
         return vlists
 
     # ---------------------------------------------------------------------
@@ -118,6 +122,11 @@ class KavMain:
             self.flags_off = {}
             flags = []
             mm = filehandle
+
+            # Virus.Win32.Small.a 검사
+            ret, vname = self.__scan_virus_win32_small_a(filehandle, fileformat)
+            if ret:
+                return True, vname, 0, kernel.INFECTED
 
             # Flag별 Signature를 만든다.
             # Flag - 0 : 파일의 처음
@@ -146,7 +155,17 @@ class KavMain:
                     flag3_off.append(foff)
                 self.flags_off[3] = flag3_off
 
-            cs_size = [6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x18,
+            # Attach 영역이 존재하는가?
+            if 'ff_attach' in fileformat:
+                # Flag - 4 : Attach 영역
+                pos = fileformat['ff_attach']['Attached_Pos']
+                size = fileformat['ff_attach']['Attached_Size']
+                if size > 0x80:
+                    flags.append([int('0004' + mm[pos:pos+2].encode('hex'), 16),
+                                  gen_checksums(mm[pos:pos + 0x80])])
+                    self.flags_off[4] = [pos]
+
+            cs_size = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x18,
                       0x20, 0x28, 0x30, 0x38, 0x40, 0x48, 0x50, 0x58, 0x60,
                       0x68, 0x70, 0x78, 0x80]
 
@@ -234,7 +253,9 @@ class KavMain:
     # ---------------------------------------------------------------------
     def __get_data_crc32(self, buf, flag, off, size):
         crc32s = []
-        for base_off in self.flags_off[flag]:
+
+        base_offs = self.flags_off.get(flag, [])
+        for base_off in base_offs:
             crc32s.append(int(gen_checksum(buf, base_off + off, size), 16))
 
         return crc32s
@@ -262,3 +283,35 @@ class KavMain:
                 return kavutil.normal_vname(vname)
 
         return None
+
+    # ---------------------------------------------------------------------
+    # Virus.Win32.Small.a 검사한다.
+    # 리턴값 : True(발견) or False(미발견)
+    # ---------------------------------------------------------------------
+    def __scan_virus_win32_small_a(self, mm, fileformat):
+        if 'ff_pe' in fileformat:
+            ff = fileformat['ff_pe']['pe']
+            ep_off = ff['EntryPointRaw']
+
+            if cryptolib.crc32(mm[ep_off:ep_off + 12]) == '4d49a25f':
+                v_rva = kavutil.get_uint32(mm, ep_off + 12) + 1  # 악성코드 RVA
+                v_rva -= ff['ImageBase']
+
+                # v_rva가 마지막 섹션에 속하는 값인지 확인한다.
+                sec = ff['Sections'][-1]
+                if sec['RVA'] <= v_rva <= sec['RVA'] + sec['VirtualSize']:
+                    pe_file_align = ff['FileAlignment']
+                    if pe_file_align:
+                        foff = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+                    else:
+                        foff = sec['PointerRawData']
+
+                    v_off = v_rva - sec['RVA'] + foff
+
+                    x = cryptolib.crc32(mm[v_off:v_off + 0x30])
+                    if x == '8d964738':
+                        return True, 'Virus.Win32.Small.a'
+                    elif x == '00000000' or x == 'f288b395':  # 파일이 깨진 경우이거나 모든 값이 0인 경우이다.
+                        return True, 'Virus.Win32.SuperThreat.b'
+
+        return False, None

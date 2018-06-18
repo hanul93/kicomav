@@ -113,37 +113,14 @@ class KavMain:
                     data = get_zip_data(filename, 'word/document.xml')
 
                     if data:
-                        # TEXT 영역을 추출한다.
-                        texts = self.p_dde_text.findall(data)
-                        if len(texts):
-                            buf = ''
-                            for text in texts:
-                                # 앞쪽 begin Tag 제거
-                                off = text.find('>')
-                                text = text[off+1:]
-
-                                # 뒤쪽 end Tag 제거
-                                off = text.rfind('<')
-                                text = text[:off]
-
-                                # instr를 처리한다.
-                                text = self.p_instr.sub(InstrSub, text)
-
-                                # 모든 Tag 삭제
-                                buf += self.p_tag.sub('', text) + '\n'
-
-                            # print buf
-                            if len(buf):
-                                if self.p_dde.search(buf) and self.p_cmd.search(buf):
-                                    return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
+                        if self.__scan_dde_docx(data):
+                            return True, 'Exploit.MSWord.DDE.a', 0, kernel.INFECTED
+                        elif self.__scan_cve_2017_0199_docx(data):
+                            return True, 'Exploit.MSWord.CVE-2017-0199', 0, kernel.INFECTED
             elif filename_ex.lower() == 'worddocument':
                 data = filehandle
-                s = self.p_dde2.search(data)
-                if s:
-                    buf = s.group()
-                    if len(buf):
-                        if self.p_dde.search(buf) and self.p_cmd.search(buf):
-                            return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
+                if self.__scan_dde_doc(data):
+                    return True, 'Exploit.MSWord.DDE.b', 0, kernel.INFECTED
         except IOError:
             pass
 
@@ -179,11 +156,11 @@ class KavMain:
         # 진단/치료하는 악성코드 이름 등록
         vlist.append('Exploit.MSWord.DDE.a')
         vlist.append('Exploit.MSWord.DDE.b')
+        vlist.append('Exploit.MSWord.CVE-2017-0199')
 
         return vlist
 
-        # ---------------------------------------------------------------------
-
+    # ---------------------------------------------------------------------
     # getinfo(self)
     # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
     # 리턴값 : 플러그인 엔진 정보
@@ -195,6 +172,55 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'DDE Scan Engine'  # 엔진 설명
         info['kmd_name'] = 'dde'  # 엔진 파일 이름
-        info['sig_num'] = 2  # 진단/치료 가능한 악성코드 수
+        info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
+
+    # ---------------------------------------------------------------------
+    # DDE 악성코드를 진단한다.
+    # ---------------------------------------------------------------------
+    def __scan_dde_docx(self, data):
+        # TEXT 영역을 추출한다.
+        texts = self.p_dde_text.findall(data)
+        if len(texts):
+            buf = ''
+            for text in texts:
+                # 앞쪽 begin Tag 제거
+                off = text.find('>')
+                text = text[off + 1:]
+
+                # 뒤쪽 end Tag 제거
+                off = text.rfind('<')
+                text = text[:off]
+
+                # instr를 처리한다.
+                text = self.p_instr.sub(InstrSub, text)
+
+                # 모든 Tag 삭제
+                buf += self.p_tag.sub('', text) + '\n'
+
+            # print buf
+            if len(buf):
+                if self.p_dde.search(buf) and self.p_cmd.search(buf):
+                    return True
+
+        return False
+
+    def __scan_dde_doc(self, data):
+        s = self.p_dde2.search(data)
+        if s:
+            buf = s.group()
+            if len(buf):
+                if self.p_dde.search(buf) and self.p_cmd.search(buf):
+                    return True
+
+        return False
+
+    # ---------------------------------------------------------------------
+    # CVE-2017-0199 악성코드를 진단한다.
+    # ---------------------------------------------------------------------
+    def __scan_cve_2017_0199_docx(self, data):
+        if data.find('<o:OLEObject Type="Link" ProgID="Word.Document.8"') != -1:
+            return True
+
+        return False

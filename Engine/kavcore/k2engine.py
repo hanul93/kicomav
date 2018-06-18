@@ -52,7 +52,7 @@ class Engine:
         # 플러그 엔진의 가장 최신 시간 값을 가진다.
         # 초기값으로는 1980-01-01을 지정한다.
         self.max_datetime = datetime.datetime(1980, 1, 1, 0, 0, 0, 0)
-        
+
         # 키콤백신이 만든 임시 파일 모두 제거 (운영체제의 임시 폴더를 초기화)
         k2file.K2Tempfile().removetempdir()
 
@@ -256,6 +256,8 @@ class EngineInstance:
         self.identified_virus = set()  # 유니크한 악성코드 개수를 구하기 위해 사용
         self.set_result()  # 악성코드 검사 결과를 초기화한다.
 
+        self.quarantine_name = {}  # 격리소로 파일 이동시 악성코드 이름 폴더로 이동시 사용
+
         self.disinfect_callback_fn = None  # 악성코드 치료 콜백 함수
         self.update_callback_fn = None  # 악성코드 압축 최종 치료 콜백 함수
         self.quarantine_callback_fn = None  # 악성코드 격리 콜백 함수
@@ -304,7 +306,7 @@ class EngineInstance:
                     ret = inst.init(self.plugins_path, self.options['opt_verbose'])
                 else:
                     ret = inst.init(self.plugins_path, False)
-                    
+
                 if not ret:  # 성공
                     t_kavmain_inst.append(inst)
 
@@ -552,17 +554,22 @@ class EngineInstance:
                             move_master_file = False
 
                     if ret_value['result']:  # 악성코드 발견인가?
+                        t_master_file = t_file_info.get_master_filename()
+
+                        # 격리소에 생성시 악성코드 이름 부여할 경우 사용할 목적임
+                        if not self.quarantine_name.get(t_master_file, None):
+                            self.quarantine_name[t_master_file] = ret_value['virus_name']
+
                         action_type = self.call_scan_callback_fn(scan_callback_fn, ret_value)
 
-                        if self.options['opt_move']:
+                        if self.options['opt_move'] or self.options['opt_copy']:
                             if t_file_info.get_additional_filename() == '':
-                                # print 'move 1 :', t_file_info.get_master_filename()
+                                # print 'move 1 :', t_master_file
                                 self.__arcclose()
-                                self.__quarantine_file(t_file_info.get_master_filename())
+                                self.__quarantine_file(t_master_file)
                                 move_master_file = False
                             else:
                                 move_master_file = True
-                                t_master_file = t_file_info.get_master_filename()
                         else:  # 격리 옵션이 치료 옵션보다 우선 적용
                             if action_type == k2const.K2_ACTION_QUIT:  # 종료인가?
                                 return 0
@@ -645,13 +652,26 @@ class EngineInstance:
     # 입력값 : filename - 격리 대상 파일 이름
     # ---------------------------------------------------------------------
     def __quarantine_file(self, filename):
-        if self.options['infp_path']:
+        if self.options['infp_path'] and (self.options['opt_move'] or self.options['opt_copy']):
             is_success = False
 
             try:
+                if self.options['opt_qname']:
+                    x = self.quarantine_name.get(filename, None)
+                    if x:
+                        q_path = os.path.join(self.options['infp_path'], x)
+                        self.quarantine_name.pop(filename)
+                    else:
+                        q_path = self.options['infp_path']
+                else:
+                    q_path = self.options['infp_path']
+
+                if not os.path.exists(q_path):
+                    os.makedirs(q_path)  # 다중 폴더 생성
+
                 t_filename = os.path.split(filename)[-1]
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
-                fname = os.path.join(self.options['infp_path'], t_filename)
+                fname = os.path.join(q_path, t_filename)
                 t_quarantine_fname = fname
                 count = 1
                 while True:
@@ -661,13 +681,23 @@ class EngineInstance:
                     else:
                         break
 
-                shutil.move(filename, t_quarantine_fname)  # 격리소로 이동
+                if self.options['opt_move']:
+                    shutil.move(filename, t_quarantine_fname)  # 격리소로 이동
+                elif self.options['opt_copy']:
+                    shutil.copy(filename, t_quarantine_fname)  # 격리소로 복사
+                    q_type = k2const.K2_QUARANTINE_COPY
+
                 is_success = True
             except (shutil.Error, OSError) as e:
                 pass
 
             if isinstance(self.quarantine_callback_fn, types.FunctionType):
-                self.quarantine_callback_fn(filename, is_success)
+                if self.options['opt_copy']:
+                    q_type = k2const.K2_QUARANTINE_COPY
+                else:
+                    q_type = k2const.K2_QUARANTINE_MOVE
+
+                self.quarantine_callback_fn(filename, is_success, q_type)
 
     # ---------------------------------------------------------------------
     # __update_process(self, file_struct, immediately_flag=False)
@@ -915,7 +945,7 @@ class EngineInstance:
             if k2const.K2DEBUG:
                 import traceback
                 print traceback.format_exc()
-                raw_input('>>')
+                # raw_input('>>')
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
         if mm:
@@ -1045,7 +1075,10 @@ class EngineInstance:
                                 shutil.copy(rname, sig_fname)
 
                                 # sigtool.log 파일을 생성한다.
-                                msg = '%s : %s\n' % (sig_fname, rname_struct.get_additional_filename())
+                                t = rname_struct.get_additional_filename()
+                                if t[0] == '/' or t[0] == '\\':
+                                    t = t[1:]
+                                msg = '%s : %s\n' % (sig_fname, t)
                                 fp = open('sigtool.log', 'at')
                                 fp.write(msg)
                                 fp.close()
@@ -1213,23 +1246,27 @@ class EngineInstance:
             self.options['opt_nor'] = options.opt_nor
             self.options['opt_list'] = options.opt_list
             self.options['opt_move'] = options.opt_move
+            self.options['opt_copy'] = options.opt_copy
             self.options['opt_dis'] = options.opt_dis
             self.options['infp_path'] = options.infp_path
             self.options['opt_verbose'] = options.opt_verbose
             self.options['opt_sigtool'] = options.opt_sigtool
             self.options['opt_debug'] = options.opt_debug
             self.options['opt_feature'] = options.opt_feature
+            self.options['opt_qname'] = options.opt_qname
         else:  # 기본값 설정
             self.options['opt_arc'] = False
             self.options['opt_nor'] = False
             self.options['opt_list'] = False
             self.options['opt_move'] = False
+            self.options['opt_copy'] = False
             self.options['opt_dis'] = False
             self.options['infp_path'] = None
             self.options['opt_verbose'] = False
             self.options['opt_sigtool'] = False
             self.options['opt_debug'] = False
             self.options['opt_feature'] = 0xffffffff
+            self.options['opt_qname'] = False
         return True
 
     # -----------------------------------------------------------------

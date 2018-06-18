@@ -134,7 +134,7 @@ image_directory_entry = enum('EXPORT', 'IMPORT', 'RESOURCE', 'EXCEPTION', 'SECUR
                              'IAT', 'DELAY_IMPORT', 'COM_DESCRIPTOR', 'RESERVED')
 
 
-p_str = re.compile(r'[^\x00]+')  # NULL 문자 직전까지 복사
+p_str = re.compile(r'[^\x00]*')  # NULL 문자 직전까지 복사
 
 
 class PE:
@@ -262,12 +262,14 @@ class PE:
 
             if rsrc_rva:  # 리소스가 존재한가?
                 try:
-                    rsrc_off, _ = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
+                    rsrc_off, rsrc_idx = self.rva_to_off(rsrc_rva)  # 리소스 위치 변환
 
                     if rsrc_off > self.filesize:
                         raise ValueError
 
-                    if len(mm[rsrc_off:rsrc_off + rsrc_size]) != rsrc_size:  # 충분한 리소스가 존재하지 않음
+                    t_size = self.sections[rsrc_idx]['SizeRawData']
+                    if not (len(mm[rsrc_off:rsrc_off + rsrc_size]) == rsrc_size or \
+                        len(mm[rsrc_off:rsrc_off + t_size]) == t_size):  # 충분한 리소스가 존재하지 않음
                         raise ValueError
 
                     # Type 체크
@@ -279,14 +281,16 @@ class PE:
                         name_id_off = kavutil.get_uint32(mm, rsrc_off + 0x14 + (i * 8))
 
                         # Type이 사용자가 정의한 이름 or RCDATA?
-                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA:
+                        if type_id & 0x80000000 == 0x80000000 or type_id == 0xA or type_id == 0:
                             if type_id & 0x80000000 == 0x80000000:
                                 # 사용자가 정의한 이름 추출
                                 string_off = (type_id & 0x7FFFFFFF) + rsrc_off
                                 len_name = kavutil.get_uint16(mm, string_off)
                                 rsrc_type_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
-                            else:
+                            elif type_id == 0xA:
                                 rsrc_type_name = 'RCDATA'
+                            else:
+                                rsrc_type_name = '%d' % type_id
 
                             # Name ID
                             name_id_off = (name_id_off & 0x7FFFFFFF) + rsrc_off
@@ -486,16 +490,17 @@ class PE:
                 if 'PDB_Name' in pe_format:
                     kavutil.vprint('PDB Information')
                     kavutil.vprint(None, 'Name', '%s' % repr(pe_format['PDB_Name']))
+                    print repr(pe_format['PDB_Name'])
                     print
 
-        except ValueError:
+        except (ValueError, struct.error) as e:
             return None
 
         return pe_format
 
     def rva_to_off(self, t_rva):
         for section in self.sections:
-            size = section['VirtualSize']
+            size = section['SizeRawData']
             rva = section['RVA']
 
             if rva <= t_rva < rva + size:
@@ -523,6 +528,20 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
+
+        # NSIS 코드 패턴
+        '''
+        81 7D DC EF BE AD DE                          cmp     [ebp+var_24], 0DEADBEEFh
+        75 69                                         jnz     short loc_402D79
+        81 7D E8 49 6E 73 74                          cmp     [ebp+var_18], 'tsnI'
+        75 60                                         jnz     short loc_402D79
+        81 7D E4 73 6F 66 74                          cmp     [ebp+var_1C], 'tfos'
+        75 57                                         jnz     short loc_402D79
+        81 7D E0 4E 75 6C 6C                          cmp     [ebp+var_20], 'lluN'
+        '''
+
+        self.p_nsis = '817DDCEFBEADDE7569817DE8496E7374'.decode('hex')
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -602,11 +621,38 @@ class KavMain:
             attach_size = file_size - pe_size
 
         if pe_size < file_size and pe_size != 0:
-            fileformat = {  # 포맷 정보를 담을 공간
-                'Attached_Pos': pe_size,
-                'Attached_Size': attach_size
-            }
-            ret['ff_attach'] = fileformat
+            mm = filehandle
+
+            # NSIS 코드가 .text 영역에 존재하는지 체크한다.
+            text_sec = pe_format['Sections'][0]
+            if pe_file_align:
+                off = (text_sec['PointerRawData'] / pe_file_align) * pe_file_align
+            else:
+                off = text_sec['PointerRawData']
+            size = text_sec['SizeRawData']
+
+            if size:
+                if mm[off:off + size].find(self.p_nsis) != -1:
+                    # PE 파일에 뒤쪽에 데이터가 있다면 NSIS 파일인지 분석하기
+                    i = 1
+                    while True:
+                        t = mm[i * 0x200 + 4:i * 0x200 + 20]
+                        if len(t) != 16:
+                            break
+
+                        if t == '\xEF\xBE\xAD\xDENullsoftInst':
+                            ret['ff_nsis'] = {'Offset': i * 0x200}
+                            break
+
+                        i += 1
+
+            # Attach 처리하기 (단 NSIS가 존재하면 처리하지 않음)
+            if not('ff_nsis' in ret):
+                fileformat = {  # 포맷 정보를 담을 공간
+                    'Attached_Pos': pe_size,
+                    'Attached_Size': attach_size
+                }
+                ret['ff_attach'] = fileformat
 
         return ret
 

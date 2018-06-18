@@ -36,6 +36,8 @@ Utility module to read windows cabinet files.
 """
 
 # from __future__ import print_function
+import tempfile
+import shutil
 import sys
 import os.path
 try:
@@ -745,9 +747,13 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.handle = {}
+        self.temp_path = {}
 
         if not LOAD_WINTYPES:
             return -1
+
+        pid = os.getpid()
+        self.root_temp_path = os.path.join(tempfile.gettempdir(), 'ktmp%05x' % pid)
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -768,10 +774,10 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
+        info['version'] = '1.1'  # 버전
         info['title'] = 'Cab Archive Engine'  # 엔진 설명
         info['kmd_name'] = 'cab'  # 엔진 파일 이름
-        info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
+        info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
 
         return info
 
@@ -787,6 +793,7 @@ class KavMain:
         else:
             zfile = CabinetFile(filename)  # cab 파일 열기
             self.handle[filename] = zfile
+            self.temp_path[filename] = tempfile.mktemp(prefix='ktmp', dir=self.root_temp_path)
 
         return zfile
 
@@ -824,11 +831,16 @@ class KavMain:
         if 'ff_cab' in fileformat:
             zfile = self.__get_handle(filename)
 
-            try:
-                for name in zfile.namelist():
-                    file_scan_list.append(['arc_cab', name])
-            except CabinetError:
-                pass
+            cab_extract_path = self.temp_path.get(filename, None)
+            if cab_extract_path:
+                zfile.extract(cab_extract_path)
+
+                try:
+                    for name in zfile.namelist():
+                        file_scan_list.append(['arc_cab', name])
+
+                except CabinetError:
+                    pass
 
         return file_scan_list
 
@@ -841,10 +853,12 @@ class KavMain:
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
         if arc_engine_id == 'arc_cab':
-            zfile = self.__get_handle(arc_name)
-            data = zfile.read(fname_in_arc)
-
-            return data
+            cab_extract_path = self.temp_path.get(arc_name, None)
+            tname = os.path.join(cab_extract_path, fname_in_arc)
+            if os.path.exists(tname):
+                data = open(tname, 'rb').read()
+                os.remove(tname)
+                return data
 
         return None
 
@@ -856,4 +870,10 @@ class KavMain:
         for fname in self.handle.keys():
             zfile = self.handle[fname]
             zfile.close()
+
+            cab_extract_path = self.temp_path.get(fname, None)
+            if os.path.exists(cab_extract_path):
+                shutil.rmtree(cab_extract_path)
+
             self.handle.pop(fname)
+            self.temp_path.pop(fname)

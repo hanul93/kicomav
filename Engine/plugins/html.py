@@ -4,6 +4,7 @@
 
 import re
 import os
+import kernel
 import kavutil
 
 
@@ -29,6 +30,9 @@ class KavMain:
         pat = r'<script.*?>[\d\D]*?</script>|<iframe.*?>[\d\D]*?</iframe>|<\?(php\b)?[\d\D]*?\?>'
         self.p_script = re.compile(pat, re.IGNORECASE)
 
+        # HTML.
+        self.p_html_malware = re.compile(r'\?ob_start.+?>\s*<iframe')
+
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -51,8 +55,22 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'HTML Engine'  # 엔진 설명
         info['kmd_name'] = 'html'  # 엔진 파일 이름
+        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
 
         return info
+
+    # ---------------------------------------------------------------------
+    # listvirus(self)
+    # 진단/치료 가능한 악성코드의 리스트를 알려준다.
+    # 리턴값 : 악성코드 리스트
+    # ---------------------------------------------------------------------
+    def listvirus(self):  # 진단 가능한 악성코드 리스트
+        vlists = []
+
+        vlists.append('Trojan.HTML.IFrame.a')
+
+        vlists.sort()
+        return vlists
 
     # ---------------------------------------------------------------------
     # format(self, filehandle, filename, filename_ex)
@@ -85,6 +103,47 @@ class KavMain:
                 return ret
 
         return None
+
+    # ---------------------------------------------------------------------
+    # scan(self, filehandle, filename, fileformat)
+    # 악성코드를 검사한다.
+    # 입력값 : filehandle  - 파일 핸들
+    #         filename    - 파일 이름
+    #         fileformat  - 파일 포맷
+    #         filename_ex - 파일 이름 (압축 내부 파일 이름)
+    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
+    # ---------------------------------------------------------------------
+    def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
+        try:
+            mm = filehandle
+
+            buf = mm[:4096]
+            if kavutil.is_textfile(buf):  # Text 파일인가?
+                if self.p_html_malware.search(buf):
+                    return True, 'Trojan.HTML.IFrame.a', 0, kernel.INFECTED
+        except:
+            pass
+
+        # 악성코드를 발견하지 못했음을 리턴한다.
+        return False, '', -1, kernel.NOT_FOUND
+
+    # ---------------------------------------------------------------------
+    # disinfect(self, filename, malware_id)
+    # 악성코드를 치료한다.
+    # 입력값 : filename    - 파일 이름
+    #        : malware_id - 치료할 악성코드 ID
+    # 리턴값 : 악성코드 치료 여부
+    # ---------------------------------------------------------------------
+    def disinfect(self, filename, malware_id):  # 악성코드 치료
+        try:
+            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
+            if malware_id == 0:
+                os.remove(filename)  # 파일 삭제
+                return True  # 치료 완료 리턴
+        except IOError:
+            pass
+
+        return False  # 치료 실패 리턴
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)

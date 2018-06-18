@@ -31,6 +31,10 @@ class KavMain:
 
         try:
             self.rules = yara.compile(os.path.join(plugins_path, 'yaraex.yar'))
+
+            self.rule_count = 0  # Rule 개수
+            for t in self.rules:
+                self.rule_count += 1
         except:
             if self.verbose:
                 print '[*] ERROR : YARA Rule compile'
@@ -58,6 +62,7 @@ class KavMain:
         info['version'] = '1.0'  # 버전
         info['title'] = 'Yara Engine'  # 엔진 설명
         info['kmd_name'] = 'yaraex'  # 엔진 파일 이름
+        info['sig_num'] = self.rule_count  # 진단/치료 가능한 악성코드 수
 
         return info
 
@@ -71,10 +76,13 @@ class KavMain:
     # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
     # ---------------------------------------------------------------------
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
-        ret = self.rules.match(filename)
-        if len(ret):
-            vname = ret[0].meta.get('KicomAV', ret[0].rule)  # KicomAV meta 정보 확인
-            return True, vname, 0, kernel.INFECTED
+        if filename.lower().find('yaraex.yar') == -1:  # yara rule을 검사할 가능성 있음
+            ret = self.rules.match(filename)
+            if len(ret):
+                for t in ret:
+                    vname = t.meta.get('KicomAV', None)  # KicomAV meta 정보 확인
+                    if vname:
+                        return True, vname, 0, kernel.INFECTED
 
         # 악성코드를 발견하지 못했음을 리턴한다.
         return False, '', -1, kernel.NOT_FOUND
