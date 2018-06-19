@@ -13,6 +13,7 @@ import re
 import shutil
 import struct
 import zipfile
+import hashlib
 
 import k2timelib
 import k2kmdfile
@@ -672,7 +673,12 @@ class EngineInstance:
                 t_filename = os.path.split(filename)[-1]
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
                 fname = os.path.join(q_path, t_filename)
-                t_quarantine_fname = fname
+
+                if self.options['opt_qhash']:  # 해시로 격리
+                    t_quarantine_fname = hashlib.sha256(open(fname, 'rb').read()).hexdigest()
+                else:
+                    t_quarantine_fname = fname
+                    
                 count = 1
                 while True:
                     if os.path.exists(t_quarantine_fname):
@@ -1254,6 +1260,7 @@ class EngineInstance:
             self.options['opt_debug'] = options.opt_debug
             self.options['opt_feature'] = options.opt_feature
             self.options['opt_qname'] = options.opt_qname
+            self.options['opt_qhash'] = options.opt_qhash
         else:  # 기본값 설정
             self.options['opt_arc'] = False
             self.options['opt_nor'] = False
@@ -1267,6 +1274,7 @@ class EngineInstance:
             self.options['opt_debug'] = False
             self.options['opt_feature'] = 0xffffffff
             self.options['opt_qname'] = False
+            self.options['opt_qhash'] = False
         return True
 
     # -----------------------------------------------------------------

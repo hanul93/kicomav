@@ -312,6 +312,9 @@ def define_options():
     parser.add_option("", "--qname",  # 격리시 악성코드 이름 부여
                       action="store_true", dest="opt_qname",
                       default=False)
+    parser.add_option("", "--qhash",  # 격리시 Sha256 이름 부여
+                      action="store_true", dest="opt_qhash",
+                      default=False)
     parser.add_option("-R", "--nor",
                       action="store_true", dest="opt_nor",
                       default=False)
@@ -412,6 +415,8 @@ def print_options():
              --no-color        don't print with color
              --move            move infected files in quarantine folder
              --copy            copy infected files in quarantine folder
+             --qname           quarantine by name of malware 
+             --qhash           quarantine by sha256 hash of malware
              --update          update
              --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
