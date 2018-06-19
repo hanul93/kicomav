@@ -670,15 +670,14 @@ class EngineInstance:
                 if not os.path.exists(q_path):
                     os.makedirs(q_path)  # 다중 폴더 생성
 
-                t_filename = os.path.split(filename)[-1]
+                if self.options['opt_qhash']:  # 해시로 격리
+                    t_filename = hashlib.sha256(open(filename, 'rb').read()).hexdigest()
+                else:
+                    t_filename = os.path.split(filename)[-1]
+
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
                 fname = os.path.join(q_path, t_filename)
-
-                if self.options['opt_qhash']:  # 해시로 격리
-                    t_quarantine_fname = hashlib.sha256(open(fname, 'rb').read()).hexdigest()
-                else:
-                    t_quarantine_fname = fname
-                    
+                t_quarantine_fname = fname
                 count = 1
                 while True:
                     if os.path.exists(t_quarantine_fname):
