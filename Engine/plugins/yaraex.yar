@@ -1,3 +1,5 @@
+import "pe"
+
 rule IsPeFile {
     meta:
         ref = "https://github.com/godaddy/yara-rules/blob/master/example.yara"
@@ -116,3 +118,16 @@ rule Exploit_HWP_Agent_b
         all of them
 }
 
+
+rule Virus_Win32_PolyRansom_a
+{
+    meta:
+        author = "Kei Choi"
+        date = "2018-06-26"
+        KicomAV = "Virus.Win32.PolyRansom.a"
+    strings:
+        $s1 = { bb ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 ?? ?? ?? 0? 00 }
+        $s2 = { bb ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 }
+    condition:
+        $s1 at pe.entry_point or $s2 at pe.entry_point
+}
