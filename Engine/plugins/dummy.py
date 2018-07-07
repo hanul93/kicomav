@@ -48,7 +48,7 @@ class KavMain:
     def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
         try:
             # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
-            fp = open(filename)
+            fp = open(filename, 'rb')
             buf = fp.read(len(self.dummy_pattern))  # 패턴은 49 Byte 크기
             fp.close()
 
