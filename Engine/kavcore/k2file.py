@@ -7,7 +7,7 @@ import re
 import glob
 import shutil
 import tempfile
-import psutil
+# import psutil
 
 
 # ---------------------------------------------------------------------
@@ -17,8 +17,7 @@ class K2Tempfile:
     def __init__(self):
         self.re_pid = re.compile(r'ktmp([0-9a-f]{5})$', re.IGNORECASE)
 
-        pid = os.getpid()
-        self.temp_path = os.path.join(tempfile.gettempdir(), 'ktmp%05x' % pid)
+        self.temp_path = os.path.join(tempfile.gettempdir(), 'ktmp%05x' % os.getpid())
 
         if not os.path.exists(self.temp_path):
             try:
@@ -33,6 +32,14 @@ class K2Tempfile:
         return tempfile.mktemp(prefix='ktmp', dir=self.temp_path)
 
     def removetempdir(self):
+        # 자기 폴더만 지우는 걸로...
+        try:
+            if os.path.exists(self.temp_path):
+                shutil.rmtree(self.temp_path)
+        except OSError:
+            pass
+
+        '''
         fl = glob.glob(os.path.join(tempfile.gettempdir(), 'ktmp*'))
         if len(fl):
             for tname in fl:
@@ -49,7 +56,7 @@ class K2Tempfile:
                         os.remove(tname)
                     except OSError:
                         pass
-
+        '''
 
 # -------------------------------------------------------------------------
 # FileStruct 클래스
