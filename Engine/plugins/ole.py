@@ -208,7 +208,6 @@ class OleFile:
         self.bbd = None
         self.bbd_fat = {}
         self.sbd = None
-        self.bbd_fat = {}
         self.root = None
         self.pps = None
         self.small_block = None
@@ -659,7 +658,7 @@ class OleFile:
             no = -1
 
         if no == -1:
-            raise Error('PPS name is invalid.')
+            raise Error('PPS name(%s) is invalid.' % name)
 
         # self.init(self.mm)
         # return
@@ -675,7 +674,7 @@ class OleFile:
     # ---------------------------------------------------------------------
     # 스트림 또는 스토리지를 삭제한다.
     # ---------------------------------------------------------------------
-    def delete(self, name):
+    def delete(self, name, delete_storage=False, reset_stream=False):
         for p in self.__full_list:
             if p['Name'] == name:
                 no = p['Node']
@@ -694,10 +693,15 @@ class OleFile:
                             self.root_list_array, self.small_block, self.verbose)
 
         target_pps = self.pps[no]
-        if target_pps['Valid'] and target_pps['Type'] == 2:  # 유요한 PPS에 대한 삭제인지 확인
-            size = target_pps['Size']
-            ow.write(no, '\x00' * size)  # 모든 데이터를 0으로 Wipe
-            
+        if target_pps['Valid'] and target_pps['Type'] == 2:  # 유효한 PPS에 대한 삭제인지 확인
+            if  reset_stream:
+                size = target_pps['Size']
+                t = ow.write(no, '\x00' * size)  # 모든 데이터를 0으로 Wipe
+
+            t = ow.delete(no)
+            if t:
+               self.init(t)  # 새롭게 OLE 재로딩
+        elif target_pps['Valid'] and target_pps['Type'] == 1 and delete_storage:  # 유효한 스토리지?
             t = ow.delete(no)  # 링크 삭제
             if t:
                 self.init(t)  # 새롭게 OLE 재로딩
@@ -735,7 +739,12 @@ class OleWriteStream:
         # Prev 조정하기 (no가 Dir에 존재하는 경우)
         for i, pps in enumerate(self.pps):
             if pps['Dir'] == no:
-                self.__set_pps_header(i, pps_dir=pps_prev)
+                if pps_prev != 0xffffffff:
+                    self.__set_pps_header(i, pps_dir=pps_prev)
+                elif pps_next != 0xffffffff:
+                    self.__set_pps_header(i, pps_dir=pps_next)
+                else:
+                    self.__set_pps_header(i, pps_dir=0xffffffff)
                 break
 
         # Prev 조정하기 (no가 Next에 존재하는 경우)
@@ -772,7 +781,8 @@ class OleWriteStream:
                         break
 
         # PPS 정보를 삭제함
-        self.__set_pps_header(no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff, pps_dir=0xffffffff)
+        self.__set_pps_header(no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
+                              pps_dir=0xffffffff, del_info=True)
 
         # 만약 해당 pps가 dir을 가졌다면 하부는 모두 0xffffffff로 정리
         if pps_dir != 0xffffffff:
@@ -786,7 +796,7 @@ class OleWriteStream:
                 fl += [x for x in [t_prev, t_next, t_dir] if x != 0xffffffff]
 
                 self.__set_pps_header(f_no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
-                                      pps_dir=0xffffffff)
+                                      pps_dir=0xffffffff, del_info=True)
 
         return self.mm
 
@@ -932,7 +942,7 @@ class OleWriteStream:
                     # PPS 크기 수정
                     self.__set_pps_header(no, size=len(data))
                 else:
-                    # raise error('Not Support : SBD -> SBD (Inc)')  # 추가 개발 필요
+                    # raise error('Not Support : SBD -> SBD (Inc)')  # 작업 완료
 
                     n = (len(data) / self.ssize) + (1 if (len(data) % self.ssize) else 0)
                     t_data = data + ('\x00' * ((n*self.ssize) - len(data)))  # 여분의 크기를 data 뒤쪽에 추가하기
@@ -950,6 +960,14 @@ class OleWriteStream:
                     # 수집된 마지막 링크 이후에 존재하는 사용하지 않는 블록을 수집한다.
                     t_link = self.__modify_small_block_link(t_link, t_num)
 
+                    # Small block 갱신
+                    self.bbd_fat = {}
+                    for i in range(len(self.bbd) / 4):
+                        n = kavutil.get_uint32(self.bbd, i * 4)
+                        self.bbd_fat[i] = n
+
+                    self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
+                    
                     # Small block 영역에 ssize 만큼씩 Overwrite
                     self.__write_data_to_small_bolck(t_data, t_link)
 
@@ -992,29 +1010,35 @@ class OleWriteStream:
     # size : 설정 크기
     # start : 시작 링크
     # ---------------------------------------------------------------------
-    def __set_pps_header(self, node, size=None, start=None, pps_prev=None, pps_next=None, pps_dir=None):
+    def __set_pps_header(self, node, size=None, start=None, pps_prev=None, pps_next=None, pps_dir=None, del_info=False):
         n = self.root_list_array[node / 4]
 
         buf = get_bblock(self.mm, n, self.bsize)
+
         off = ((node % 4) * 0x80)
+
+        if del_info and off == 0x180:
+            buf = buf[:off] + '\x00' * 0x80
+        elif del_info:
+            buf = buf[:off] + '\x00' * 0x80 + buf[off+0x80:]
 
         if size is not None:
             t_off = off + 0x78
             buf = buf[:t_off] + struct.pack('<L', size) + buf[t_off + 4:]
 
-        if start:
+        if start is not None:
             t_off = off + 0x74
             buf = buf[:t_off] + struct.pack('<L', start) + buf[t_off + 4:]
 
-        if pps_prev:
+        if pps_prev is not None:
             t_off = off + 0x44
             buf = buf[:t_off] + struct.pack('<L', pps_prev) + buf[t_off + 4:]
 
-        if pps_next:
+        if pps_next is not None:
             t_off = off + 0x48
             buf = buf[:t_off] + struct.pack('<L', pps_next) + buf[t_off + 4:]
 
-        if pps_dir:
+        if pps_dir is not None:
             t_off = off + 0x4C
             buf = buf[:t_off] + struct.pack('<L', pps_dir) + buf[t_off + 4:]
 
@@ -1424,6 +1448,7 @@ class OleWriteStream:
     # bbd : 수정된 BBD 이미지
     # ---------------------------------------------------------------------
     def __modify_bbd(self, bbd):
+        self.bbd = bbd  # 체크 !!!
         bbd_list_array, _, _, _ = get_bbd_list_array(self.mm)
 
         for i in range(len(bbd_list_array) / 4):
@@ -1569,6 +1594,21 @@ class KavMain:
                 }
                 ret['ff_attach'] = fileformat
 
+            # HWP 인가?
+            o = OleFile(filename)
+            try:
+                pics = o.openstream('FileHeader')
+                d = pics.read()
+
+                if d[:0x11] == 'HWP Document File':
+                    val = ord(d[0x24])
+                    ret['ff_hwp'] = {'compress': (val & 0x1 == 0x1),
+                                     'encrypt': (val & 0x2 == 0x2),
+                                     'viewtext': (val & 0x4 == 0x4)}
+            except Error:
+                pass
+            o.close()
+
         return ret
 
     # ---------------------------------------------------------------------
@@ -1649,19 +1689,23 @@ class KavMain:
     # ---------------------------------------------------------------------
     def mkarc(self, arc_engine_id, arc_name, file_infos):
         if arc_engine_id == 'arc_ole':
-            o = OleFile(arc_name, write_mode=True)
+            o = OleFile(arc_name, write_mode=True)  # , verbose=True)
             # zfile = zipfile.ZipFile(arc_name, 'w')
 
             for file_info in file_infos:
                 rname = file_info.get_filename()
+                a_name = file_info.get_filename_in_archive()
                 try:
-                    with open(rname, 'rb') as fp:
-                        buf = fp.read()
-                        # print '[-] filename :', rname, len(buf)
-                        # print '[-] rname :',
-                        a_name = file_info.get_filename_in_archive()
-                        o.write_stream(a_name, buf)
-                        # zfile.writestr(a_name, buf)
+                    if os.path.exists(rname):
+                        with open(rname, 'rb') as fp:
+                            buf = fp.read()
+                            # print '[-] filename :', rname, len(buf)
+                            # print '[-] rname :',
+                            o.write_stream(a_name, buf)
+                            # zfile.writestr(a_name, buf)
+                    else:
+                        # 삭제 처리
+                        o.delete(a_name)
                 except IOError:
                     # print file_info.get_filename_in_archive()
                     pass
