@@ -724,79 +724,65 @@ class OleWriteStream:
         self.root_list_array = root_list_array
         self.small_block = small_block
 
-    def delete(self, no):
-        target_pps = self.pps[no]
-        pps_prev = target_pps['Prev']
-        pps_next = target_pps['Next']
-        pps_dir = target_pps['Dir']
-
-        # Prev 조정하기 (no가 Prev에 존재하는 경우)
+    def __get_root_node(self, node):  # 해당 정보를 가진 root를 찾기
         for i, pps in enumerate(self.pps):
-            if pps['Prev'] == no:
-                self.__set_pps_header(i, pps_prev=pps_prev)
+            if pps['Prev'] == node or pps['Next'] == node or pps['Dir'] == node:
+                return i
+
+    def __get_max_node(self, node):  # 특정 노드의 Max 값을 가진 node를 찾기
+        no = node
+
+        while True:
+            pps = self.pps[no]
+            if pps['Next'] == 0xffffffff:  # 더이상 오른쪽이 없으면 탐색 종료
                 break
+            else:  # 항상 오른쪽 노드가 큰 값임
+                no = pps['Next']
 
-        # Prev 조정하기 (no가 Dir에 존재하는 경우)
-        for i, pps in enumerate(self.pps):
-            if pps['Dir'] == no:
-                if pps_prev != 0xffffffff:
-                    self.__set_pps_header(i, pps_dir=pps_prev)
-                elif pps_next != 0xffffffff:
-                    self.__set_pps_header(i, pps_dir=pps_next)
-                else:
-                    self.__set_pps_header(i, pps_dir=0xffffffff)
-                break
+        return no
 
-        # Prev 조정하기 (no가 Next에 존재하는 경우)
-        for i, pps in enumerate(self.pps):
-            if pps['Next'] == no:
-                self.__set_pps_header(i, pps_next=pps_prev)
-                break
+    def delete(self, del_no):
+        del_pps = self.pps[del_no]
+        prev_no = del_pps['Prev']
+        next_no = del_pps['Next']
+        dir_no = del_pps['Dir']
 
-        # Next 수정하기
-        if pps_next != 0xffffffff:
-            # Next 수정하기 (현재 no에 Prev, Next가 모두 존재할 경우)
-            if pps_prev != 0xffffffff:
-                t_no = self.pps[pps_prev]['Next']
-                if t_no != 0xffffffff:
-                    while True:
-                        if self.pps[t_no]['Next'] == 0xffffffff:
-                            self.__set_pps_header(t_no, pps_next=pps_next)
-                            break
-                        else:
-                            t_no = self.pps[t_no]['Next']
-                else:
-                    self.__set_pps_header(pps_prev, pps_next=pps_next)
-            else:  # Next 값만 존재하는 경우
-                # Next 조정하기 (no가 Next에 존재하는 경우)
-                for i, pps in enumerate(self.pps):
-                    if pps['Next'] == no:
-                        self.__set_pps_header(i, pps_next=pps_next)
-                        break
+        # root를 찾기
+        root_no = self.__get_root_node(del_no)
 
-                # Next 조정하기 (no가 Prev에 존재하는 경우)
-                for i, pps in enumerate(self.pps):
-                    if pps['Prev'] == no:
-                        self.__set_pps_header(i, pps_next=pps_next)
-                        break
+        # 양쪽 노드가 존재하는가?
+        if prev_no != 0xffffffff and next_no != 0xffffffff:  # 양쪽 모두 노트가 존재함
+            # 1. prev 노드 값을 root로 보낸다.
+            t_no = prev_no
 
-        # PPS 정보를 삭제함
-        self.__set_pps_header(no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
+            # 2. prev 노드 하위에 next가 없는 node를 찾아서 del_pps의 next_no를 등록한다.
+            blank_next_no = self.__get_max_node(prev_no)
+            self.__set_pps_header(blank_next_no, pps_next=next_no)
+
+        elif prev_no != 0xffffffff and next_no == 0xffffffff:  # Prev만 존재
+            # 1. prev 노드 값을 root로 보낸다.
+            t_no = prev_no
+
+        elif prev_no == 0xffffffff and next_no != 0xffffffff:  # Next만 존재
+            # 1. next 노드 값을 root로 보낸다.
+            t_no = next_no
+
+        else:  # prev_no == 0xffffffff and next_no == 0xffffffff:  # 단일 노드
+            # 1. 0xffffffff 노드 값을 root로 보낸다.
+            t_no = 0xffffffff
+
+        # root 노드를 수정한다.
+        pps = self.pps[root_no]
+        if pps['Prev'] == del_no:
+            self.__set_pps_header(root_no, pps_prev=t_no)
+        elif pps['Next'] == del_no:
+            self.__set_pps_header(root_no, pps_next=t_no)
+        else:  # Dir
+            self.__set_pps_header(root_no, pps_dir=t_no)
+
+        # 삭제 노드 값은 모두 지우기
+        self.__set_pps_header(del_no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
                               pps_dir=0xffffffff, del_info=True)
-
-        # 만약 해당 pps가 dir을 가졌다면 하부는 모두 0xffffffff로 정리
-        if pps_dir != 0xffffffff:
-            fl = [pps_dir]
-
-            while len(fl):
-                f_no = fl.pop(0)
-                t_prev = self.pps[f_no]['Prev']
-                t_next = self.pps[f_no]['Next']
-                t_dir = self.pps[f_no]['Dir']
-                fl += [x for x in [t_prev, t_next, t_dir] if x != 0xffffffff]
-
-                self.__set_pps_header(f_no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
-                                      pps_dir=0xffffffff, del_info=True)
 
         return self.mm
 
