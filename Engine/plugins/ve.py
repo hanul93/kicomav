@@ -240,6 +240,14 @@ class KavMain:
     # 리턴값 : 악성코드 치료 여부
     # ---------------------------------------------------------------------
     def disinfect(self, filename, malware_id):  # 악성코드 치료
+        try:
+            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
+            if malware_id == 0:
+                os.remove(filename)  # 파일 삭제
+                return True  # 치료 완료 리턴
+        except IOError:
+            pass
+
         return False  # 치료 실패 리턴
 
     # ---------------------------------------------------------------------
