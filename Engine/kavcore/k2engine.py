@@ -776,9 +776,16 @@ class EngineInstance:
         t = []
 
         arc_level = p_file_info.get_level()
+        arc_engine = p_file_info.get_archive_engine_name()
+        if arc_engine:
+            arc_engine = arc_engine.split(':')[0]
 
         while len(self.update_info):
-            if self.update_info[-1].get_level() == arc_level:
+            ename = self.update_info[-1].get_archive_engine_name()
+            if ename:
+                ename = ename.split(':')[0]
+
+            if self.update_info[-1].get_level() == arc_level and ename == arc_engine:
                 t.append(self.update_info.pop())
             else:
                 break
