@@ -135,10 +135,10 @@ class KavMain:
     # 리턴값 : 압축 성공 여부 (True or False)
     # ---------------------------------------------------------------------
     def mkarc(self, arc_engine_id, arc_name, file_infos):
-        if arc_engine_id == 'arc_embed_ole':
+        file_info = file_infos[0]
+        rname = file_info.get_filename()
 
-            file_info = file_infos[0]
-            rname = file_info.get_filename()
+        if arc_engine_id == 'arc_embed_ole':
             try:
                 with open(rname, 'rb') as fp:
                     buf = fp.read()
@@ -148,6 +148,21 @@ class KavMain:
                     open(arc_name, 'wb').write(new_data)  # 새로운 파일 생성
 
                     return True
+            except IOError:
+                pass
+
+        elif arc_engine_id == 'arc_zlib':
+            try:
+                if os.path.exists(rname):
+                    with open(rname, 'rb') as fp:
+                        buf = fp.read()
+                        new_data = zlib.compress(buf)[2:]
+                        open(arc_name, 'wb').write(new_data)  # 새로운 파일 생성
+
+                        return True
+                else:
+                    os.remove(arc_name)
+                    return True  # 삭제 처리됨
             except IOError:
                 pass
 
