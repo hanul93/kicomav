@@ -3,6 +3,7 @@
 
 
 import os
+import kernel
 import kavutil
 
 
@@ -41,6 +42,7 @@ class KavMain:
         info['version'] = '1.1'  # 버전
         info['title'] = 'Attach Engine'  # 엔진 설명
         info['kmd_name'] = 'attach'  # 엔진 파일 이름
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -112,3 +114,37 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        file_info = file_infos[0]
+        rname = file_info.get_filename()
+
+        if arc_engine_id.find('arc_attach:') != -1:
+            t = arc_engine_id.split(':')
+            pos = int(t[1])
+            size = int(t[2])
+
+            try:
+                if os.path.exists(rname):
+                    with open(rname, 'rb') as fp:
+                        buf = fp.read()
+                        t_buf = open(arc_name, 'rb').read()
+                        open(arc_name, 'rb').write(t_buf[:pos] + buf)  # 새로운 파일 생성
+
+                        return True
+                else:
+                    os.remove(arc_name)
+                    # open(arc_name, 'wb').write('')
+
+                    return True  # 삭제 처리됨
+            except IOError:
+                pass
+
+        return False
