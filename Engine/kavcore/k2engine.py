@@ -13,6 +13,7 @@ import re
 import shutil
 import struct
 import zipfile
+import hashlib
 
 import k2timelib
 import k2kmdfile
@@ -669,7 +670,11 @@ class EngineInstance:
                 if not os.path.exists(q_path):
                     os.makedirs(q_path)  # 다중 폴더 생성
 
-                t_filename = os.path.split(filename)[-1]
+                if self.options['opt_qhash']:  # 해시로 격리
+                    t_filename = hashlib.sha256(open(filename, 'rb').read()).hexdigest()
+                else:
+                    t_filename = os.path.split(filename)[-1]
+
                 # 격리소에 동일한 파일 이름이 존재하는지 체크
                 fname = os.path.join(q_path, t_filename)
                 t_quarantine_fname = fname
@@ -771,9 +776,16 @@ class EngineInstance:
         t = []
 
         arc_level = p_file_info.get_level()
+        arc_engine = p_file_info.get_archive_engine_name()
+        if arc_engine:
+            arc_engine = arc_engine.split(':')[0]
 
         while len(self.update_info):
-            if self.update_info[-1].get_level() == arc_level:
+            ename = self.update_info[-1].get_archive_engine_name()
+            if ename:
+                ename = ename.split(':')[0]
+
+            if self.update_info[-1].get_level() == arc_level and ename == arc_engine:
                 t.append(self.update_info.pop())
             else:
                 break
@@ -1254,6 +1266,7 @@ class EngineInstance:
             self.options['opt_debug'] = options.opt_debug
             self.options['opt_feature'] = options.opt_feature
             self.options['opt_qname'] = options.opt_qname
+            self.options['opt_qhash'] = options.opt_qhash
         else:  # 기본값 설정
             self.options['opt_arc'] = False
             self.options['opt_nor'] = False
@@ -1267,6 +1280,7 @@ class EngineInstance:
             self.options['opt_debug'] = False
             self.options['opt_feature'] = 0xffffffff
             self.options['opt_qname'] = False
+            self.options['opt_qhash'] = False
         return True
 
     # -----------------------------------------------------------------

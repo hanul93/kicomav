@@ -348,6 +348,7 @@ class KavMain:
         info['version'] = '1.1'  # 버전
         info['title'] = 'RTF Engine'  # 엔진 설명
         info['kmd_name'] = 'rtf'  # 엔진 파일 이름
+        info['make_arc_type'] = kernel.MASTER_DELETE  # 악성코드 치료 후 재압축 유무
         info['sig_num'] = len(self.listvirus())  # 진단/치료 가능한 악성코드 수
 
         return info
@@ -410,3 +411,18 @@ class KavMain:
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+
+        if arc_engine_id == 'arc_rtf':
+            # 재 압축 할 수가 없으므로 삭제 처리해야 한다.
+            return True
+
+        return False

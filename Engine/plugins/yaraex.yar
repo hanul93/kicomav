@@ -1,20 +1,21 @@
-rule IsPeFile {
-meta:
-    ref = "https://github.com/godaddy/yara-rules/blob/master/example.yara"
-strings:
-		$mz = "MZ"
+import "pe"
 
+rule IsPeFile {
+    meta:
+        ref = "https://github.com/godaddy/yara-rules/blob/master/example.yara"
+    strings:
+		$mz = "MZ"
 	condition:
 		$mz at 0 and uint32(uint32(0x3C)) == 0x4550
 }
 
 rule Hwp_Malware1
 {
-meta:
-	author = "Kei Choi (hanul93@gmail.com)"
-	date = "2017-08-23"
-	KicomAV = "Trojan.PS.Agent.yra"
-strings:
+    meta:
+        author = "Kei Choi (hanul93@gmail.com)"
+        date = "2017-08-23"
+        KicomAV = "Trojan.PS.Agent.yra"
+    strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $string1 = "1 bitshift add" nocase
         $string2 = "(KERNEL32.DLL)" nocase
@@ -27,11 +28,11 @@ strings:
 
 rule Hwp_Malware2
 {
-meta:
-	author = "Kei Choi (hanul93@gmail.com)"
-	date = "2017-08-23"
-	KicomAV = "Trojan.PS.Agent.yrb"
-strings:
+    meta:
+        author = "Kei Choi (hanul93@gmail.com)"
+        date = "2017-08-23"
+        KicomAV = "Trojan.PS.Agent.yrb"
+    strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $regex2 = "90909090"
         $string1 = "putinterval def" nocase
@@ -43,10 +44,10 @@ strings:
 
 rule Hwp_Malware3
 {
-meta:
-	author = "Kei Choi (hanul93@gmail.com)"
-	date = "2017-08-23"
-	KicomAV = "Trojan.PS.Agent.yrc"
+    meta:
+        author = "Kei Choi (hanul93@gmail.com)"
+        date = "2017-08-23"
+        KicomAV = "Trojan.PS.Agent.yrc"
     strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $string1 = "4 mod get xor put" nocase
@@ -101,4 +102,32 @@ rule APT34_Malware_HTA {
       $s2 = "<body onload=\"test()\">" fullword ascii
    condition:
       filesize < 60KB and ( 1 of ($x*) or all of ($s*) )
+}
+
+rule Exploit_HWP_Agent_b
+{
+    meta:
+        author = "Kei Choi"
+        date = "2018-06-19"
+        KicomAV = "Exploit.HWP.Agent.b"
+    strings:
+        $s1 = "kernel32.dll" nocase
+        $s2 = /1\s+get\s+<636C6F736566696C65>\s+cvx\s+exec/
+        $regex1 = /<[0-9A-Fa-f]{500,}/
+    condition:
+        all of them
+}
+
+
+rule Virus_Win32_PolyRansom_a
+{
+    meta:
+        author = "Kei Choi"
+        date = "2018-06-26"
+        KicomAV = "Virus.Win32.PolyRansom.a"
+    strings:
+        $s1 = { b? ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 ?? ?? ?? 0? 00 }
+        $s2 = { b? ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 }
+    condition:
+        $s1 at pe.entry_point or $s2 at pe.entry_point
 }

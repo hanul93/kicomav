@@ -1,3 +1,22 @@
+## v0.32 (Aug 1, 2019)
+
+* **Engine :**
+  * k2engine: Removed dependence on psutil
+  * k2engine: Fixed recompression logic after disinfection of malwares in compress file
+  
+* **Plugins Modules :**
+  * attach: Added disinfection of attached malwares
+  * dummy: Fixed file open in dummy engine
+  * nsis: Modified NSIS engine's info
+  * ole: Fixed OleWriteStream (SBD -> SBD (Inc))
+  * ole: Fixed delete of OLE's directory
+  * rtf: Added make archive of rtf
+  * ve: Added disinfect function for VE
+  * zlib: Added make archive of zlib
+
+* **Command Line Interface :**
+  * k2: Added new options (--qhash)
+
 ## v0.31 (Jun 18, 2018)
 
 * **Plugins Modules :**

@@ -48,8 +48,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.31'
-KAV_BUILDDATE = 'Jun 18 2018'
+KAV_VERSION = '0.32'
+KAV_BUILDDATE = 'Aug 1 2019'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -312,6 +312,9 @@ def define_options():
     parser.add_option("", "--qname",  # 격리시 악성코드 이름 부여
                       action="store_true", dest="opt_qname",
                       default=False)
+    parser.add_option("", "--qhash",  # 격리시 Sha256 이름 부여
+                      action="store_true", dest="opt_qhash",
+                      default=False)
     parser.add_option("-R", "--nor",
                       action="store_true", dest="opt_nor",
                       default=False)
@@ -412,6 +415,8 @@ def print_options():
              --no-color        don't print with color
              --move            move infected files in quarantine folder
              --copy            copy infected files in quarantine folder
+             --qname           quarantine by name of malware 
+             --qhash           quarantine by sha256 hash of malware
              --update          update
              --verbose         enabling verbose mode (only Developer Edition)
              --sigtool         make files for malware signatures
@@ -943,12 +948,12 @@ def print_result(result):
     cprint('I/O errors        :%d\n' % result['IO_errors'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
 
     # 검사 시간 출력
-    if g_delta_time.seconds > 10:  # 10초 이상 걸린 경우에만 시간 출력
-        t = str(g_delta_time).split(':')
-        t_h = int(float(t[0]))
-        t_m = int(float(t[1]))
-        t_s = int(float(t[2]))
-        cprint('Scan time         :%02d:%02d:%02d\n' % (t_h, t_m, t_s), FOREGROUND_GREY | FOREGROUND_INTENSITY)
+    # if g_delta_time.seconds > 10:  # 10초 이상 걸린 경우에만 시간 출력
+    t = str(g_delta_time).split(':')
+    t_h = int(float(t[0]))
+    t_m = int(float(t[1]))
+    t_s = int(float(t[2]))
+    cprint('Scan time         :%02d:%02d:%02d\n' % (t_h, t_m, t_s), FOREGROUND_GREY | FOREGROUND_INTENSITY)
 
     print
 
