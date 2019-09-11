@@ -808,6 +808,10 @@ class KavMain:
 
                                 t_pics = o.openstream(t_pps_name)  # 매크로가 존재하는 스트림 열기
                                 t_data = t_pics.read()
+
+                                if len(t_data) == 0:  # 데이터가 없으면 다음 vba 체크
+                                    continue
+
                                 t_ret, buf = decompress(t_data[vba[1]:])  # 매크로 소스코드 획득 완료
                                 buf = buf.replace('\r\n', '\n')
 
