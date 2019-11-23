@@ -337,6 +337,8 @@ class KavMain:
                             ret['ff_ooxml'] = 'docx'
                         elif n == 'ppt/presentation.xml':
                             ret['ff_ooxml'] = 'pptx'
+                        elif n == 'contents/section0.xml':
+                            ret['ff_hwpx'] = 'hwpx'
 
                     if len(ret) == 0:
                         ret['ff_zip'] = 'zip'
