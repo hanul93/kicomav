@@ -451,13 +451,13 @@ def update_kicomav(path):
         if os.name == 'nt' and is_k2_exe_update:
             k2temp_path = download_file_k2(url, 'k2.exe', path, gz=True, fnhook=hook)
 
+        # 업데이트 설정 파일 삭제
+        os.remove(os.path.join(path, 'update.cfg'))
+
         # 업데이트 완료 메시지 출력
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update complete', FOREGROUND_GREEN)
         cprint(']\n', FOREGROUND_GREY)
-
-        # 업데이트 설정 파일 삭제
-        os.remove(os.path.join(path, 'update.cfg'))
 
         # k2.exe의 경우 최종 업데이트 프로그램 실행
         if os.name == 'nt' and is_k2_exe_update:
@@ -468,7 +468,7 @@ def update_kicomav(path):
         cprint(']\n', FOREGROUND_GREY)
     except:
         cprint('\n[', FOREGROUND_GREY)
-        cprint('Update faild', FOREGROUND_RED | FOREGROUND_INTENSITY)
+        cprint('Update failed', FOREGROUND_RED | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
 
 
