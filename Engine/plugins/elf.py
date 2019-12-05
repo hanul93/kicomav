@@ -207,6 +207,7 @@ class ELF64:
         self.verbose = verbose
         self.mm = mm
         self.endian = endian
+        self.program_headers = []
         self.sections = []
 
     def parse(self):
@@ -223,6 +224,20 @@ class ELF64:
             e_phnum = get_uint16(mm, 0x38, self.endian)
             e_shnum = get_uint16(mm, 0x3C, self.endian)
             e_shstrndx = get_uint16(mm, 0x3E, self.endian)
+
+            # 프로그램 헤더 정보 구하기
+            for i in range(e_phnum):
+                program_header = {}
+
+                program_header['Type'] = get_uint32(mm, e_phoff + (0x38 * i) + 0, self.endian)
+                program_header['Flag'] = get_uint32(mm, e_phoff + (0x38 * i) + 0x4, self.endian)
+                program_header['RVA'] = get_uint64(mm, e_phoff + (0x38 * i) + 0x10, self.endian)
+                program_header['Offset'] = get_uint64(mm, e_phoff + (0x38 * i) + 0x8, self.endian)
+                program_header['Size'] = get_uint64(mm, e_phoff + (0x38 * i) + 0x20, self.endian)
+
+                self.program_headers.append(program_header)
+
+            fileformat['ProgramHeaders'] = self.program_headers
 
             # 섹션 이름이 저장된 테이블
             name_table_off = get_uint64(mm, e_shoff + (0x40 * e_shstrndx) + 0x18, self.endian)
