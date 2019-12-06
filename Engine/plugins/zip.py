@@ -6,6 +6,8 @@ import struct
 import zlib
 import os
 import py7zlib
+import kavutil
+import shutil
 
 import zipfile
 import kernel
@@ -256,6 +258,7 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.handle = {}  # 압축 파일 핸들
+        self.fp_7z = None
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -302,7 +305,8 @@ class KavMain:
         if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
             zfile = self.handle.get(filename, None)
         else:
-            zfile = py7zlib.Archive7z(open(filename, 'rb'))  # 7z 파일 열기
+            self.fp_7z = open(filename, 'rb')
+            zfile = py7zlib.Archive7z(self.fp_7z)  # 7z 파일 열기
             self.handle[filename] = zfile
 
         return zfile
@@ -337,11 +341,8 @@ class KavMain:
                             ret['ff_ooxml'] = 'docx'
                         elif n == 'ppt/presentation.xml':
                             ret['ff_ooxml'] = 'pptx'
-                        elif n == 'contents/section0.xml':
-                            ret['ff_hwpx'] = 'hwpx'
-
-                    if len(ret) == 0:
-                        ret['ff_zip'] = 'zip'
+                    # if len(ret) == 0:
+                    ret['ff_zip'] = 'zip'
             except zipfile.BadZipfile:
                 zfile = NZipFile(filename)
                 try:
@@ -425,6 +426,9 @@ class KavMain:
             except (ValueError, py7zlib.UnsupportedCompressionMethodError) as e:
                 # BCJ LZMA, BCJ2 LZMA를 py7zlib가 아직 지원하지 못함 (ver 0.4.9)
                 # LZMA 지원 체크 완료
+                # ver 0.5.0에서 지원함
+                pass
+            except py7zlib.NoPasswordGivenError:
                 pass
 
         return None
@@ -436,8 +440,13 @@ class KavMain:
     def arcclose(self):
         for fname in self.handle.keys():
             zfile = self.handle[fname]
-            zfile.close()
+            if 'close' in dir(zfile):
+                zfile.close()
             self.handle.pop(fname)
+
+        if self.fp_7z:
+            self.fp_7z.close()
+            self.fp_7z = None
 
     # ---------------------------------------------------------------------
     # mkarc(self, arc_engine_id, arc_name, file_infos)
@@ -459,13 +468,47 @@ class KavMain:
                         # print '[-] filename :', rname, len(buf)
                         # print '[-] rname :',
                         a_name = file_info.get_filename_in_archive()
-                        zfile.writestr(a_name, buf)
+                        zfile.writestr(a_name, buf, compress_type=zipfile.ZIP_DEFLATED)
                 except IOError:
                     # print file_info.get_filename_in_archive()
                     pass
 
             zfile.close()
             # print '[-] close()\n'
+            return True
+
+        elif arc_engine_id == 'arc_7z':
+            # ZIP 파일로 변환하기
+            uname = kavutil.uniq_string()
+            tname = '.tmp_' + uname
+            oname = '.org_' + uname
+
+            if open(arc_name, 'rb').read(2) != 'PK':
+                fp = open(arc_name, 'rb')
+                zfile_w = zipfile.ZipFile(arc_name + tname, 'w')
+                zfile_r = py7zlib.Archive7z(fp)  # 7z 파일 열기
+
+                for name in zfile_r.filenames:
+                    cf = zfile_r.getmember(name)
+                    data = cf.read()
+                    zfile_w.writestr(name, data, compress_type=zipfile.ZIP_DEFLATED)
+
+                fp.close()
+                del zfile_r
+
+                # zfile_r.close()  # 7z은 Close 함수가 없음
+                zfile_w.close()
+
+                shutil.move(arc_name, arc_name + oname)
+                shutil.move(arc_name + tname, arc_name)
+
+            # 변환된 ZIP 파일에 치료한 파일 넣기
+            kavutil.make_zip(arc_name, file_infos)
+
+            fname = arc_name + oname
+            if os.path.exists(fname):
+                os.remove(fname)
+
             return True
 
         return False
