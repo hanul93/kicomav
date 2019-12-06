@@ -3,8 +3,10 @@
 
 
 import re
+import os
 import tarfile
 import kernel
+
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -43,6 +45,7 @@ class KavMain:
         info['title'] = 'Tar Archive Engine'  # 엔진 설명
         info['kmd_name'] = 'tar'  # 엔진 파일 이름
         info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -139,3 +142,37 @@ class KavMain:
             tfile = self.handle[fname]
             tfile.close()
             self.handle.pop(fname)
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_tar':
+
+            zfile = tarfile.open(arc_name, 'w')
+            # print '[-] zip :', arc_name
+
+            for file_info in file_infos:
+                rname = file_info.get_filename()
+                if not os.path.exists(rname):
+                    continue
+
+                try:
+                    # print '[-] filename :', rname, len(buf)
+                    # print '[-] rname :',
+                    a_name = file_info.get_filename_in_archive()
+
+                    zfile.add(rname, arcname=a_name)
+                except IOError:
+                    # print file_info.get_filename_in_archive()
+                    pass
+
+            zfile.close()
+            # print '[-] close()\n'
+            return True
+
+        return False
