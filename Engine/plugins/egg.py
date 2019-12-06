@@ -7,6 +7,8 @@ import sys
 import mmap
 import zlib
 import bz2
+import zipfile
+import shutil
 import kernel
 import kavutil
 
@@ -410,6 +412,7 @@ class KavMain:
         info['title'] = 'Egg Archive Engine'  # 엔진 설명
         info['kmd_name'] = 'egg'  # 엔진 파일 이름
         info['engine_type'] = kernel.ARCHIVE_ENGINE # 엔진 타입
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -490,3 +493,40 @@ class KavMain:
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_egg':
+            # ZIP 파일로 변환하기
+            uname = kavutil.uniq_string()
+            tname = '.tmp_' + uname
+            oname = '.org_' + uname
+
+            if open(arc_name, 'rb').read(2) != 'PK':
+                zfile_w = zipfile.ZipFile(arc_name + tname, 'w')
+                zfile_r = EggFile(arc_name)
+                for name in zfile_r.namelist():
+                    data = zfile_r.read(name)
+                    zfile_w.writestr(name, data, compress_type=zipfile.ZIP_DEFLATED)                
+                zfile_r.close()
+                zfile_w.close()
+            
+                shutil.move(arc_name, arc_name + oname)
+                shutil.move(arc_name + tname, arc_name)
+            
+            # 변환된 ZIP 파일에 치료한 파일 넣기
+            kavutil.make_zip(arc_name, file_infos)
+
+            fname = arc_name + oname
+            if os.path.exists(fname):
+                os.remove(fname)
+
+            return True
+
+        return False

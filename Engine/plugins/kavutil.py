@@ -10,6 +10,7 @@ import marshal
 import time
 import math
 import zlib
+import zipfile
 
 
 # -------------------------------------------------------------------------
@@ -726,6 +727,13 @@ def normal_vname(vname, platform=None):
     return vname
 
 
+# -------------------------------------------------------------------------
+# 유니크한 숫자형태의 문자열을 리턴한다.
+# -------------------------------------------------------------------------
+def uniq_string():
+    return str(int(time.time() * 1000))
+
+
 # ----------------------------------------------------------------------------
 # Feature를 위한 로직
 # ----------------------------------------------------------------------------
@@ -795,6 +803,32 @@ class Feature:
             t_data += chr(int(m[i * 8:(i + 1) * 8], 2))
 
         return t_data
+
+
+# ----------------------------------------------------------------------------
+# 압축 파일에 존재하는 악성코드를 치료하고 새롭게 압축하는 로직
+# 실제 압축 로직이 없는 압축엔진(예:ALZ, EGG 등)은 ZIP으로 파일을 압축하고 확장자는 그대로 유지
+# ----------------------------------------------------------------------------
+def make_zip(arc_name, file_infos):
+    if open(arc_name, 'rb').read(2) == 'PK':
+        # print '[-] zip :', arc_name
+        zfile = zipfile.ZipFile(arc_name, 'w')
+
+        for file_info in file_infos:
+            rname = file_info.get_filename()
+            try:
+                with open(rname, 'rb') as fp:
+                    buf = fp.read()
+                    # print '[-] filename :', rname, len(buf)
+                    # print '[-] rname :',
+                    a_name = file_info.get_filename_in_archive()
+                    zfile.writestr(a_name, buf, compress_type=zipfile.ZIP_DEFLATED)
+            except IOError:
+                # print file_info.get_filename_in_archive()
+                pass
+
+        zfile.close()
+        # print '[-] close()\n'
 
 
 # -------------------------------------------------------------------------
