@@ -41,6 +41,7 @@ class KavMain:
         info['title'] = 'GZ Archive Engine'  # 엔진 설명
         info['kmd_name'] = 'gz'  # 엔진 파일 이름
         info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
+        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
 
         return info
 
@@ -101,3 +102,28 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
+
+    # ---------------------------------------------------------------------
+    # mkarc(self, arc_engine_id, arc_name, file_infos)
+    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
+    #         arc_name      - 최종적으로 압축될 압축 파일 이름
+    #         file_infos    - 압축 대상 파일 정보 구조체
+    # 리턴값 : 압축 성공 여부 (True or False)
+    # ---------------------------------------------------------------------
+    def mkarc(self, arc_engine_id, arc_name, file_infos):
+        if arc_engine_id == 'arc_gz':
+            try:
+                zfile = gzip.open(arc_name, 'wb')
+                file_info = file_infos[0]
+
+                rname = file_info.get_filename()
+                data = open(rname, 'rb').read()
+
+                zfile.write(data)
+                zfile.close()
+
+                return True
+            except:
+                pass
+
+        return False
