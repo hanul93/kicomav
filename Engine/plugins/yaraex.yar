@@ -150,3 +150,20 @@ rule Trojan_JS_Agent_gen_1
         1 of ($a*) and all of ($s*)
 }
 
+
+rule Trojan_BAT_Agent_gen_1
+{
+    meta:
+        author = "Kei Choi"
+        date = "2019-12-08"
+        KicomAV = "Trojan.BAT.Agent.gen"
+    strings:
+        $mz = "<KicomAV:BAT>"
+        $s1 = "echo" nocase
+        $s2 = ".downloadstring" nocase
+        $s3 = "windowspowershell" nocase
+        $s4 = "powershell.exe" nocase
+    condition:
+        all of them
+}
+
