@@ -684,8 +684,12 @@ def is_textfile(buf):
 #         off - 오프셋
 # 리턴값 : uint16 변환 값
 # -------------------------------------------------------------------------
-def get_uint16(buf, off):
-    return struct.unpack('<H', buf[off:off+2])[0]
+def get_uint16(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+        
+    return struct.unpack(endian + 'H', buf[off:off+2])[0]
 
 
 # -------------------------------------------------------------------------
@@ -695,8 +699,12 @@ def get_uint16(buf, off):
 #         off - 오프셋
 # 리턴값 : uint32 변환 값
 # -------------------------------------------------------------------------
-def get_uint32(buf, off):
-    return struct.unpack('<L', buf[off:off+4])[0]
+def get_uint32(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+
+    return struct.unpack(endian + 'L', buf[off:off+4])[0]
 
 
 # -------------------------------------------------------------------------
@@ -706,8 +714,12 @@ def get_uint32(buf, off):
 #         off - 오프셋
 # 리턴값 : uint64 변환 값
 # -------------------------------------------------------------------------
-def get_uint64(buf, off):
-    return struct.unpack('<Q', buf[off:off+8])[0]
+def get_uint64(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+
+    return struct.unpack(endian + 'Q', buf[off:off+8])[0]
 
 
 # -------------------------------------------------------------------------
