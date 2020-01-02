@@ -2,108 +2,115 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
-import os
+import six
 import kernel
+import k2io
 
 
 # -------------------------------------------------------------------------
-# KavMain 클래스
+# strcmp
+# Temporarily used for PY2 and PY3 compatibility
 # -------------------------------------------------------------------------
-class KavMain:
+def strcmp(str_s1, byte_s2):
+    if six.PY2:
+        return str_s1 == byte_s2
+
+    return bytes(str_s1, 'utf-8') == byte_s2
+
+
+# -------------------------------------------------------------------------
+# class KavMain
+# -------------------------------------------------------------------------
+class KavMain(kernel.PluginsMain):
     # ---------------------------------------------------------------------
-    # init(self, plugins_path)
-    # 플러그인 엔진을 초기화 한다.
-    # 인력값 : plugins_path - 플러그인 엔진의 위치
-    #         verbose      - 디버그 모드 (True or False)
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # init(self, plugins_path, verbose)
+    # Initialize the plug-in engine
+    # input  : plugins_path - Location of the plug-in engine
+    #          verbose         - verbose (True or False)
+    # return : 0 - success, Nonzero - fail
     # ---------------------------------------------------------------------
-    def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        # 진단/치료하는 악성코드 이름
+    def init(self, plugins_path, verbose=False):
+        # Load db of malware's patterns
         self.virus_name = 'Dummy-Test-File (not a virus)'
-        # 악성코드 패턴 등록
         self.dummy_pattern = 'Dummy Engine test file - KICOM Anti-Virus Project'
+        self.len_dummy_pattern = len(self.dummy_pattern)
 
-        return 0  # 플러그인 엔진 초기화 성공
-        
+        return 0
+
     # ---------------------------------------------------------------------
     # uninit(self)
-    # 플러그인 엔진을 종료한다.
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # Quit the plug-in engine
+    # return : 0 - success, Nonzero - fail
     # ---------------------------------------------------------------------
-    def uninit(self):  # 플러그인 엔진 종료
-        del self.virus_name  # 메모리 해제 (악성코드 이름 관련)
-        del self.dummy_pattern  # 메모리 해제 (악성코드 패턴)
+    def uninit(self):
+        # unload db
+        del self.virus_name
+        del self.dummy_pattern
+        return 0
 
-        return 0  # 플러그인 엔진 종료 성공
-
     # ---------------------------------------------------------------------
-    # scan(self, filehandle, filename, fileformat)
-    # 악성코드를 검사한다.
-    # 입력값 : filehandle  - 파일 핸들
-    #         filename    - 파일 이름
-    #         fileformat  - 파일 포맷
-    #         filename_ex - 파일 이름 (압축 내부 파일 이름)
-    # 리턴값 : (악성코드 발견 여부, 악성코드 이름, 악성코드 ID) 등등
+    # scan(self, filehandle, filename, fileformat, filename_ex)
+    # Scan for malware
+    # input  : filehandle  - Handle of file
+    #          filename    - Name of file
+    #          fileformat  - Format of file
+    #          filename_ex - File name inside the compressed file
+    # return : (malware found, malware name, malware ID, malware scan result)
     # ---------------------------------------------------------------------
-    def scan(self, filehandle, filename, fileformat, filename_ex):  # 악성코드 검사
+    def scan(self, filehandle, filename, fileformat, filename_ex):
         try:
-            # 파일을 열어 악성코드 패턴만큼 파일에서 읽는다.
-            fp = open(filename, 'rb')
-            buf = fp.read(len(self.dummy_pattern))  # 패턴은 49 Byte 크기
-            fp.close()
+            # Open file and read from file
+            fp = k2io.k2open(filename, 'rb')
+            buf = k2io.k2read(fp, self.len_dummy_pattern)  # Pattern size is 49 Bytes
+            k2io.k2close(fp)
 
-            # 악성코드 패턴을 비교한다.
-            if buf == self.dummy_pattern:
-                # 악성코드 패턴이 갖다면 결과 값을 리턴한다.
-                return True, self.virus_name, 0, kernel.INFECTED
+            # Compare malware patterns
+            if strcmp(self.dummy_pattern, buf):
+                return True, self.virus_name, kernel.DISINFECT_DELETE, kernel.INFECTED
         except IOError:
             pass
 
-        # 악성코드를 발견하지 못했음을 리턴한다.
-        return False, '', -1, kernel.NOT_FOUND
+        return False, '', kernel.DISINFECT_NONE, kernel.NOT_FOUND
 
     # ---------------------------------------------------------------------
     # disinfect(self, filename, malware_id)
-    # 악성코드를 치료한다.
-    # 입력값 : filename    - 파일 이름
-    #        : malware_id - 치료할 악성코드 ID
-    # 리턴값 : 악성코드 치료 여부
+    # Disinfect for malware
+    # input  : filename    - Name of file
+    #          malware_id - Malware ID to Clean
+    # return : True - success, False - fail
     # ---------------------------------------------------------------------
-    def disinfect(self, filename, malware_id):  # 악성코드 치료
-        try:
-            # 악성코드 진단 결과에서 받은 ID 값이 0인가?
-            if malware_id == 0:
-                os.remove(filename)  # 파일 삭제
-                return True  # 치료 완료 리턴
-        except IOError:
-            pass
+    def disinfect(self, filename, malware_id):
+        # Is the malware_id received from scan result 0?
+        if malware_id == kernel.DISINFECT_DELETE:
+            if k2io.k2unlink(filename):
+                return True
 
-        return False  # 치료 실패 리턴
-        
+        return False
+
     # ---------------------------------------------------------------------
     # listvirus(self)
-    # 진단/치료 가능한 악성코드의 리스트를 알려준다.
-    # 리턴값 : 악성코드 리스트
+    # It shows a list of malware that can be scan and disinfect.
+    # return : malware lists
     # ---------------------------------------------------------------------
-    def listvirus(self):  # 진단 가능한 악성코드 리스트
-        vlist = list()  # 리스트형 변수 선언
+    def listvirus(self):
+        vlist = list()
 
-        vlist.append(self.virus_name)  # 진단/치료하는 악성코드 이름 등록
+        vlist.append(self.virus_name)
 
         return vlist         
 
     # ---------------------------------------------------------------------
     # getinfo(self)
-    # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
-    # 리턴값 : 플러그인 엔진 정보
+    # Provides information about the plug-in engine. (author, version, ...)
+    # return : Plug-in information
     # ---------------------------------------------------------------------
-    def getinfo(self):  # 플러그인 엔진의 주요 정보
-        info = dict()  # 사전형 변수 선언
+    def getinfo(self):
+        info = dict()
 
-        info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.1'      # 버전
-        info['title'] = 'Dummy Scan Engine'  # 엔진 설명
-        info['kmd_name'] = 'dummy'   # 엔진 파일 이름
-        info['sig_num'] = 1  # 진단/치료 가능한 악성코드 수
+        info['author'] = 'Kei Choi'
+        info['version'] = '1.1'
+        info['title'] = 'Dummy Scan Engine'
+        info['kmd_name'] = 'dummy'
+        info['sig_num'] = 1  # Number of malware that can be scan & disinfect
 
         return info
