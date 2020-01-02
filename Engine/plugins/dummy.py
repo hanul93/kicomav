@@ -8,17 +8,6 @@ import k2io
 
 
 # -------------------------------------------------------------------------
-# strcmp
-# Temporarily used for PY2 and PY3 compatibility
-# -------------------------------------------------------------------------
-def strcmp(str_s1, byte_s2):
-    if six.PY2:
-        return str_s1 == byte_s2
-
-    return bytes(str_s1, 'utf-8') == byte_s2
-
-
-# -------------------------------------------------------------------------
 # class KavMain
 # -------------------------------------------------------------------------
 class KavMain(kernel.PluginsMain):
@@ -26,7 +15,7 @@ class KavMain(kernel.PluginsMain):
     # init(self, plugins_path, verbose)
     # Initialize the plug-in engine
     # input  : plugins_path - Location of the plug-in engine
-    #          verbose         - verbose (True or False)
+    #          verbose      - verbose (True or False)
     # return : 0 - success, Nonzero - fail
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):
@@ -58,17 +47,15 @@ class KavMain(kernel.PluginsMain):
     # return : (malware found, malware name, malware ID, malware scan result)
     # ---------------------------------------------------------------------
     def scan(self, filehandle, filename, fileformat, filename_ex):
-        try:
-            # Open file and read from file
-            fp = k2io.k2open(filename, 'rb')
+        # Open file and read from file
+        fp = k2io.k2open(filename, 'rb')
+        if fp:
             buf = k2io.k2read(fp, self.len_dummy_pattern)  # Pattern size is 49 Bytes
             k2io.k2close(fp)
 
             # Compare malware patterns
-            if strcmp(self.dummy_pattern, buf):
+            if k2io.k2memcmp(self.dummy_pattern, buf):
                 return True, self.virus_name, kernel.DISINFECT_DELETE, kernel.INFECTED
-        except IOError:
-            pass
 
         return False, '', kernel.DISINFECT_NONE, kernel.NOT_FOUND
 
@@ -93,11 +80,9 @@ class KavMain(kernel.PluginsMain):
     # return : malware lists
     # ---------------------------------------------------------------------
     def listvirus(self):
-        vlist = list()
-
-        vlist.append(self.virus_name)
-
-        return vlist         
+        vlist = k2io.k2list()
+        k2io.k2list_append(vlist, self.virus_name)
+        return vlist
 
     # ---------------------------------------------------------------------
     # getinfo(self)
@@ -105,12 +90,12 @@ class KavMain(kernel.PluginsMain):
     # return : Plug-in information
     # ---------------------------------------------------------------------
     def getinfo(self):
-        info = dict()
+        info = k2io.k2dict()
 
-        info['author'] = 'Kei Choi'
-        info['version'] = '1.1'
-        info['title'] = 'Dummy Scan Engine'
-        info['kmd_name'] = 'dummy'
-        info['sig_num'] = 1  # Number of malware that can be scan & disinfect
+        k2io.k2dict_append(info, 'author', 'Kei Choi')
+        k2io.k2dict_append(info, 'version', '1.1')
+        k2io.k2dict_append(info, 'title', 'Dummy Scan Engine')
+        k2io.k2dict_append(info, 'kmd_name', 'dummy')
+        k2io.k2dict_append(info, 'sig_num', 1)  # Number of malware that can be scan & disinfect
 
         return info

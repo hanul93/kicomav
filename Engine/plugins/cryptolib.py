@@ -5,41 +5,42 @@
 import hashlib
 import zlib
 from ctypes import c_ushort
+import kernel
+import k2io
 
 
 # -------------------------------------------------------------------------
 # md5(data)
-# 주어진 데이터에 대해 MD5 해시를 구한다.
-# 입력값 : data - 데이터
-# 리턴값 : MD5 해시 문자열
+# Compute MD5 hash for given data
+# input  : data
+# return : hash value
 # -------------------------------------------------------------------------
 def md5(data):
-    return hashlib.md5(data).hexdigest()
+    return hashlib.md5(k2io.k2byte(data)).hexdigest()
 
 
 # -------------------------------------------------------------------------
 # crc32(data)
-# 주어진 데이터에 대해 CRC32 해시를 구한다.
-# 입력값 : data - 데이터
-# 리턴값 : CRC32 해시 문자열
+# Compute CRC32 hash for given data
+# input  : data
+# return : hash value
 # -------------------------------------------------------------------------
 def crc32(data):
-    return '%08x' % (zlib.crc32(data) & 0xffffffff)
+    return '%08x' % (zlib.crc32(k2io.k2byte(data)) & 0xffffffff)
 
 
 # -------------------------------------------------------------------------
 # sha256(data)
-# 주어진 데이터에 대해 SHA256 해시를 구한다.
-# 입력값 : data - 데이터
-# 리턴값 : SHA256 해시 문자열
+# Compute SHA256 hash for given data
+# input  : data
+# return : hash value
 # -------------------------------------------------------------------------
 def sha256(data):
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha256(k2io.k2byte(data)).hexdigest()
 
 
 # -------------------------------------------------------------------------
-# CRC16
-# 주어진 데이터에 대해 CRC16 해시를 구한다.
+# class CRC16
 # -------------------------------------------------------------------------
 class CRC16(object):
     crc16_tab = []
@@ -86,39 +87,32 @@ class CRC16(object):
                     crc = c_ushort(crc >> 1).value
             self.crc16_tab.append(crc)
 
-# -------------------------------------------------------------------------
-# KavMain 클래스
-# -------------------------------------------------------------------------
-class KavMain:
-    # ---------------------------------------------------------------------
-    # init(self, plugins_path)
-    # 플러그인 엔진을 초기화 한다.
-    # 인력값 : plugins_path - 플러그인 엔진의 위치
-    #         verbose      - 디버그 모드 (True or False)
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
-    # ---------------------------------------------------------------------
-    def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        return 0  # 플러그인 엔진 초기화 성공
 
-    # ---------------------------------------------------------------------
-    # uninit(self)
-    # 플러그인 엔진을 종료한다.
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
-    # ---------------------------------------------------------------------
-    def uninit(self):  # 플러그인 엔진 종료
-        return 0  # 플러그인 엔진 종료 성공
+# -------------------------------------------------------------------------
+# crc16(data)
+# Compute CRC16 hash for given data
+# input  : data
+# return : hash value
+# -------------------------------------------------------------------------
+def crc16(data):
+    return '%04x' % CRC16().calculate(k2io.k2byte(data))
 
+
+# -------------------------------------------------------------------------
+# class KavMain
+# -------------------------------------------------------------------------
+class KavMain(kernel.PluginsMain):
     # ---------------------------------------------------------------------
     # getinfo(self)
-    # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
-    # 리턴값 : 플러그인 엔진 정보
+    # Provides information about the plug-in engine. (author, version, ...)
+    # return : Plug-in information
     # ---------------------------------------------------------------------
-    def getinfo(self):  # 플러그인 엔진의 주요 정보
-        info = dict()  # 사전형 변수 선언
+    def getinfo(self):
+        info = k2io.k2dict()
 
-        info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.0'  # 버전
-        info['title'] = 'Crypto Library'  # 엔진 설명
-        info['kmd_name'] = 'cryptolib'  # 엔진 파일 이름
+        k2io.k2dict_append(info, 'author', 'Kei Choi')
+        k2io.k2dict_append(info, 'version', '1.0')
+        k2io.k2dict_append(info, 'title', 'Crypto Library')
+        k2io.k2dict_append(info, 'kmd_name', 'cryptolib')
 
         return info

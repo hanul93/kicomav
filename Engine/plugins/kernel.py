@@ -67,12 +67,10 @@ class PluginsMain:
 # class KavMain
 # -------------------------------------------------------------------------
 class KavMain(PluginsMain):
+    # ---------------------------------------------------------------------
+    # getinfo(self)
+    # Provides information about the plug-in engine. (author, version, ...)
+    # return : Plug-in information
+    # ---------------------------------------------------------------------
     def getinfo(self):
-        info = dict()
-
-        info['author'] = 'Kei Choi'
-        info['version'] = '1.0'
-        info['title'] = 'KicomAV Kernel'  # Plug-in engine description
-        info['kmd_name'] = 'kernel'  # filename of Plug-in engine
-
-        return info
+        pass

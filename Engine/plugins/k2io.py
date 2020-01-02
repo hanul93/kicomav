@@ -2,6 +2,8 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 import os
+import mmap
+import six
 import kernel
 
 
@@ -48,6 +50,19 @@ def k2close(filehandle):
 
 
 # -------------------------------------------------------------------------
+# k2getfilesize(filename)
+# Get file size
+# input  : filename    - Name of file
+# return : size - success, None - fail
+# -------------------------------------------------------------------------
+def k2getfilesize(filename):
+    if not os.path.exists(filename):
+        return None
+
+    return os.path.getsize(filename)
+
+
+# -------------------------------------------------------------------------
 # k2unlink(filename)
 # Delete file
 # input  : filename    - Name of file
@@ -63,6 +78,88 @@ def k2unlink(filename):
     except IOError:
         return False
 
+
+def k2mmap(filehandle):
+    return mmap.mmap(filehandle.fileno(), 0, access=mmap.ACCESS_READ)
+
+
+# -------------------------------------------------------------------------
+# k2byte(data)
+# Convert String to Bytes(PY3)
+# -------------------------------------------------------------------------
+def k2byte(data):
+    if six.PY3 and isinstance(data, str):
+        return data.encode('utf-8')
+
+    return data  # PY2: str, PY3: byte
+
+
+# -------------------------------------------------------------------------
+# k2memcmp(str1, str2)
+# Compare datas
+# return : True - same datas
+# -------------------------------------------------------------------------
+def k2memcmp(str1, str2):
+    return k2byte(str1) == k2byte(str2)
+
+
+# -------------------------------------------------------------------------
+# k2memcpy(data, offset, size):
+# Copy memory data
+# -------------------------------------------------------------------------
+def k2memcpy(data, offset, size):
+    tdata = k2byte(data)
+    return tdata[offset:offset+size]
+
+
+# -------------------------------------------------------------------------
+# k2sizeof(data)
+# Calculate size of data
+# -------------------------------------------------------------------------
+def k2sizeof(data):
+    return len(k2byte(data))
+
+
+def k2list():
+    return list()
+
+
+def k2list_append(hlist, item):
+    hlist.append(item)
+
+
+def k2list_get(hlist, start=0, end=None, step=1):
+    if not end:
+        end = len(hlist)
+
+    return hlist[start:end:step]
+
+def k2list_index(hlist, index):
+    return hlist[index]
+
+
+def k2dict():
+    return dict()
+
+
+def k2dict_append(hdict, key, value):
+    hdict[key] = value
+
+
+def k2dict_has(hdict, key):
+    return key in hdict
+
+
+def k2dict_get(hdict, key, default_value=None):
+    return hdict.get(key, default_value)
+
+
+def k2dict_keys(hdict):
+    return hdict.keys()
+
+
+def k2dict_pop(hdict, key):
+    return hdict.pop(key)
 
 # -------------------------------------------------------------------------
 # class KavMain
