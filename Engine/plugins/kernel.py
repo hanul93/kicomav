@@ -2,6 +2,9 @@
 # Made by Kei Choi(hanul93@naver.com)
 
 
+from abc import *  # for Abstract Base Classes
+
+
 # Malware scan result
 NOT_FOUND = 0
 INFECTED = 1
@@ -11,7 +14,12 @@ IDENTIFIED = 4
 ERROR = 99
 
 
-# How to Clean Malware for Compressed Files
+# Disinfect method for malware
+DISINFECT_NONE = -1
+DISINFECT_DELETE = 0x8000
+
+
+# Clean Malware for Compressed Files
 MASTER_IGNORE = 0  # it is not currently supported
 MASTER_PACK = 1  # Top-level file compression (reconstruction), can handle mkarc function
 MASTER_DELETE = 2  # Delete top-level file
@@ -24,12 +32,14 @@ ARCHIVE_ENGINE = 80
 # -------------------------------------------------------------------------
 # class PluginsMain
 # -------------------------------------------------------------------------
-class PluginsMain(object):
+class PluginsMain:
+    __metaclass__ = ABCMeta
+
     # ---------------------------------------------------------------------
     # init(self, plugins_path, verbose)
     # Initialize the plug-in engine
     # input  : plugins_path - Location of the plug-in engine
-    #          verbose      - verbose (True or False)
+    #          verbose         - verbose (True or False)
     # return : 0 - success, Nonzero - fail
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):
@@ -48,6 +58,7 @@ class PluginsMain(object):
     # Provides information about the plug-in engine. (author, version, ...)
     # return : Plug-in information
     # ---------------------------------------------------------------------
+    @abstractmethod
     def getinfo(self):
         return dict()
 
