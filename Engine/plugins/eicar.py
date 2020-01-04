@@ -46,9 +46,11 @@ class KavMain(kernel.PluginsMain):
     # ---------------------------------------------------------------------
     def disinfect(self, filename, malware_id):
         # Is the malware_id received from scan result 0?
-        if malware_id == kernel.DISINFECT_DELETE:
-            if k2io.k2unlink(filename):
-                return True
+        if malware_id != kernel.DISINFECT_DELETE:
+            return False
+
+        if k2io.k2unlink(filename):
+            return True
 
         return False
 

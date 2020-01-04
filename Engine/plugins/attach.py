@@ -2,68 +2,66 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
+from __future__ import print_function
 import os
 import kernel
 import kavutil
+import k2io
 
 
 # -------------------------------------------------------------------------
-# KavMain 클래스
+# class KavMain
 # -------------------------------------------------------------------------
-class KavMain:
+class KavMain(kernel.PluginsMain):
     # ---------------------------------------------------------------------
-    # init(self, plugins_path)
-    # 플러그인 엔진을 초기화 한다.
-    # 인력값 : plugins_path - 플러그인 엔진의 위치
-    #         verbose      - 디버그 모드 (True or False)
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
+    # init(self, plugins_path, verbose)
+    # Initialize the plug-in engine
+    # input  : plugins_path - Location of the plug-in engine
+    #          verbose      - verbose (True or False)
+    # return : 0 - success, Nonzero - fail
     # ---------------------------------------------------------------------
-    def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+    def init(self, plugins_path, verbose=False):
         self.verbose = verbose
-        return 0  # 플러그인 엔진 초기화 성공
-
-    # ---------------------------------------------------------------------
-    # uninit(self)
-    # 플러그인 엔진을 종료한다.
-    # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
-    # ---------------------------------------------------------------------
-    def uninit(self):  # 플러그인 엔진 종료
-        return 0  # 플러그인 엔진 종료 성공
+        return 0
 
     # ---------------------------------------------------------------------
     # getinfo(self)
-    # 플러그인 엔진의 주요 정보를 알려준다. (제작자, 버전, ...)
-    # 리턴값 : 플러그인 엔진 정보
+    # Provides information about the plug-in engine. (author, version, ...)
+    # return : Plug-in information
     # ---------------------------------------------------------------------
-    def getinfo(self):  # 플러그인 엔진의 주요 정보
-        info = dict()  # 사전형 변수 선언
+    def getinfo(self):
+        info = k2io.k2dict()
 
-        info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.1'  # 버전
-        info['title'] = 'Attach Engine'  # 엔진 설명
-        info['kmd_name'] = 'attach'  # 엔진 파일 이름
-        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        k2io.k2dict_append(info, 'author', 'Kei Choi')
+        k2io.k2dict_append(info, 'version', '1.1')
+        k2io.k2dict_append(info, 'title', 'Attach Engine')
+        k2io.k2dict_append(info, 'kmd_name', 'attach')
+        k2io.k2dict_append(info, 'make_arc_type', kernel.MASTER_PACK)
 
         return info
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
-    # 압축 파일 내부의 파일 목록을 얻는다.
-    # 입력값 : filename   - 파일 이름
-    #          fileformat - 파일 포맷 분석 정보
-    # 리턴값 : [[압축 엔진 ID, 압축된 파일 이름]]
+    # Get a list of files inside the archive file.
+    # input  : filehandle  - Handle of file
+    #          fileformat  - all fileformat informations
+    # return : [[archive engine ID, filename inside a compressed file]]
     # ---------------------------------------------------------------------
     def arclist(self, filename, fileformat):
-        file_scan_list = []  # 검사 대상 정보를 모두 가짐
+        file_scan_list = k2io.k2list()
 
-        # 미리 분석된 파일 포맷중에 첨부 파일 포맷이 있는가?
-        if 'ff_attach' in fileformat:
-            pos = fileformat['ff_attach']['Attached_Pos']
-            size = fileformat['ff_attach']['Attached_Size']
-            file_scan_list.append(['arc_attach:%d:%d' % (pos, size), 'Attached'])
+        if k2io.k2dict_has(fileformat, 'ff_attach'):
+            t = k2io.k2dict_get(fileformat, 'ff_attach')
+            pos = k2io.k2dict_get(t, 'Attached_Pos')
+            size = k2io.k2dict_get(t, 'Attached_Size')
+
+            t = k2io.k2list()
+            k2io.k2list_append(t, 'arc_attach:%d:%d' % (pos, size))
+            k2io.k2list_append(t, 'Attached')
+            k2io.k2list_append(file_scan_list, t)
 
             if self.verbose:
-                print '-' * 79
+                print('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'attach.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
@@ -74,35 +72,37 @@ class KavMain:
                     fp.seek(pos)
                     buf = fp.read(0x80)
 
-                    print
+                    print()
                     kavutil.vprint('Attach Point (Raw)')
-                    print
+                    print()
                     kavutil.HexDump().Buffer(buf, 0, 0x80)
 
-                print
+                print()
 
         return file_scan_list
 
     # ---------------------------------------------------------------------
     # unarc(self, arc_engine_id, arc_name, fname_in_arc)
-    # 입력값 : arc_engine_id - 압축 엔진 ID
-    #          arc_name      - 압축 파일
-    #          fname_in_arc   - 압축 해제할 파일 이름
-    # 리턴값 : 압축 해제된 내용 or None
+    # Decompress the archive file
+    # input  : arc_engine_id  - Archive engine ID
+    #          arc_name       - Archive file name
+    #          fname_in_arc   - Decompress file name in Archive file
+    # return : Decompress data or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id.find('arc_attach:') != -1:
-            t = arc_engine_id.split(':')
-            pos = int(t[1])
-            size = int(t[2])
+        eid = k2io.k2memcpy(arc_engine_id, 0, 11)
+        if not k2io.k2memcmp(eid, 'arc_attach:'):
+            return None
 
-            try:
-                with open(arc_name, 'rb') as fp:
-                    fp.seek(pos)
-                    data = fp.read(size)
-                    # print data
-            except IOError:
-                return None
+        t = k2io.k2split(arc_engine_id, ':')
+        pos = int(k2io.k2list_index(t, 1))
+        size = int(k2io.k2list_index(t, 2))
+
+        fp = k2io.k2open(arc_name, 'rb')
+        if fp:
+            k2io.k2seek(fp, pos)
+            data = k2io.k2read(fp, size)
+            k2io.k2close(fp)
 
             return data
 
@@ -110,41 +110,53 @@ class KavMain:
 
     # ---------------------------------------------------------------------
     # arcclose(self)
-    # 압축 파일 핸들을 닫는다.
+    # Close the compressed file handle
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
 
     # ---------------------------------------------------------------------
     # mkarc(self, arc_engine_id, arc_name, file_infos)
-    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
-    #         arc_name      - 최종적으로 압축될 압축 파일 이름
-    #         file_infos    - 압축 대상 파일 정보 구조체
-    # 리턴값 : 압축 성공 여부 (True or False)
+    # Make archive file
+    # input  : arc_engine_id  - Archive engine ID
+    #          arc_name       - Archive file name
+    #          file_infos     - Target archive file info structure
+    # return : True - success, False - fail
     # ---------------------------------------------------------------------
     def mkarc(self, arc_engine_id, arc_name, file_infos):
-        file_info = file_infos[0]
+        eid = k2io.k2memcpy(arc_engine_id, 0, 11)
+        if not k2io.k2memcmp(eid, 'arc_attach:'):
+            return False
+
+        t = k2io.k2split(arc_engine_id, ':')
+        pos = int(k2io.k2list_index(t, 1))
+        # size = int(k2io.k2list_index(t, 2))
+
+        file_info = k2io.k2list_index(file_infos, 0)
         rname = file_info.get_filename()
 
-        if arc_engine_id.find('arc_attach:') != -1:
-            t = arc_engine_id.split(':')
-            pos = int(t[1])
-            size = int(t[2])
+        try:
+            fp = k2io.k2open(arc_name, 'rb')
+            fsize = k2io.k2getfilesize(arc_name)
+            t_buf = k2io.k2read(fp, fsize)
+            k2io.k2close(fp)
 
-            try:
-                if os.path.exists(rname):
-                    with open(rname, 'rb') as fp:
-                        buf = fp.read()
-                        t_buf = open(arc_name, 'rb').read()
-                        open(arc_name, 'rb').write(t_buf[:pos] + buf)  # 새로운 파일 생성
+            if k2io.k2fileexists(rname):  # exists
+                fp = k2io.k2open(rname, 'rb')
+                fsize = k2io.k2getfilesize(rname)
+                buf = k2io.k2read(fp, fsize)
+                k2io.k2close(fp)
 
-                        return True
-                else:
-                    os.remove(arc_name)
-                    # open(arc_name, 'wb').write('')
+                data = t_buf[:pos] + buf
+            else:
+                data = t_buf[:pos]
 
-                    return True  # 삭제 처리됨
-            except IOError:
-                pass
+            wp = k2io.k2open(arc_name, 'wb')
+            k2io.k2write(wp, data)
+            k2io.k2close(wp)  # create a clean file
+
+            return True
+        except IOError:
+            pass
 
         return False

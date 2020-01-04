@@ -7,6 +7,11 @@ import six
 import kernel
 
 
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
+
+
 # -------------------------------------------------------------------------
 # k2open(filename, mode)
 # Open file
@@ -31,6 +36,31 @@ def k2open(filename, mode):
 def k2read(filehandle, size):
     if filehandle:
         return filehandle.read(size)
+
+    return None
+
+
+def k2write(filehandle, data):
+    if filehandle:
+        return filehandle.write(k2byte(data))
+
+    return None
+
+# -------------------------------------------------------------------------
+# k2seek(filehandle, offset, mode=SEEK_SET)
+# Set file pointer
+# input  : filehandle  - Handle of file
+#          offset      - Offset of Set file pointer
+#          mode        - 0(SET), 1(CUR), 2(END)
+# return : offset - success, None - fail
+# -------------------------------------------------------------------------
+def k2seek(filehandle, offset, mode=SEEK_SET):
+    if filehandle:
+        if six.PY2:
+            filehandle.seek(offset, mode)
+            return filehandle.tell()
+
+        return filehandle.seek(offset, mode)
 
     return None
 
@@ -62,6 +92,9 @@ def k2getfilesize(filename):
     return os.path.getsize(filename)
 
 
+def k2fileexists(path):
+    return os.path.exists(path)
+
 # -------------------------------------------------------------------------
 # k2unlink(filename)
 # Delete file
@@ -92,6 +125,17 @@ def k2byte(data):
         return data.encode('utf-8')
 
     return data  # PY2: str, PY3: byte
+
+
+def k2ord(ch):
+    if six.PY3 and isinstance(ch, int):
+        return ch
+
+    return ord(ch)
+
+
+def k2split(str1, sep):
+    return str1.split(sep)
 
 
 # -------------------------------------------------------------------------
@@ -133,6 +177,7 @@ def k2list_get(hlist, start=0, end=None, step=1):
         end = len(hlist)
 
     return hlist[start:end:step]
+
 
 def k2list_index(hlist, index):
     return hlist[index]
