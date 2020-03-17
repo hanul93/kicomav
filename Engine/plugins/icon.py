@@ -1,10 +1,17 @@
 # -*- coding:utf-8 -*-
 # Author: Kei Choi(hanul93@gmail.com)
 
+# ICON Spec-1 : http://www.daubnet.com/en/file-format-ico
+# ICON Spec-2 : https://formats.kaitai.io/ico/index.html
 
-import bz2
 import kernel
+import kavutil
 
+import os
+import re
+
+# p_name = re.compile(r'(\d+)x(\d+) (\d+) bit')
+p_name = re.compile(r'(\d+)x(\d+)')
 
 # -------------------------------------------------------------------------
 # KavMain 클래스
@@ -18,6 +25,8 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        self.handle = {}  # 압축 파일 핸들
+        self.verbose = verbose
         return 0  # 플러그인 엔진 초기화 성공
 
     # ---------------------------------------------------------------------
@@ -38,10 +47,8 @@ class KavMain:
 
         info['author'] = 'Kei Choi'  # 제작자
         info['version'] = '1.0'  # 버전
-        info['title'] = 'Bz2 Archive Engine'  # 엔진 설명
-        info['kmd_name'] = 'bz2'  # 엔진 파일 이름
-        info['engine_type'] = kernel.ARCHIVE_ENGINE  # 엔진 타입
-        info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
+        info['title'] = 'Icon Engine'  # 엔진 설명
+        info['kmd_name'] = 'icon'  # 엔진 파일 이름
 
         return info
 
@@ -57,11 +64,27 @@ class KavMain:
         ret = {}
 
         mm = filehandle
-        if mm[0:3] == 'BZh':  # 헤더 체크
-            ret['ff_bz2'] = 'bz2'
+        if mm[0:4] == '\x00\x00\x01\x00':  # 헤더 체크
+            ret['ff_icon'] = kavutil.get_uint16(mm, 4)
             return ret
 
         return None
+
+    # ---------------------------------------------------------------------
+    # __get_handle(self, filename)
+    # 압축 파일의 핸들을 얻는다.
+    # 입력값 : filename   - 파일 이름
+    # 리턴값 : 압축 파일 핸들
+    # ---------------------------------------------------------------------
+    def __get_handle(self, filename):
+        # print type(self.handle)
+        if filename in self.handle:  # 이전에 열린 핸들이 존재하는가?
+            buf = self.handle.get(filename, None)
+        else:
+            buf = open(filename, 'rb').read()
+            self.handle[filename] = buf
+
+        return buf
 
     # ---------------------------------------------------------------------
     # arclist(self, filename, fileformat)
@@ -73,9 +96,20 @@ class KavMain:
     def arclist(self, filename, fileformat):
         file_scan_list = []  # 검사 대상 정보를 모두 가짐
 
-        # 미리 분석된 파일 포맷중에 BZ2 포맷이 있는가?
-        if 'ff_bz2' in fileformat:
-            file_scan_list.append(['arc_bz2', 'BZ2'])
+        # 미리 분석된 파일 포맷중에 ICON 포맷이 있는가?
+        if 'ff_icon' in fileformat:
+            num = fileformat['ff_icon']
+            mm = self.__get_handle(filename)
+
+            for i in range(num):
+                off = 6 + (16 * i)
+                w = ord(mm[off])
+                h = ord(mm[off+1])
+                c = kavutil.get_uint16(mm, off+6)
+
+                # name = '%dx%d %d bit' % (w, h, c)
+                name = '%dx%d' % (w, h)
+                file_scan_list.append(['arc_icon', name])
 
         return file_scan_list
 
@@ -87,22 +121,28 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id == 'arc_bz2':
-            try:
-                s = open(arc_name, 'rb').read()
-                data = ''
-                while len(s):
-                    try:
-                        b = bz2.BZ2Decompressor()
-                        data += b.decompress(s)
-                        s = b.unused_data
-                    except IOError:
-                        break
+        if arc_engine_id == 'arc_icon':
+            mm = self.__get_handle(arc_name)
+            num = kavutil.get_uint16(mm, 4)
 
-                if len(data):
-                    return data
-            except IOError:
-                pass
+            p = p_name.search(fname_in_arc)
+            if p:
+                fw = int(p.groups()[0])
+                fh = int(p.groups()[1])
+                # fc = int(p.groups()[2])
+
+                for i in range(num):
+                    off = 6 + (16 * i)
+                    w = ord(mm[off])
+                    h = ord(mm[off+1])
+                    # c = kavutil.get_uint16(mm, off+6)
+
+                    if w == fw and h == fh:  # and c == fc:
+                        img_size = kavutil.get_uint32(mm, off+8)
+                        img_off = kavutil.get_uint32(mm, off+12)
+                        data = mm[img_off:img_off+img_size]
+
+                        return data
 
         return None
 
@@ -111,29 +151,8 @@ class KavMain:
     # 압축 파일 핸들을 닫는다.
     # ---------------------------------------------------------------------
     def arcclose(self):
-        pass
-
-    # ---------------------------------------------------------------------
-    # mkarc(self, arc_engine_id, arc_name, file_infos)
-    # 입력값 : arc_engine_id - 압축 가능 엔진 ID
-    #         arc_name      - 최종적으로 압축될 압축 파일 이름
-    #         file_infos    - 압축 대상 파일 정보 구조체
-    # 리턴값 : 압축 성공 여부 (True or False)
-    # ---------------------------------------------------------------------
-    def mkarc(self, arc_engine_id, arc_name, file_infos):
-        if arc_engine_id == 'arc_bz2':
-            try:
-                zfile = bz2.BZ2File(arc_name, 'w')
-                file_info = file_infos[0]
-
-                rname = file_info.get_filename()
-                data = open(rname, 'rb').read()
-
-                zfile.write(data)
-                zfile.close()
-
-                return True
-            except:
-                pass
-
-        return False
+        for fname in self.handle.keys():
+            hfile = self.handle[fname]
+            # 버퍼라 close 하지 않고 del 처리만 하자
+            del hfile
+            self.handle.pop(fname)

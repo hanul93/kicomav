@@ -131,3 +131,39 @@ rule Virus_Win32_PolyRansom_a
     condition:
         $s1 at pe.entry_point or $s2 at pe.entry_point
 }
+
+rule Trojan_JS_Agent_gen_1
+{
+    meta:
+        author = "Kei Choi"
+        date = "2019-12-08"
+        KicomAV = "Trojan.JS.Agent.gen"
+    strings:
+        $a1 = "CreateObject" nocase
+        $a2 = "ActiveXObject" nocase
+        $s1 = ".type" nocase
+        $s2 = ".open" nocase
+        $s3 = ".write" nocase
+        $s4 = ".savetofile" nocase
+        $s5 = ".run" nocase
+    condition:
+        1 of ($a*) and all of ($s*)
+}
+
+
+rule Trojan_BAT_Agent_gen_1
+{
+    meta:
+        author = "Kei Choi"
+        date = "2019-12-08"
+        KicomAV = "Trojan.BAT.Agent.gen"
+    strings:
+        $mz = "<KicomAV:BAT>"
+        $s1 = "echo" nocase
+        $s2 = ".downloadstring" nocase
+        $s3 = "windowspowershell" nocase
+        $s4 = "powershell.exe" nocase
+    condition:
+        all of them
+}
+

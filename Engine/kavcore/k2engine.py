@@ -132,9 +132,10 @@ class Engine:
                 pass
 
         # 악성코드 패턴에서 최신 시간 값을 얻는다.
-        fl = glob.glob(os.path.join(plugins_path, '*.n??'))
+        fl = glob.glob1(plugins_path, '*.n??')
         for fname in fl:
             try:
+                fname = os.path.join(plugins_path, fname)
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
                     sdate = k2timelib.convert_date(struct.unpack('<H', buf[8:10])[0])
@@ -475,10 +476,11 @@ class EngineInstance:
 
                     if is_sub_dir_scan:
                         # 폴더 안의 파일들을 검사대상 리스트에 추가
-                        flist = glob.glob(os.path.join(real_name, '*'))
+                        flist = glob.glob1(real_name, '*')
                         tmp_flist = []
 
                         for rfname in flist:
+                            rfname = os.path.join(real_name, rfname)
                             tmp_info = k2file.FileStruct(rfname)
                             tmp_flist.append(tmp_info)
 

@@ -10,6 +10,7 @@ import marshal
 import time
 import math
 import zlib
+import zipfile
 
 
 # -------------------------------------------------------------------------
@@ -61,9 +62,10 @@ class PatternMD5:
         # 이는 향후 (size % 개수) + 1을 해서 size가 어느 그룹에 존재하는지를 확인하게 됨
         self.sig_group_count = {}
 
-        fl = glob.glob(os.path.join(plugins_path, '*.s??'))
+        fl = glob.glob1(plugins_path, '*.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -237,9 +239,10 @@ class PatternMD5:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -257,9 +260,10 @@ class PatternMD5:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
@@ -285,9 +289,10 @@ class PatternVDB:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
-        fl = glob.glob(os.path.join(plugins_path, 've.s??'))
+        fl = glob.glob1(plugins_path, 've.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -447,9 +452,10 @@ class PatternVDB:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -467,9 +473,10 @@ class PatternVDB:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
@@ -683,8 +690,12 @@ def is_textfile(buf):
 #         off - 오프셋
 # 리턴값 : uint16 변환 값
 # -------------------------------------------------------------------------
-def get_uint16(buf, off):
-    return struct.unpack('<H', buf[off:off+2])[0]
+def get_uint16(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+        
+    return struct.unpack(endian + 'H', buf[off:off+2])[0]
 
 
 # -------------------------------------------------------------------------
@@ -694,8 +705,12 @@ def get_uint16(buf, off):
 #         off - 오프셋
 # 리턴값 : uint32 변환 값
 # -------------------------------------------------------------------------
-def get_uint32(buf, off):
-    return struct.unpack('<L', buf[off:off+4])[0]
+def get_uint32(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+
+    return struct.unpack(endian + 'L', buf[off:off+4])[0]
 
 
 # -------------------------------------------------------------------------
@@ -705,8 +720,12 @@ def get_uint32(buf, off):
 #         off - 오프셋
 # 리턴값 : uint64 변환 값
 # -------------------------------------------------------------------------
-def get_uint64(buf, off):
-    return struct.unpack('<Q', buf[off:off+8])[0]
+def get_uint64(buf, off, be=False):
+    endian = '<'
+    if be:
+        endian = '>'
+
+    return struct.unpack(endian + 'Q', buf[off:off+8])[0]
 
 
 # -------------------------------------------------------------------------
@@ -724,6 +743,13 @@ def normal_vname(vname, platform=None):
         vname = vname.replace('<p>', platform)
 
     return vname
+
+
+# -------------------------------------------------------------------------
+# 유니크한 숫자형태의 문자열을 리턴한다.
+# -------------------------------------------------------------------------
+def uniq_string():
+    return str(int(time.time() * 1000))
 
 
 # ----------------------------------------------------------------------------
@@ -795,6 +821,32 @@ class Feature:
             t_data += chr(int(m[i * 8:(i + 1) * 8], 2))
 
         return t_data
+
+
+# ----------------------------------------------------------------------------
+# 압축 파일에 존재하는 악성코드를 치료하고 새롭게 압축하는 로직
+# 실제 압축 로직이 없는 압축엔진(예:ALZ, EGG 등)은 ZIP으로 파일을 압축하고 확장자는 그대로 유지
+# ----------------------------------------------------------------------------
+def make_zip(arc_name, file_infos):
+    if open(arc_name, 'rb').read(2) == 'PK':
+        # print '[-] zip :', arc_name
+        zfile = zipfile.ZipFile(arc_name, 'w')
+
+        for file_info in file_infos:
+            rname = file_info.get_filename()
+            try:
+                with open(rname, 'rb') as fp:
+                    buf = fp.read()
+                    # print '[-] filename :', rname, len(buf)
+                    # print '[-] rname :',
+                    a_name = file_info.get_filename_in_archive()
+                    zfile.writestr(a_name, buf, compress_type=zipfile.ZIP_DEFLATED)
+            except IOError:
+                # print file_info.get_filename_in_archive()
+                pass
+
+        zfile.close()
+        # print '[-] close()\n'
 
 
 # -------------------------------------------------------------------------

@@ -10,6 +10,7 @@ adware.kmd
 macro.kmd
 dde.kmd
 hwp.kmd
+hwpx.kmd
 yaraex.kmd
 pe.kmd
 elf.kmd
@@ -17,6 +18,7 @@ html.kmd
 script.kmd
 rtf.kmd
 pdf.kmd
+lnk.kmd
 pyz.kmd
 carch.kmd
 olenative.kmd

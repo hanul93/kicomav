@@ -9,6 +9,9 @@ import kernel
 import kavutil
 
 
+KICOMAV_BAT_MAGIC = '<KicomAV:BAT>'
+
+
 # -------------------------------------------------------------------------
 # KavMain 클래스
 # -------------------------------------------------------------------------
@@ -21,6 +24,9 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
+        # text 포맷으로 된 파일 포맷 확인하기
+        self.p_text_format = re.compile(r'\s*@?(\w+)', re.IGNORECASE)
+
         # 파일 시작이 <script, <iframe인지 확인하는 정규표현식
         self.p_script_head = re.compile(r'\s*<\s*(script|iframe)', re.IGNORECASE)
 
@@ -34,7 +40,11 @@ class KavMain:
         self.p_script_cmt1 = re.compile(r'//.*')
         self.p_script_cmt2 = re.compile(r'/\*.*?\*/', re.DOTALL)
         self.p_script_cmt3 = re.compile(r'(#|\bREM\b).*', re.IGNORECASE)
-        self.p_space = re.compile(r'\s')
+        self.p_space = re.compile(r'[\s]')
+
+        # BAT 주석문
+        self.p_bat_cmt1 = re.compile(r'\bREM\s+.*', re.IGNORECASE)
+        self.p_bat_cmt2 = re.compile(r'[\^\`]', re.IGNORECASE)
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -86,7 +96,16 @@ class KavMain:
         mm = filehandle
 
         buf = mm[:4096]
+
         if kavutil.is_textfile(buf):  # Text 파일인가?
+            obj = self.p_text_format.match(buf)  # 첫 시작 단어로 파일 포맷 인식하기
+            if obj:
+                t = obj.groups()[0].lower()
+                if t in ['cd', 'echo']:
+                    return {'ff_bat': 'BAT'}
+            elif mm[:13] == KICOMAV_BAT_MAGIC:
+                return {'ff_bat': 'BAT'}
+
             obj = self.p_script_head.match(buf)
             if obj:
                 # 내부 스크립트가 존재하나?
@@ -136,6 +155,8 @@ class KavMain:
             file_scan_list.append(['arc_script', 'JavaScript'])
         elif 'ff_iframe' in fileformat:
             file_scan_list.append(['arc_iframe', 'IFrame'])
+        elif 'ff_bat' in fileformat:
+            file_scan_list.append(['arc_bat', 'BAT'])
 
         return file_scan_list
 
@@ -147,19 +168,23 @@ class KavMain:
     # 리턴값 : 압축 해제된 내용 or None
     # ---------------------------------------------------------------------
     def unarc(self, arc_engine_id, arc_name, fname_in_arc):
-        if arc_engine_id == 'arc_script' or arc_engine_id == 'arc_iframe':
-            buf = ''
-
+        if arc_engine_id in ['arc_script', 'arc_iframe', 'arc_bat']:
             try:
                 with open(arc_name, 'rb') as fp:
                     buf = fp.read()
             except IOError:
                 return None
 
-            obj = self.p_script_in_html.search(buf)
-            if obj:
-                data = obj.groups()[1]
-                return data
+            if arc_engine_id in ['arc_script', 'arc_iframe']:
+                obj = self.p_script_in_html.search(buf)
+                if obj:
+                    data = obj.groups()[1]
+                    return data
+
+            elif arc_engine_id == 'arc_bat':
+                buf = self.p_bat_cmt1.sub('', buf)
+                data = self.p_bat_cmt2.sub('', buf)
+                return KICOMAV_BAT_MAGIC + data
 
         return None
 
@@ -252,9 +277,22 @@ class KavMain:
             if not ('ff_html' in fileformat or
                     'ff_script' in fileformat or
                     'ff_iframe' in fileformat or
+                    'ff_bat' in fileformat or
                     'ff_script_external' in fileformat or
                     'ff_iframe_external' in fileformat):
                 raise ValueError  # 해당 포맷이 포함되을때만 script 엔진 검사
+
+            if 'ff_bat' in fileformat and mm[:13] == KICOMAV_BAT_MAGIC:
+                p = re.compile(r'set\s+(\w+)=', re.IGNORECASE)
+                t_set = p.findall(mm)
+                t_count = 0
+                for k in t_set:
+                    p = re.compile('echo\s+.+?%s' % k)
+                    if p.search(mm):
+                        t_count += 1
+
+                if t_count > 5:
+                    return True, 'Trojan.BAT.Agent.gen', 0, kernel.INFECTED
 
             if kavutil.is_textfile(mm[:4096]):
                 buf = mm[:]
