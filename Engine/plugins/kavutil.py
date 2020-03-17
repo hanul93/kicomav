@@ -62,9 +62,10 @@ class PatternMD5:
         # 이는 향후 (size % 개수) + 1을 해서 size가 어느 그룹에 존재하는지를 확인하게 됨
         self.sig_group_count = {}
 
-        fl = glob.glob(os.path.join(plugins_path, '*.s??'))
+        fl = glob.glob1(plugins_path, '*.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -238,9 +239,10 @@ class PatternMD5:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -258,9 +260,10 @@ class PatternMD5:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
@@ -286,9 +289,10 @@ class PatternVDB:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
-        fl = glob.glob(os.path.join(plugins_path, 've.s??'))
+        fl = glob.glob1(plugins_path, 've.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -448,9 +452,10 @@ class PatternVDB:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -468,9 +473,10 @@ class PatternVDB:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
