@@ -23,6 +23,33 @@ class Error(Exception):
     pass
 
 
+# -------------------------------------------------------------------------
+# 문자열 비교 (s1 > s2) -1, (s1 < s2) 1, (s1 == s2) 0
+# -------------------------------------------------------------------------
+def strcmp(s1, s2):
+    if s1 == s2:
+        return 0
+
+    if len(s1) > len(s2):
+        return -1
+    elif len(s1) < len(s2):
+        return 1
+
+    # 길이가 같은 경우 (각각의 값을 비교)
+    c1 = [ord(x) for x in s1]
+    c2 = [ord(x) for x in s2]
+
+    for i in range(len(c1)):
+        if c1 == c2:
+            continue
+        elif c1 < c2:
+            return 1
+        else:
+            return -1
+
+    return 0
+
+
 # ---------------------------------------------------------------------
 # MisiBase64 인코더 디코더
 # ---------------------------------------------------------------------
@@ -694,17 +721,19 @@ class OleFile:
 
         target_pps = self.pps[no]
         if target_pps['Valid'] and target_pps['Type'] == 2:  # 유효한 PPS에 대한 삭제인지 확인
-            if  reset_stream:
+            if reset_stream:
                 size = target_pps['Size']
                 t = ow.write(no, '\x00' * size)  # 모든 데이터를 0으로 Wipe
 
             t = ow.delete(no)
             if t:
-               self.init(t)  # 새롭게 OLE 재로딩
+                self.init(t)  # 새롭게 OLE 재로딩
+
         elif target_pps['Valid'] and target_pps['Type'] == 1 and delete_storage:  # 유효한 스토리지?
             t = ow.delete(no)  # 링크 삭제
             if t:
                 self.init(t)  # 새롭게 OLE 재로딩
+
 
 # ---------------------------------------------------------------------
 # OleWriteStream 클래스
@@ -724,67 +753,112 @@ class OleWriteStream:
         self.root_list_array = root_list_array
         self.small_block = small_block
 
-    def __get_root_node(self, node):  # 해당 정보를 가진 root를 찾기
+    def delete(self, no):
+        target_pps = self.pps[no]
+        pps_prev = target_pps['Prev']
+        pps_next = target_pps['Next']
+        pps_dir = target_pps['Dir']
+
+        # Prev 조정하기 (no가 Dir에 존재하는 경우)
         for i, pps in enumerate(self.pps):
-            if pps['Prev'] == node or pps['Next'] == node or pps['Dir'] == node:
-                return i
+            if pps['Dir'] == no:
+                if pps_prev != 0xffffffff:
+                    self.__set_pps_header(i, pps_dir=pps_prev)
+                    self.pps[i]['Dir'] = pps_prev
 
-    def __get_max_node(self, node):  # 특정 노드의 Max 값을 가진 node를 찾기
-        no = node
+                    if pps_next != 0xffffffff:
+                        self.trace_tree_1(pps_prev, pps_next)
 
-        while True:
-            pps = self.pps[no]
-            if pps['Next'] == 0xffffffff:  # 더이상 오른쪽이 없으면 탐색 종료
+                elif pps_next != 0xffffffff:
+                    self.__set_pps_header(i, pps_dir=pps_next)
+                    self.pps[i]['Dir'] = pps_next
+
+                    if pps_prev != 0xffffffff:
+                        self.trace_tree_1(pps_next, pps_prev)
+                else:
+                    self.__set_pps_header(i, pps_dir=0xffffffff)
+                    self.pps[i]['Dir'] = 0xffffffff
                 break
-            else:  # 항상 오른쪽 노드가 큰 값임
-                no = pps['Next']
 
-        return no
+        # Prev 조정하기 (no가 Prev에 존재하는 경우)
+        for i, pps in enumerate(self.pps):
+            if pps['Prev'] == no:
+                if pps_prev != 0xffffffff:
+                    t = strcmp(pps['Name'], self.pps[pps_prev]['Name'])
+                else:
+                    t = -1
 
-    def delete(self, del_no):
-        del_pps = self.pps[del_no]
-        prev_no = del_pps['Prev']
-        next_no = del_pps['Next']
-        dir_no = del_pps['Dir']
+                if t < 0:
+                    self.__set_pps_header(i, pps_prev=pps_prev)
+                    self.pps[i]['Prev'] = pps_prev
+                    if pps_next != 0xffffffff:
+                        self.trace_tree_1(i, pps_next)
+                else:  # 이런 경우는 존재하지 않을 듯
+                    pass
+                    # raw_input('>>> Case1')
+                    # Next 트리 검색해서 적절한 위치 찾기 (2개의 값이 들어가는 경우)
+                    # self.trace_tree_next_2(i, pps_prev, pps_next)
+                break
 
-        # root를 찾기
-        root_no = self.__get_root_node(del_no)
+        # Next 조정하기 (no가 Next에 존재하는 경우)
+        for i, pps in enumerate(self.pps):
+            if pps['Next'] == no:
+                if pps_next != 0xffffffff:
+                    t = strcmp(pps['Name'], self.pps[pps_next]['Name'])
+                else:
+                    t = 1
 
-        # 양쪽 노드가 존재하는가?
-        if prev_no != 0xffffffff and next_no != 0xffffffff:  # 양쪽 모두 노트가 존재함
-            # 1. prev 노드 값을 root로 보낸다.
-            t_no = prev_no
+                if t > 0:
+                    self.__set_pps_header(i, pps_next=pps_next)
+                    self.pps[i]['Next'] = pps_next
+                    if pps_prev != 0xffffffff:
+                        self.trace_tree_1(i, pps_prev)
+                else:
+                    pass  # 이런 경우는 존재하지 않을 듯
+                    # raw_input('>>> Case2')
+                    # Next 트리 검색해서 적절한 위치 찾기 (2개의 값이 들어가는 경우)
+                    # self.trace_tree_next_2(i, pps_prev, pps_next)
+                break
 
-            # 2. prev 노드 하위에 next가 없는 node를 찾아서 del_pps의 next_no를 등록한다.
-            blank_next_no = self.__get_max_node(prev_no)
-            self.__set_pps_header(blank_next_no, pps_next=next_no)
-
-        elif prev_no != 0xffffffff and next_no == 0xffffffff:  # Prev만 존재
-            # 1. prev 노드 값을 root로 보낸다.
-            t_no = prev_no
-
-        elif prev_no == 0xffffffff and next_no != 0xffffffff:  # Next만 존재
-            # 1. next 노드 값을 root로 보낸다.
-            t_no = next_no
-
-        else:  # prev_no == 0xffffffff and next_no == 0xffffffff:  # 단일 노드
-            # 1. 0xffffffff 노드 값을 root로 보낸다.
-            t_no = 0xffffffff
-
-        # root 노드를 수정한다.
-        pps = self.pps[root_no]
-        if pps['Prev'] == del_no:
-            self.__set_pps_header(root_no, pps_prev=t_no)
-        elif pps['Next'] == del_no:
-            self.__set_pps_header(root_no, pps_next=t_no)
-        else:  # Dir
-            self.__set_pps_header(root_no, pps_dir=t_no)
-
-        # 삭제 노드 값은 모두 지우기
-        self.__set_pps_header(del_no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
+        # PPS 정보를 삭제함
+        self.__set_pps_header(no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
                               pps_dir=0xffffffff, del_info=True)
 
+        # 만약 해당 pps가 dir을 가졌다면 하부는 모두 0xffffffff로 정리
+        if pps_dir != 0xffffffff:
+            fl = [pps_dir]
+
+            while len(fl):
+                f_no = fl.pop(0)
+                t_prev = self.pps[f_no]['Prev']
+                t_next = self.pps[f_no]['Next']
+                t_dir = self.pps[f_no]['Dir']
+                fl += [x for x in [t_prev, t_next, t_dir] if x != 0xffffffff]
+
+                self.__set_pps_header(f_no, size=0, start=0xffffffff, pps_prev=0xffffffff, pps_next=0xffffffff,
+                                      pps_dir=0xffffffff, del_info=True)
+
         return self.mm
+
+
+    def trace_tree_1(self, no, val):
+        t1 = self.pps[no]['Name']
+        t2 = self.pps[val]['Name']
+
+        t = strcmp(t1, t2)
+        if t < 0:
+            if self.pps[no]['Prev'] == 0xffffffff:
+                self.__set_pps_header(no, pps_prev=val)
+                self.pps[no]['Prev'] = val
+            else:
+                self.trace_tree_1(self.pps[no]['Prev'], val)
+        else:
+            if self.pps[no]['Next'] == 0xffffffff:
+                self.__set_pps_header(no, pps_next=val)
+                self.pps[no]['Next'] = val
+            else:
+                self.trace_tree_1(self.pps[no]['Next'], val)
+
 
     def write(self, no, data):
         # 기존 PPS 정보를 얻는다
@@ -1447,6 +1521,28 @@ class OleWriteStream:
 if __name__ == '__main__':
     # import zlib
 
+    o = OleFile('5ac5deee99ebfe1679bf6c1554bf6b2f6a2dda4c703aa0364d85efe2afa3ee40_defore.doc', write_mode=True, verbose=True)
+    print o.listdir()
+
+    # Prev 삭제 테스트
+    # o.delete('Macros/VBA/__SRP_3')
+    # o.delete('Macros/VBA/Dejqgixsfb')
+    # o.delete('Data')
+    # o.delete('ObjectPool', delete_storage=True)
+    # o.delete('Macros/VBA/Wkegcelqe')
+
+    # Next 삭제 테스트
+    # o.delete('Macros/VBA/Xomjavucvz')
+    # o.delete('Macros/VBA/Sordpnajy')
+    # o.delete('_SummaryInformation')
+    # o.delete('Macros/VBA/__SRP_2')
+
+    '''
+    # dir 삭제 테스트
+    o.delete('Macros/PROJECT')
+    o.close()
+
+    '''
     # o = OleFile('normal.hwp', write_mode=True, verbose=True)
     o = OleFile('a82d381c20cfdf47d603b4b2b840136ed32f71d2757c64c898dc209868bb57d6', write_mode=True, verbose=True)
     print o.listdir()
@@ -1527,7 +1623,7 @@ class KavMain:
         info = dict()  # 사전형 변수 선언
 
         info['author'] = 'Kei Choi'  # 제작자
-        info['version'] = '1.1'  # 버전
+        info['version'] = '1.1.2140'  # 버전
         info['title'] = 'OLE Library'  # 엔진 설명
         info['kmd_name'] = 'ole'  # 엔진 파일 이름
         info['make_arc_type'] = kernel.MASTER_PACK  # 악성코드 치료 후 재압축 유무
