@@ -61,23 +61,23 @@ cp -rf Engine/* Release
 
 if [ ! -f "key.skr" ]
 then 
-    python Tools/mkkey.py     
+    python2 Tools/mkkey.py     
 fi
 
 if [ ! -f "key.pkr" ]
 then 
-    python Tools/mkkey.py 
+    python2 Tools/mkkey.py 
 fi
 
 cp key.* Release/plugins
 cd Release/plugins
 
 echo '[*] Build Engine files...'
-python ../../Tools/kmake.py kicom.lst
+python2 ../../Tools/kmake.py kicom.lst
 
 for f in *.py
 do
-    python ../../Tools/kmake.py "$f"
+    python2 ../../Tools/kmake.py "$f"
 done
 
 rm *.py
