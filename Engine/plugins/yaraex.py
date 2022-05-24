@@ -37,7 +37,7 @@ class KavMain:
                 self.rule_count += 1
         except:
             if self.verbose:
-                print '[*] ERROR : YARA Rule compile'
+                print ('[*] ERROR : YARA Rule compile')
             return -1
 
         return 0  # 플러그인 엔진 초기화 성공

@@ -134,29 +134,29 @@ class NSIS:
         self.case_type = case_type
 
         if self.verbose:
-            print '-' * 79
+            print ('-' * 79)
             kavutil.vprint('Engine')
             kavutil.vprint(None, 'Engine', 'nsis.kmd')
             kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
 
-            print
+            print ()
             kavutil.vprint('NSIS')
             kavutil.vprint(None, 'Flag', '%d' % flag)
             kavutil.vprint(None, 'Uncompress Case', '%d' % case_type)
 
-            print
+            print ()
             kavutil.vprint('Uncompress Data')
-            print
+            print ()
             kavutil.HexDump().Buffer(data, 0, 0x80)
 
             s = self.nsis_header.namelist_ex()
             if len(s):
-                print
+                print ()
                 kavutil.vprint('File Extract')
-                print
+                print ()
                 for t in s:
                     (foff, fname, ftime, extract_type) = t
-                    print "%08X | %-45s | %s" % (foff, fname, ftime if ftime != '' else 'N/A')
+                    print ("%08X | %-45s | %s" % (foff, fname, ftime if ftime != '' else 'N/A'))
 
         return True
 

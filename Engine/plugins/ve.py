@@ -170,13 +170,13 @@ class KavMain:
                       0x68, 0x70, 0x78, 0x80]
 
             if self.verbose:
-                print '-' * 79
+                print ('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 've.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
                 kavutil.vprint(None, 'MD5', cryptolib.md5(mm[:]))
 
-                print
+                print ()
                 kavutil.vprint('VE')
                 vdb_name = os.path.split(filename)[-1] + '.vdb'
                 kavutil.vprint(None, 'VDB File name', vdb_name)
@@ -198,8 +198,8 @@ class KavMain:
 
             for flag in flags:
                 p1 = kavutil.handle_pattern_vdb.match_size('ve', flag[0])  # 일치하는 Flag가 있나?
-                # print '%08x :' % flag[0], p1
-                # print flag[0] >> 16
+                # print ('%08x :' % flag[0], p1)
+                # print (flag[0] >> 16)
 
                 if p1:
                     for ve_id in p1.keys():
@@ -213,7 +213,7 @@ class KavMain:
 
                             if flag[0] >> 16 == cs1_flag and cs1_off == 0 and cs1_size in cs_size:
                                 i = cs_size.index(cs1_size)
-                                # print '=', hex(flag[1][i])
+                                # print ('=', hex(flag[1][i]))
                                 if cs1_crc == flag[1][i]:  # 1차 패턴이 같은가?
                                     vname = self.__scan_cs2(mm, ve_id, idx)
                                     if vname:

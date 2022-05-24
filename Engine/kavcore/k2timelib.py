@@ -65,6 +65,6 @@ def get_now_time(now=None):
 
     t_h = (now.tm_hour << 11) & 0xF800
     t_m = (now.tm_min << 5) & 0x07E0
-    t_s = (now.tm_sec / 2) & 0x001F
+    t_s = (now.tm_sec // 2) & 0x001F
 
     return (t_h | t_m | t_s) & 0xFFFF

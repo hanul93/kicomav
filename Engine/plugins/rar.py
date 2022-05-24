@@ -3091,7 +3091,7 @@ class KavMain:
         ret = {}
 
         mm = filehandle
-        if mm[0:4] == 'Rar!':  # 헤더 체크
+        if mm[0:4] == b'Rar!':  # 헤더 체크
             ret['ff_rar'] = 'rar'
             return ret
 

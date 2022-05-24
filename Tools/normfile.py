@@ -11,13 +11,13 @@ import hashlib
 
 
 # 주석문 및 공백 제거를 위한 정규표현식
-p_http = re.compile(r'https?://')
-p_script_cmt1 = re.compile(r'//.*|/\*[\d\D]*?\*/')
-p_script_cmt2 = re.compile(r'(#|\bREM\b).*', re.IGNORECASE)
-p_space = re.compile(r'\s')
+p_http = re.compile(rb'https?://')
+p_script_cmt1 = re.compile(rb'//.*|/\*[\d\D]*?\*/')
+p_script_cmt2 = re.compile(rb'(#|\bREM\b).*', re.IGNORECASE)
+p_space = re.compile(rb'\s')
 
-p_vba = re.compile(r'^\s*Attribute\s+VB_Name.+|^\s*Attribute\s+.+VB_Invoke_Func.+|\s+_\r?\n', re.IGNORECASE|re.MULTILINE)
-p_vba_cmt = re.compile(r'(\'|\bREM\b).*', re.IGNORECASE)
+p_vba = re.compile(rb'^\s*Attribute\s+VB_Name.+|^\s*Attribute\s+.+VB_Invoke_Func.+|\s+_\r?\n', re.IGNORECASE|re.MULTILINE)
+p_vba_cmt = re.compile(rb'(\'|\bREM\b).*', re.IGNORECASE)
 
 # -------------------------------------------------------------------------
 # sigtool.log의 로그 한 줄을 분석한 뒤 파일 내용을 정형화 하는 작업
@@ -39,7 +39,7 @@ def normfile(fname, ftype):
     elif ftype.find('Attached') >= 0:
         pass
     else:
-        print 'NOT Support : %s' % ftype
+        print ('NOT Support : %s' % ftype)
         return
 
     # 정형화된 내용의 파일을 생성한다.
@@ -69,7 +69,7 @@ def main(log_fname):
 
         fname = f[0].strip()
         ftype = f[1].strip()
-        print fname
+        print (fname)
 
         normfile(fname, ftype)  # 정형화 하기
     fp.close()
@@ -80,7 +80,7 @@ def main(log_fname):
 # -------------------------------------------------------------------------
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print 'Usage : normfile.py [sigtool.log]'
+        print ('Usage : normfile.py [sigtool.log]')
         exit(0)
 
     main(sys.argv[1])

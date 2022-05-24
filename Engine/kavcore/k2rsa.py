@@ -42,7 +42,7 @@ def __ext_euclid(a, b):
 
     while 1:
         list_r.append(list_r[i - 2] % list_r[i - 1])
-        list_q.append(list_r[i - 2] / list_r[i - 1])
+        list_q.append(list_r[i - 2] // list_r[i - 1])
 
         if list_r[i] == 0:
             d = list_r[i - 1]
@@ -184,8 +184,13 @@ def __value_to_string(val):
 # ---------------------------------------------------------------------
 def __string_to_value(buf):
     plantext_ord = 0
-    for i in range(len(buf)):
-        plantext_ord |= ord(buf[i]) << (i * 8)
+    if isinstance(buf, bytes):
+        for i in range(len(buf)):
+            plantext_ord |= buf[i] << (i * 8)    
+    else:
+        for i in range(len(buf)):
+#        plantext_ord |= ord(buf[i]) << (i * 8)
+            plantext_ord |= buf[i].encode('latin-1')[0] << (i * 8)
 
     return plantext_ord
 
@@ -201,25 +206,25 @@ def create_key(pu_fname='key.prk', pr_fname='key.skr', debug=False):
     p = __gen_prime(128)  # 128bit 소수 생성
     q = __gen_prime(128)  # 128bit 소수 생성
 
-    # print 'p    :', hex(p)
-    # print 'q    :', hex(q)
+    # print ('p    :', hex(p))
+    # print ('q    :', hex(q))
 
     n = p * q
-    # print 'n    :', hex(n)
+    # print ('n    :', hex(n))
 
     qn = (p - 1) * (q - 1)
 
-    # print 'Q(n) :', hex(qn)
+    # print ('Q(n) :', hex(qn))
 
     e, d = __get_ed(qn)
-    # print 'e    :', hex(e)
-    # print 'd    :', hex(d)
+    # print ('e    :', hex(e))
+    # print ('d    :', hex(d))
 
     pu = [e, n]  # 공개키
     pr = [d, n]  # 개인키
 
-    # print 'pu   :', pu  # 공개키
-    # print 'pr   :', pr  # 개인키
+    # print ('pu   :', pu)  # 공개키
+    # print ('pr   :', pr)  # 개인키
 
     # 공개키와 개인키를 base64로 구성한다.
     pu_data = base64.b64encode(marshal.dumps(pu))
@@ -227,15 +232,15 @@ def create_key(pu_fname='key.prk', pr_fname='key.skr', debug=False):
 
     try:
         # 공개키와 개인키를 파일로 만든다.
-        open(pu_fname, 'wt').write(pu_data)
-        open(pr_fname, 'wt').write(pr_data)
+        open(pu_fname, 'wt').write(pu_data.decode('latin-1'))
+        open(pr_fname, 'wt').write(pr_data.decode('latin-1'))
     except IOError:
-        # print 'ERROR'
+        # print ('ERROR')
         return False
 
     # 공개키와 개인키가 생성되었다.
     if debug:
-        print '[*] Make key : %s, %s' % (pu_fname, pr_fname)
+        print ('[*] Make key : %s, %s' % (pu_fname, pr_fname))
 
     return True
 

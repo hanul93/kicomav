@@ -183,7 +183,7 @@ def make_signature(fname, _id):
         printProgress(idx, MAX_COUNT)
 
         if idx >= MAX_COUNT:
-            print '[*] %s : %d' % (fname, _id)
+            print ('[*] %s : %d' % (fname, _id))
             save_sig_file(fname, _id)
             idx = 0
             _id += 1
@@ -198,7 +198,7 @@ def make_signature(fname, _id):
 # -------------------------------------------------------------------------
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'Usage : sigtool_md5.py [sig text] [id]'
+        print ('Usage : sigtool_md5.py [sig text] [id]')
         exit(0)
 
     if len(sys.argv) == 2:

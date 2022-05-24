@@ -6,10 +6,10 @@ import struct
 import zlib
 import os
 import py7zlib
-import kavutil
 import shutil
-
 import zipfile
+
+import kavutil
 import kernel
 
 
@@ -323,7 +323,7 @@ class KavMain:
         ret = {}
 
         mm = filehandle
-        if mm[0:4] == 'PK\x03\x04':  # 헤더 체크
+        if mm[0:4] == b'PK\x03\x04':  # 헤더 체크
             try:
                 zfile = zipfile.ZipFile(filename)  # zip 파일 열기
                 names = zfile.namelist()
@@ -359,7 +359,7 @@ class KavMain:
                     pass
 
             return ret
-        elif mm[0:4] == '7z\xbc\xaf':
+        elif mm[0:4] == b'7z\xbc\xaf':
             ret['ff_7z'] = '7z'
             return ret
 

@@ -443,7 +443,7 @@ class KavMain:
         fileformat = {}  # 포맷 정보를 담을 공간
 
         mm = filehandle
-        if mm[0:4] == 'EGGA':  # 헤더 체크
+        if mm[0:4] == b'EGGA':  # 헤더 체크
             ret = {'ff_egg': 'EGG'}
             return ret
 

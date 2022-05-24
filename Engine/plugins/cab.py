@@ -45,14 +45,18 @@ try:
 except ImportError:
     from io import StringIO
 
+#try:
+from ctypes import *
 try:
-    from ctypes import *
     from ctypes.wintypes import BOOL
     from functools import wraps
 
     LOAD_WINTYPES = True
 except ImportError:
     LOAD_WINTYPES = False
+except ValueError:
+    LOAD_WINTYPES = False
+    BOOL = c_long
 
 import sys
 import kernel

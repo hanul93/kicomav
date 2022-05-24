@@ -27,7 +27,7 @@ class KavMain:
         self.p_html = re.compile(pat, re.IGNORECASE)
 
         # script, iframe, php 키워드
-        pat = r'<script.*?>[\d\D]*?</script>|<iframe.*?>[\d\D]*?</iframe>|<\?(php\b)?[\d\D]*?\?>'
+        pat = rb'<script.*?>[\d\D]*?</script>|<iframe.*?>[\d\D]*?</iframe>|<\?(php\b)?[\d\D]*?\?>'
         self.p_script = re.compile(pat, re.IGNORECASE)
 
         # HTML.
@@ -95,6 +95,7 @@ class KavMain:
         buf = mm[:4096]
         if kavutil.is_textfile(buf):  # Text 파일인가?
             # HTML 문서
+            buf = buf.decode('latin-1')
             ret = self.p_html.findall(buf)
             if len(set(ret)) >= HTML_KEY_COUNT:
                 fileformat['keyword'] = list(set(ret))  # 존재하는 HTML Keyword 보관
@@ -173,13 +174,13 @@ class KavMain:
                 t = obj.group()
                 p = t.lower()
 
-                if p.find('<script') != -1:
+                if p.find(b'<script') != -1:
                     file_scan_list.append(['arc_html', 'HTML/Script #%d' % s_count])
                     s_count += 1
-                elif p.find('<iframe') != -1:
+                elif p.find(b'<iframe') != -1:
                     file_scan_list.append(['arc_html', 'HTML/IFrame #%d' % i_count])
                     i_count += 1
-                elif p.find('<?') != -1:
+                elif p.find(b'<?') != -1:
                     file_scan_list.append(['arc_html', 'HTML/PHP #%d' % p_count])
                     p_count += 1
 
@@ -211,13 +212,13 @@ class KavMain:
                 pos = obj.span()
                 p = t.lower()
 
-                if p.find('<script') != -1:
+                if p.find(b'<script') != -1:
                     k = 'HTML/Script #%d' % s_count
                     s_count += 1
-                elif p.find('<iframe') != -1:
+                elif p.find(b'<iframe') != -1:
                     k = 'HTML/IFrame #%d' % i_count
                     i_count += 1
-                elif p.find('<?') != -1:
+                elif p.find(b'<?') != -1:
                     k = 'HTML/PHP #%d' % p_count
                     p_count += 1
                 else:

@@ -66,7 +66,7 @@ class KavMain:
         ret = {}
 
         mm = filehandle
-        if mm[0:6] == '\xFD7zXZ\x00':  # 헤더 체크
+        if mm[0:6] == b'\xFD7zXZ\x00':  # 헤더 체크
             ret['ff_xz'] = 'xz'
             return ret
 

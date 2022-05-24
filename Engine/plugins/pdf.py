@@ -24,33 +24,33 @@ class KavMain:
         self.IN_OBJ = 1  # 해당 문장이 포함된 OBJ의 Stream 추출하기
 
         # PDF 헤더
-        pat = r'^s*%PDF-1.'
+        pat = rb'^s*%PDF-1.'
         self.p_pdf_header = re.compile(pat, re.IGNORECASE)
 
         # PDF내부의 OBJ의 위치 기록을 위해 사용한다.
-        s = r'(\d+)\s+0\s+obj\s*<<[\d\D]+?endobj'
+        s = rb'(\d+)\s+0\s+obj\s*<<[\d\D]+?endobj'
         self.p_obj = re.compile(s)
         self.pdf_obj_off = None
 
         # 해당 패턴이 존재하면 악성코드 검사를 시도한다.
         self.p_pdf_scanables = {}
-        pats = {r'/JS\s+(\d+)\s+0\s+R\b': self.REF_OBJ,
-                r'/Length\s+0\b': self.IN_OBJ
+        pats = {rb'/JS\s+(\d+)\s+0\s+R\b': self.REF_OBJ,
+                rb'/Length\s+0\b': self.IN_OBJ
                 }
 
         for pat in pats.keys():
             self.p_pdf_scanables[re.compile(pat, re.IGNORECASE)] = pats[pat]
 
         # Stream 추출
-        pat = r'stream\s*([\d\D]+?)\s*endstream'
+        pat = rb'stream\s*([\d\D]+?)\s*endstream'
         self.p_stream = re.compile(pat, re.IGNORECASE)
 
         # /Filter
-        pat = '/Filter\s*/(\w+)'
+        pat = b'/Filter\s*/(\w+)'
         self.p_pdf_filter = re.compile(pat, re.IGNORECASE)
 
         # PDF 트로이목마 진단용 패턴
-        pat = r'this\.exportDataObject.+?cName:.+?nLaunch'
+        pat = rb'this\.exportDataObject.+?cName:.+?nLaunch'
         self.p_pdf_trojan_js = re.compile(pat)
 
         return 0  # 플러그인 엔진 초기화 성공
