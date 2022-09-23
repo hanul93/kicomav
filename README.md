@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/hanul93/kicomav-db/master/logo/k2_full_2.png">
 
-# KicomAV v0.32
+# KicomAV v0.34
 
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
@@ -12,7 +12,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 
 ## Requirements
 
-* Python 2.7
+* Python 3.8~
 * [pylzma](https://github.com/fancycode/pylzma)
 * [yara](https://github.com/plusvic/yara)
 * [backports.lzma](https://github.com/peterjc/backports.lzma)
