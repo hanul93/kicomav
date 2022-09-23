@@ -7,7 +7,8 @@ import os
 import struct
 import yara
 import zlib
-import cPickle
+#import cPickle
+import pickle
 
 
 s = os.path.dirname(
@@ -24,7 +25,7 @@ import k2timelib
 # -------------------------------------------------------------------------
 # virus.db 파일에서 Rule의 숫자를 얻는다.
 # -------------------------------------------------------------------------
-re_rule = r'rule\s+\w+'
+re_rule = rb'rule\s+\w+'
 
 
 # -------------------------------------------------------------------------
@@ -72,7 +73,7 @@ def make_signature(fname):
 # -------------------------------------------------------------------------
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print 'Usage : sigtool_yar.py [sig text]'
+        print ('Usage : sigtool_yar.py [sig text]')
         exit(0)
 
     sin_fname = sys.argv[1]

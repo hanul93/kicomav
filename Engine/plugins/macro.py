@@ -105,7 +105,7 @@ def set_uint32(val):
 def cure_word97_macro(data, verbose=False):
     if ord(data[0x0B]) & 0x01 == 0x01:
         if verbose:
-            print 'PASSWORD'
+            print ('PASSWORD')
         return False, None  # 문서에 암호가 설정되어 있음
 
     data = data[:0x15E] + '\x00\x00\x00\x00' + data[0x162:]
@@ -227,7 +227,7 @@ def cure_excel97_macro(data, verbose=False):
 
     if get_uint16(d2, 0) == 0x002F or get_uint16(d3, 0) == 0x002F:
         if verbose:
-            print 'PASSWORD'
+            print ('PASSWORD')
         return False, None  # Sheet에 암호가 설정되어 있음
 
     # Workbook에 존재하는 매크로를 치료한다.
@@ -248,7 +248,7 @@ def cure_excel97_macro(data, verbose=False):
                 t_ret, data = cure_excel_worksheet(data, worksheet_pos)
                 if t_ret is False:
                     if verbose:
-                        print 'SHEET'
+                        print ('SHEET')
                     return False, None
 
                 data = data[:off+8] + set_uint16(0x0001) + data[off+10:]
@@ -408,7 +408,7 @@ def dir_informationrecord(data, off, verbose=False):
     off += len(t_data)
 
     if verbose:
-        print 'Name : %s' % t_data[6:]
+        print ('Name : %s' % t_data[6:])
 
     # DocStringRecord에는 2개의 레코드가 존재함
     t_data = get_record_size32(data, off)
@@ -481,7 +481,7 @@ def dir_referencesrecord(data, off, verbose=False):
         off += len(t_data)
 
         if verbose:
-            print 'ReferencesRecord Name : %s' % t_data[6:]
+            print ('ReferencesRecord Name : %s' % t_data[6:])
 
         t_data = get_record_size32(data, off)
         val = get_uint16(t_data, 0)
@@ -588,7 +588,7 @@ def dir_modulesrecord(data, off, verbose=False):
         off += 40
 
         if verbose:
-            print 'ModulesRecord Name : %s : %08X' % (m_name, m_off)
+            print ('ModulesRecord Name : %s : %08X' % (m_name, m_off))
 
         vba_modules.append((m_name, m_off))
 
@@ -698,8 +698,8 @@ class KavMain:
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.verbose = verbose
 
-        self.p_vba_cmt = re.compile(r'(\'|\bREM\b).*', re.IGNORECASE)
-        self.p_vba_word = re.compile(r'\w{2,}')
+        self.p_vba_cmt = re.compile(rb'(\'|\bREM\b).*', re.IGNORECASE)
+        self.p_vba_word = re.compile(rb'\w{2,}')
 
         # 엑셀97 매크로 바이러스 의심
         '''
@@ -820,7 +820,7 @@ class KavMain:
                                         # 매크로 소스코드 출력
                                         kavutil.vprint('Macro Source')
                                         kavutil.vprint(None, 'PPS', '%s' % t_pps_name)
-                                        print buf
+                                        print (buf)
 
                                     buf = self.p_vba_cmt.sub('', buf)  # 주석문 제거
                                     buf = buf.lower()  # 영어 소문자로 통일
@@ -830,7 +830,9 @@ class KavMain:
                                     vba_keyword_crc32 = set()
                                     for i in range(len(key_words)-1):
                                         word = key_words[i] + key_words[i+1]
-                                        c = zlib.crc32(word) & 0xffffffffL
+#                                           surfree                                        
+#                                        c = zlib.crc32(word) & 0xffffffffL
+                                        c = zlib.crc32(word) & 0xffffffff
                                         vba_keyword_crc32.add(c)
 
                                     # 테스트
@@ -840,23 +842,25 @@ class KavMain:
                                         t_word = []
                                         for i in range(len(key_words)-1):
                                             word = key_words[i] + key_words[i+1]
-                                            c = zlib.crc32(word) & 0xffffffffL
+                                            #surfree
+#                                            c = zlib.crc32(word) & 0xffffffffL
+                                            c = zlib.crc32(word) & 0xffffffff
                                             t_word.append([c, key_words[i], key_words[i+1]])
 
                                             if len(key_words[i+1]) > max_len:
                                                 max_len = len(key_words[i+1])
 
                                         t_l = '+-' + ('-' * 8) + '-+-' + ('-' * max_len) + '-+-' + ('-' * max_len) + '-+'
-                                        print t_l
+                                        print (t_l)
                                         msg = '| %%-8s | %%-%ds | %%-%ds |' % (max_len, max_len)
-                                        print msg % ('CRC32', 'Keyword #1', 'Keyword #2')
-                                        print t_l
+                                        print (msg % ('CRC32', 'Keyword #1', 'Keyword #2'))
+                                        print (t_l)
 
                                         msg = '| %%08X | %%-%ds | %%-%ds |' % (max_len, max_len)
                                         for n in t_word:
-                                            print msg % (n[0], n[1], n[2])
+                                            print (msg % (n[0], n[1], n[2]))
 
-                                        print t_l
+                                        print (t_l)
 
                                     # Heuristic 검사
                                     for macro_crc in self.word97_macro_crcs:

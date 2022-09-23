@@ -7,6 +7,7 @@ import mmap
 import zlib
 import bz2
 import zipfile
+#import shutil
 import kernel
 import shutil
 import kavutil
@@ -300,7 +301,7 @@ class KavMain:
         fileformat = {}  # 포맷 정보를 담을 공간
 
         mm = filehandle
-        if mm[0:4] == 'ALZ\x01':  # 헤더 체크
+        if mm[0:4] == b'ALZ\x01':  # 헤더 체크
             fileformat['size'] = len(mm)  # 포맷 주요 정보 저장
 
             ret = {'ff_alz': fileformat}

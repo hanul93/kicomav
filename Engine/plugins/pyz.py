@@ -102,10 +102,10 @@ class KavMain:
         self.verbose = verbose
         self.handle = {}  # 압축 파일 핸들
 
-        chars = r"A-Za-z0-9/\-=:.,_$%@'()[\]<> "
+        chars = rb"A-Za-z0-9/\-=:.,_$%@'()[\]<> "
         shortest_run = 5
 
-        regexp = '[%s]{%d,}' % (chars, shortest_run)
+        regexp = b'[%s]{%d,}' % (chars, shortest_run)
         self.p_string = re.compile(regexp)
 
         return 0  # 플러그인 엔진 초기화 성공
@@ -163,10 +163,10 @@ class KavMain:
 
         mm = filehandle
 
-        if mm[0:4] == 'PYZ\x00':  # 헤더 체크
+        if mm[0:4] == b'PYZ\x00':  # 헤더 체크
             ret['ff_pyz'] = 'PYZ'
-        elif mm[0:8] == '\x63\x00\x00\x00\x00\x00\x00\x00' or \
-            mm[8:0x10] == '\x63\x00\x00\x00\x00\x00\x00\x00':
+        elif mm[0:8] == b'\x63\x00\x00\x00\x00\x00\x00\x00' or \
+            mm[8:0x10] == b'\x63\x00\x00\x00\x00\x00\x00\x00':
             ret['ff_pyc'] = 'PYC'
 
         return ret
@@ -230,7 +230,7 @@ class KavMain:
             # 미리 분석된 파일 포맷중에 PE 포맷이 있는가?
             if 'ff_pyc' in fileformat:
                 if self.verbose:
-                    print '-' * 79
+                    print ('-' * 79)
                     kavutil.vprint('Engine')
                     kavutil.vprint(None, 'Engine', 'pyz.kmd')
 
@@ -239,7 +239,7 @@ class KavMain:
                 # String 추출
                 if len(mm):
                     if self.verbose:
-                        print
+                        print ()
                         kavutil.vprint('String')
 
                     for match in self.p_string.finditer(mm):
@@ -260,7 +260,7 @@ class KavMain:
 
                         if fsize and kavutil.handle_pattern_md5.match_size('emalware', fsize):
                             fmd5 = cryptolib.md5(buf)
-                            # print fsize, fmd5
+                            # print (fsize, fmd5)
                             vname = kavutil.handle_pattern_md5.scan('emalware', fsize, fmd5)
                             if vname:
                                 return True, vname, 0, kernel.INFECTED

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PYTHON_CMD=python3
+
 function jumpto
 {
     label=$1
@@ -56,28 +58,31 @@ build:
 print_logo
 echo '[*] Engine file copy to the Release folder...'
 
-mkdir Release
+if [ ! -d "Release" ]
+then
+	mkdir Release
+fi
 cp -rf Engine/* Release
 
 if [ ! -f "key.skr" ]
 then 
-    python Tools/mkkey.py     
+    $PYTHON_CMD Tools/mkkey.py     
 fi
 
 if [ ! -f "key.pkr" ]
 then 
-    python Tools/mkkey.py 
+    $PYTHON_CMD Tools/mkkey.py 
 fi
 
 cp key.* Release/plugins
 cd Release/plugins
 
 echo '[*] Build Engine files...'
-python ../../Tools/kmake.py kicom.lst
+$PYTHON_CMD ../../Tools/kmake.py kicom.lst
 
 for f in *.py
 do
-    python ../../Tools/kmake.py "$f"
+    $PYTHON_CMD ../../Tools/kmake.py "$f"
 done
 
 rm *.py

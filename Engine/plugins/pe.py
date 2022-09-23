@@ -123,7 +123,7 @@ class SECTION_HEADER(ctypes.Structure):
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
-    reverse = dict((value, key) for key, value in enums.iteritems())
+    reverse = dict((value, key) for key, value in enums.items())
     enums['reverse_mapping'] = reverse
     return type('Enum', (), enums)
 
@@ -134,7 +134,7 @@ image_directory_entry = enum('EXPORT', 'IMPORT', 'RESOURCE', 'EXCEPTION', 'SECUR
                              'IAT', 'DELAY_IMPORT', 'COM_DESCRIPTOR', 'RESERVED')
 
 
-p_str = re.compile(r'[^\x00]*')  # NULL 문자 직전까지 복사
+p_str = re.compile(rb'[^\x00]*')  # NULL 문자 직전까지 복사
 
 
 class PE:
@@ -348,7 +348,7 @@ class PE:
                     pass
 
                 # if 'Resource_UserData' in pe_format:
-                #     print pe_format['Resource_UserData']
+                #     print (pe_format['Resource_UserData'])
 
             # Import API 분석
             try:
@@ -361,9 +361,9 @@ class PE:
             if imp_rva:  # Import API 존재
                 imp_api = {}
 
-                # print 'IMP : %08X' % imp_rva
+                # print ('IMP : %08X' % imp_rva)
                 imp_off = self.rva_to_off(imp_rva)[0]
-                # print hex(imp_off), imp_size
+                # print (hex(imp_off), imp_size)
                 imp_data = mm[imp_off:imp_off+imp_size]
                 if len(imp_data) == imp_size:
                     for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
@@ -375,13 +375,13 @@ class PE:
                                 api_rva = kavutil.get_uint32(imp_data, (i*0x14)+0x10)
                                 bo = 0
 
-                            # print hex(api_rva)
+                            # print (hex(api_rva))
                             if dll_rva == 0:  # DLL 정보가 없음
                                 break
 
                             t_off = self.rva_to_off(dll_rva)[0]
                             dll_name = p_str.search(mm[t_off:t_off+0x20]).group()
-                            # print '[+]', dll_name
+                            # print ('[+]', dll_name)
                             imp_api[dll_name] = []
 
                             t_off = self.rva_to_off(api_rva)[0]
@@ -399,9 +399,9 @@ class PE:
                                     break
 
                                 t = self.rva_to_off(api_name_rva)[0]
-                                # print hex(t_off), hex(t)
+                                # print (hex(t_off), hex(t))
                                 api_name = p_str.search(mm[t+bo:t+bo+0x20]).group()
-                                # print '   ', api_name
+                                # print ('   ', api_name)
                                 imp_api[dll_name].append(api_name)
                                 t_off += 4
                         except struct.error:
@@ -446,52 +446,52 @@ class PE:
                     pe_format['PDB_Name'] = 'Not support Type : %s' % debug_data[:4]
 
             if self.verbose:
-                print '-' * 79
+                print ('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'pe.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
                 kavutil.vprint(None, 'MD5', cryptolib.md5(mm[:]))
 
-                print
+                print ()
                 kavutil.vprint('PE')
                 kavutil.vprint(None, 'EntryPoint', '%08X' % pe_format['EntryPoint'])
                 kavutil.vprint(None, 'EntryPoint (Section)', '%d' % pe_format['EntryPoint_in_Section'])
 
                 # 섹션 보기
                 if section_num:
-                    print
+                    print ()
                     kavutil.vprint('Section Header')
-                    print '    %-8s %-8s %-8s %-8s %-8s %-8s' % ('Name', 'VOFF', 'VSIZE', 'FOFF', 'FSIZE', 'EXEC')
-                    print '    ' + ('-' * (9*6 - 1))
+                    print ('    %-8s %-8s %-8s %-8s %-8s %-8s' % ('Name', 'VOFF', 'VSIZE', 'FOFF', 'FSIZE', 'EXEC'))
+                    print ('    ' + ('-' * (9*6 - 1)))
 
                     for s in self.sections:
-                        print '    %-8s %08X %08X %08X %08X %-05s' % (s['Name'], s['RVA'], s['VirtualSize'],
+                        print ('    %-8s %08X %08X %08X %08X %-05s' % (s['Name'], s['RVA'], s['VirtualSize'],
                                                                      s['PointerRawData'], s['SizeRawData'],
-                                                                     s['Characteristics'] & 0x20000000 == 0x20000000)
+                                                                     s['Characteristics'] & 0x20000000 == 0x20000000))
 
                 if section_num:
-                    print
+                    print ()
                     kavutil.vprint('Section MD5')
-                    print '    %-8s %-8s %-32s' % ('Name', 'FSIZE', 'MD5')
-                    print '    ' + ('-' * ((9 * 2 - 1)+32))
+                    print ('    %-8s %-8s %-32s' % ('Name', 'FSIZE', 'MD5'))
+                    print ('    ' + ('-' * ((9 * 2 - 1)+32)))
 
                     for s in self.sections:
                         # if s['Characteristics'] & 0x20000000 == 0x20000000:
                         off = s['PointerRawData']
                         size = s['SizeRawData']
                         fmd5 = cryptolib.md5(mm[off:off+size]) if size else '-'
-                        print '    %-8s %8d %s' % (s['Name'], size, fmd5)
+                        print ('    %-8s %8d %s' % (s['Name'], size, fmd5))
 
-                print
+                print ()
                 kavutil.vprint('Entry Point (Raw)')
-                print
+                print ()
                 kavutil.HexDump().Buffer(mm[:], pe_format['EntryPointRaw'], 0x80)
-                print
+                print ()
                 if 'PDB_Name' in pe_format:
                     kavutil.vprint('PDB Information')
                     kavutil.vprint(None, 'Name', '%s' % repr(pe_format['PDB_Name']))
-                    print repr(pe_format['PDB_Name'])
-                    print
+                    print (repr(pe_format['PDB_Name']))
+                    print ()
 
         except (ValueError, struct.error) as e:
             return None
@@ -775,7 +775,7 @@ class KavMain:
 
                     if 'Import_API' in l_pe_format:
                         imp_api = pe_format['Import_API']
-                        # print imp_api
+                        # print (imp_api)
 
                         for dll in imp_api.keys():
                             for api in dll:

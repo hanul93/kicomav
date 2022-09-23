@@ -123,12 +123,12 @@ class ELF32:
             fileformat['EntryPoint_in_Section'] = sec_idx  # EP가 포함된 섹션
 
             if self.verbose:
-                print '-' * 79
+                print ('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'elf.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
 
-                print
+                print ()
                 kavutil.vprint('ELF32')
 
                 if e_ident in self.ident:
@@ -151,28 +151,28 @@ class ELF32:
                 kavutil.vprint(None, 'Section Header Num', '0x%04X' % e_shnum)
 
                 if e_phnum:
-                    print
+                    print ()
                     kavutil.vprint('Program Header')
-                    print '    %-8s %-8s %-8s %-8s %-8s' % ('Type', 'Flag', 'RVA', 'Offset', 'Size')
-                    print '    ' + ('-' * 44)
+                    print ('    %-8s %-8s %-8s %-8s %-8s' % ('Type', 'Flag', 'RVA', 'Offset', 'Size'))
+                    print ('    ' + ('-' * 44))
 
                     for p in self.program_headers:
-                        print '    %08X %08X %08X %08X %08X' % (p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size'])
+                        print ('    %08X %08X %08X %08X %08X' % (p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size']))
 
                 if e_shnum:
-                    print
+                    print ()
                     kavutil.vprint('Section Header')
-                    print '    %-15s %-8s %-8s %-8s %-8s %-8s' % ('Name', 'Type', 'Flag', 'RVA', 'Offset', 'Size')
-                    print '    ' + ('-' * (44 + 16))
+                    print ('    %-15s %-8s %-8s %-8s %-8s %-8s' % ('Name', 'Type', 'Flag', 'RVA', 'Offset', 'Size'))
+                    print ('    ' + ('-' * (44 + 16)))
 
                     for p in self.sections:
-                        print '    %-15s %08X %08X %08X %08X %08X' % (p['Name'], p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size'])
+                        print ('    %-15s %08X %08X %08X %08X %08X' % (p['Name'], p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size']))
 
-                print
+                print ()
                 kavutil.vprint('Entry Point (Raw)')
-                print
+                print ()
                 kavutil.HexDump().Buffer(mm[:], ep_raw, 0x80)
-                print
+                print ()
         except (ValueError, struct.error) as e:
             pass
 
@@ -269,12 +269,12 @@ class ELF64:
             fileformat['EntryPoint_in_Section'] = sec_idx  # EP가 포함된 섹션
 
             if self.verbose:
-                print '-' * 79
+                print ('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'elf.kmd')
                 kavutil.vprint(None, 'File name', os.path.split(self.filename)[-1])
 
-                print
+                print ()
                 kavutil.vprint('ELF64')
 
                 kavutil.vprint(None, 'Entry Point', '0x%016X' % e_entry)
@@ -285,19 +285,19 @@ class ELF64:
                 kavutil.vprint(None, 'Section Header Num', '0x%04X' % e_shnum)
 
                 if e_shnum:
-                    print
+                    print ()
                     kavutil.vprint('Section Header')
-                    print '    %-15s %-8s %-16s %-16s %-16s %-16s' % ('Name', 'Type', 'Flag', 'RVA', 'Offset', 'Size')
-                    print '    ' + ('-' * (76 + 16))
+                    print ('    %-15s %-8s %-16s %-16s %-16s %-16s' % ('Name', 'Type', 'Flag', 'RVA', 'Offset', 'Size'))
+                    print ('    ' + ('-' * (76 + 16)))
 
                     for p in self.sections:
-                        print '    %-15s %08X %016X %016X %016X %016X' % (p['Name'], p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size'])
+                        print ('    %-15s %08X %016X %016X %016X %016X' % (p['Name'], p['Type'], p['Flag'], p['RVA'], p['Offset'], p['Size']))
 
-                print
+                print ()
                 kavutil.vprint('Entry Point (Raw)')
-                print
+                print ()
                 kavutil.HexDump().Buffer(mm[:], ep_raw, 0x80)
-                print
+                print ()
         except (ValueError, struct.error) as e:
             pass
 

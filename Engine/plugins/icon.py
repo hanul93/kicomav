@@ -11,7 +11,7 @@ import os
 import re
 
 # p_name = re.compile(r'(\d+)x(\d+) (\d+) bit')
-p_name = re.compile(r'(\d+)x(\d+)')
+p_name = re.compile(rb'(\d+)x(\d+)')
 
 # -------------------------------------------------------------------------
 # KavMain 클래스

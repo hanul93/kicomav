@@ -441,14 +441,14 @@ class KavMain:
         mm = filehandle
 
         try:
-            if self.verbose:
-                print '-' * 79
-                kavutil.vprint('Engine')
-                kavutil.vprint(None, 'Engine', 'hwpx.kmd')
-                kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
-                print
-
             if 'ff_hwpx' in fileformat:
+                if self.verbose:
+                    print ('-' * 79)
+                    kavutil.vprint('Engine')
+                    kavutil.vprint(None, 'Engine', 'hwpx.kmd')
+                    kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
+                    print ()
+
                 zfile = zipfile.ZipFile(filename)  # zip 파일 열기
 
                 for name in zfile.namelist():
@@ -458,7 +458,7 @@ class KavMain:
                         if self.verbose:
                             kavutil.vprint('mimetype')
                             kavutil.vprint(None, 'body', '%s' % data)
-                            print
+                            print ()
 
                         if data != 'application/hwp+zip':
                             if zfile:
@@ -476,8 +476,8 @@ class KavMain:
 
                             if self.verbose:
                                 kavutil.vprint(name)
-                                print json.dumps(dict_data, indent=2)
-                                print
+                                print (json.dumps(dict_data, indent=2))
+                                print ()
                         except:
                             if zfile:
                                 zfile.close()

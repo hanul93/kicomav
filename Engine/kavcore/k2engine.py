@@ -3,8 +3,9 @@
 
 
 import os
-import imp
-import StringIO
+import sys
+import importlib.util
+from io import StringIO
 import datetime
 import types
 import mmap
@@ -15,11 +16,18 @@ import struct
 import zipfile
 import hashlib
 
-import k2timelib
-import k2kmdfile
-import k2rsa
-import k2file
-import k2const
+try:
+    from . import k2timelib
+    from . import k2kmdfile
+    from . import k2rsa
+    from . import k2file
+    from . import k2const
+except ImportError:
+    import k2timelib
+    import k2kmdfile
+    import k2rsa
+    import k2file
+    import k2const
 
 
 # ---------------------------------------------------------------------
@@ -98,8 +106,8 @@ class Engine:
             return False
 
         if self.verbose:
-            print '[*] kicom.%s :' % ('lst' if k2const.K2DEBUG else 'kmd')
-            print '   ', self.kmdfiles
+            print ('[*] kicom.%s :' % ('lst' if k2const.K2DEBUG else 'kmd'))
+            print ('   ', self.kmdfiles)
 
         # 우선순위대로 KMD 파일을 로딩한다.
         for kmd_name in self.kmdfiles:
@@ -108,7 +116,15 @@ class Engine:
                 name = kmd_name.split('.')[0]
                 if k2const.K2DEBUG:
                     k = None
-                    module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
+#                   old code python2
+#                    module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
+
+                    spec = importlib.util.spec_from_file_location(name, os.path.splitext(kmd_path)[0] + '.py')
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[name] = module
+                    if os.name != 'nt' and name != 'cab':
+                        spec.loader.exec_module(module)
+
                     try:
                         os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
                     except OSError:
@@ -132,11 +148,12 @@ class Engine:
                 pass
 
         # 악성코드 패턴에서 최신 시간 값을 얻는다.
-        fl = glob.glob(os.path.join(plugins_path, '*.n??'))
+        fl = glob.glob1(plugins_path, '*.n??')
         for fname in fl:
             try:
+                fname = os.path.join(plugins_path, fname)
                 buf = open(fname, 'rb').read(12)
-                if buf[0:4] == 'KAVS':
+                if buf[0:4] == b'KAVS':
                     sdate = k2timelib.convert_date(struct.unpack('<H', buf[8:10])[0])
                     stime = k2timelib.convert_time(struct.unpack('<H', buf[10:12])[0])
 
@@ -148,9 +165,9 @@ class Engine:
                 pass
 
         if self.verbose:
-            print '[*] kmd_modules :'
-            print '   ', self.kmd_modules
-            print '[*] Last updated %s UTC' % self.max_datetime.ctime()
+            print ('[*] kmd_modules :')
+            print ('   ', self.kmd_modules)
+            print ('[*] Last updated %s UTC' % self.max_datetime.ctime())
 
         return True
 
@@ -207,7 +224,7 @@ class Engine:
             lst_data = k.body
 
         if lst_data:  # kicom.kmd 읽혔는가?
-            msg = StringIO.StringIO(lst_data)
+            msg = StringIO(lst_data.decode('utf-8'))
 
             while True:
                 # 버퍼 한 줄을 읽어 엔터키 제거
@@ -281,7 +298,7 @@ class EngineInstance:
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
             if self.verbose:
-                print '[*] Count of KavMain : %d' % (len(self.kavmain_inst))
+                print ('[*] Count of KavMain : %d' % (len(self.kavmain_inst)))
             return True
         else:
             return False
@@ -298,7 +315,7 @@ class EngineInstance:
         t_kavmain_inst = []  # 최종 인스턴스 리스트
 
         if self.verbose:
-            print '[*] KavMain.init() :'
+            print ('[*] KavMain.init() :')
 
         for inst in self.kavmain_inst:
             try:
@@ -312,7 +329,7 @@ class EngineInstance:
                     t_kavmain_inst.append(inst)
 
                     if self.verbose:
-                        print '    [-] %s.init() : %d' % (inst.__module__, ret)
+                        print ('    [-] %s.init() : %d' % (inst.__module__, ret))
                 else:  # 실패
                     if isinstance(callback_fn, types.FunctionType):
                         callback_fn(inst.__module__)
@@ -323,7 +340,7 @@ class EngineInstance:
 
         if len(self.kavmain_inst):  # KavMain 인스턴스가 하나라도 있으면 성공
             if self.verbose:
-                print '[*] Count of KavMain.init() : %d' % (len(self.kavmain_inst))
+                print ('[*] Count of KavMain.init() : %d' % (len(self.kavmain_inst)))
             return True
         else:
             return False
@@ -334,13 +351,13 @@ class EngineInstance:
     # ---------------------------------------------------------------------
     def uninit(self):
         if self.verbose:
-            print '[*] KavMain.uninit() :'
+            print ('[*] KavMain.uninit() :')
 
         for inst in self.kavmain_inst:
             try:
                 ret = inst.uninit()
                 if self.verbose:
-                    print '    [-] %s.uninit() : %d' % (inst.__module__, ret)
+                    print ('    [-] %s.uninit() : %d' % (inst.__module__, ret))
             except AttributeError:
                 continue
 
@@ -353,7 +370,7 @@ class EngineInstance:
         ginfo = []  # 플러그인 엔진 정보를 담는다.
 
         if self.verbose:
-            print '[*] KavMain.getinfo() :'
+            print ('[*] KavMain.getinfo() :')
 
         for inst in self.kavmain_inst:
             try:
@@ -361,9 +378,9 @@ class EngineInstance:
                 ginfo.append(ret)
 
                 if self.verbose:
-                    print '    [-] %s.getinfo() :' % inst.__module__
+                    print ('    [-] %s.getinfo() :' % inst.__module__)
                     for key in ret.keys():
-                        print '        - %-10s : %s' % (key, ret[key])
+                        print ('        - %-10s : %s' % (key, ret[key]))
             except AttributeError:
                 continue
 
@@ -388,7 +405,7 @@ class EngineInstance:
             return []
 
         if self.verbose:
-            print '[*] KavMain.listvirus() :'
+            print ('[*] KavMain.listvirus() :')
 
         for inst in self.kavmain_inst:
             try:
@@ -401,9 +418,9 @@ class EngineInstance:
                     vlist += ret
 
                 if self.verbose:
-                    print '    [-] %s.listvirus() :' % inst.__module__
+                    print ('    [-] %s.listvirus() :' % inst.__module__)
                     for vname in ret:
-                        print '        - %s' % vname
+                        print ('        - %s' % vname)
             except AttributeError:
                 continue
 
@@ -475,10 +492,11 @@ class EngineInstance:
 
                     if is_sub_dir_scan:
                         # 폴더 안의 파일들을 검사대상 리스트에 추가
-                        flist = glob.glob(os.path.join(real_name, '*'))
+                        flist = glob.glob1(real_name, '*')
                         tmp_flist = []
 
                         for rfname in flist:
+                            rfname = os.path.join(real_name, rfname)
                             tmp_info = k2file.FileStruct(rfname)
                             tmp_flist.append(tmp_info)
 
@@ -549,7 +567,7 @@ class EngineInstance:
                     # 격리 시점 체크하기?
                     if move_master_file:
                         if t_master_file != t_file_info.get_master_filename():
-                            # print 'move 2 :', t_master_file
+                            # print ('move 2 :', t_master_file)
                             self.__arcclose()
                             self.__quarantine_file(t_master_file)
                             move_master_file = False
@@ -565,7 +583,7 @@ class EngineInstance:
 
                         if self.options['opt_move'] or self.options['opt_copy']:
                             if t_file_info.get_additional_filename() == '':
-                                # print 'move 1 :', t_master_file
+                                # print ('move 1 :', t_master_file)
                                 self.__arcclose()
                                 self.__quarantine_file(t_master_file)
                                 move_master_file = False
@@ -617,14 +635,14 @@ class EngineInstance:
             except:
                 if k2const.K2DEBUG:
                     import traceback
-                    print traceback.format_exc()
+                    print (traceback.format_exc())
                 pass
 
         self.__update_process(None, True)  # 최종 파일 정리
 
         # 격리 시점 체크하기?
         if move_master_file:
-            # print 'move 3 :', t_master_file
+            # print ('move 3 :', t_master_file)
             self.__arcclose()
             self.__quarantine_file(t_master_file)
             move_master_file = False
@@ -840,7 +858,7 @@ class EngineInstance:
             if os.path.exists(t_fname):
                 try:
                     os.remove(t_fname)
-                    # print '[*] Remove :', t_fname
+                    # print ('[*] Remove :', t_fname)
                 except OSError:
                     pass
         return ret_file_info
@@ -904,7 +922,7 @@ class EngineInstance:
         import kernel
 
         if self.verbose:
-            print '[*] KavMain.__scan_file() :'
+            print ('[*] KavMain.__scan_file() :')
 
         fp = None
         mm = None
@@ -936,7 +954,7 @@ class EngineInstance:
                         eid = i  # 악성코드를 발견한 플러그인 엔진 ID
 
                         if self.verbose:
-                            print '    [-] %s.__scan_file() : %s' % (inst.__module__, vname)
+                            print ('    [-] %s.__scan_file() : %s' % (inst.__module__, vname))
 
                         break
                 except AttributeError:
@@ -956,7 +974,7 @@ class EngineInstance:
         except:
             if k2const.K2DEBUG:
                 import traceback
-                print traceback.format_exc()
+                print (traceback.format_exc())
                 # raw_input('>>')
             self.result['IO_errors'] += 1  # 파일 I/O 오류 발생 수
 
@@ -978,7 +996,7 @@ class EngineInstance:
     # ---------------------------------------------------------------------
     def __feature_file(self, file_struct, fileformat, malware_id):
         if self.verbose:
-            print '[*] KavMain.__feature_file() :'
+            print ('[*] KavMain.__feature_file() :')
 
         try:
             ret = False
@@ -1024,7 +1042,7 @@ class EngineInstance:
         ret = False
 
         if self.verbose:
-            print '[*] KavMain.disinfect() :'
+            print ('[*] KavMain.disinfect() :')
 
         try:
             # 악성코드를 진단한 플러그인 엔진에게만 치료를 요청한다.
@@ -1032,7 +1050,7 @@ class EngineInstance:
             ret = inst.disinfect(filename, malware_id)
 
             if self.verbose:
-                print '    [-] %s.disinfect() : %s' % (inst.__module__, ret)
+                print ('    [-] %s.disinfect() : %s' % (inst.__module__, ret))
         except AttributeError:
             pass
 
@@ -1066,7 +1084,7 @@ class EngineInstance:
                             fp = open(rname, 'wb')
                             fp.write(unpack_data)
                             fp.close()
-                            # print '[*] Make   :', rname
+                            # print ('[*] Make   :', rname)
 
                             # 압축 엔진의 마스터 파일 처리 방법은 getinfo에서 확인 가능함
                             try:
@@ -1108,7 +1126,7 @@ class EngineInstance:
                     rname = self.temp_path.mktemp()
                     fp = open(rname, 'wb')
                     fp.close()
-                    # print '[*] Make   :', rname
+                    # print ('[*] Make   :', rname)
 
                     rname_struct = file_struct
                     rname_struct.set_filename(rname)

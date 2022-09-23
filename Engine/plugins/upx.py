@@ -41,7 +41,8 @@ def PESALIGN(o, a):
 
 
 def ROR(x, n, bits=32):
-    mask = (2L ** n) - 1
+#    mask = (2L ** n) - 1
+    mask = (2 ** n) - 1
     mask_bits = x & mask
     return (x >> n) | (mask_bits << (bits - n))
 
@@ -210,7 +211,7 @@ def RebuildPE(src, ssize, dst, dsize, ep, upx0, upx1, magic, dend):
 
         if not pehdr:
             rebsz = uint32(PESALIGN(dend, 0x1000))
-            # print hex(rebsz)
+            # print (hex(rebsz))
             # To Do
 
         foffset = PESALIGN(foffset + 0x28 * sectcnt, valign)
@@ -511,15 +512,15 @@ class KavMain:
                     raise ValueError
 
                 if self.verbose:
-                    print '-' * 79
+                    print ('-' * 79)
                     kavutil.vprint('Engine')
                     kavutil.vprint(None, 'Engine', 'upx.kmd')
                     kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
 
-                    print
+                    print ()
                     kavutil.vprint('UPX : only support \'nrv2b\' compress method.')
                     kavutil.vprint(None, 'Compress Method', arc_name.split('!')[-1])
-                    print
+                    print ()
 
                 name = 'UPX'
                 file_scan_list.append([arc_name, name])
@@ -615,7 +616,7 @@ class KavMain:
                         kavutil.vprint(None, 'Decompress Size', 'Error')
                     else:
                         kavutil.vprint(None, 'Decompress Size', '%d' % len(unpack_data))
-                    print
+                    print ()
 
                 if unpack_data == '':  # 압축 해제 실패
                     raise ValueError

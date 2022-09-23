@@ -6,7 +6,7 @@
 # PyInstaller를 위한 임포트 모듈
 # -------------------------------------------------------------------------
 import cgi
-import HTMLParser
+import html.parser
 import csv
 import xml.etree.cElementTree as ET
 import json
@@ -48,8 +48,8 @@ if os.name == 'nt':
 # -------------------------------------------------------------------------
 # 주요 상수
 # -------------------------------------------------------------------------
-KAV_VERSION = '0.32'
-KAV_BUILDDATE = 'Aug 1 2019'
+KAV_VERSION = '0.33b'
+KAV_BUILDDATE = 'Mar 24 2022'
 KAV_LASTYEAR = KAV_BUILDDATE[len(KAV_BUILDDATE)-4:]
 
 g_options = None  # 옵션
@@ -253,10 +253,10 @@ def print_k2logo():
 Copyright (C) 1995-%s Kei Choi. All rights reserved.
 '''
 
-    print '------------------------------------------------------------'
+    print ('------------------------------------------------------------')
     s = logo % (sys.platform.upper(), KAV_VERSION, KAV_BUILDDATE, KAV_LASTYEAR)
     cprint(s, FOREGROUND_CYAN | FOREGROUND_INTENSITY)
-    print '------------------------------------------------------------'
+    print ('------------------------------------------------------------')
 
 
 # -------------------------------------------------------------------------
@@ -378,10 +378,10 @@ def parser_options():
             (options, args) = parser.parse_args()
             if len(args) == 0:
                 return options, None
-        except OptionParsingError, e:  # 잘못된 옵션 사용일 경우
-            # print 'ERROR'
+        except OptionParsingError as e:  # 잘못된 옵션 사용일 경우
+            # print ('ERROR')
             return 'ILLEGAL_OPTION', e.msg
-        except OptionParsingExit, e:
+        except OptionParsingExit as e:
             return 'ILLEGAL_OPTION', e.msg
 
         return options, args
@@ -392,7 +392,7 @@ def parser_options():
 # 백신의 사용법을 출력한다
 # -------------------------------------------------------------------------
 def print_usage():
-    print '\nUsage: k2.py path[s] [options]'
+    print ('\nUsage: k2.py path[s] [options]')
 
 
 # -------------------------------------------------------------------------
@@ -423,7 +423,7 @@ def print_options():
         -?,  --help            this help
                                * = default option'''
 
-    print options_string
+    print (options_string)
 
 
 # -------------------------------------------------------------------------
@@ -431,7 +431,7 @@ def print_options():
 # 키콤백신 최신 버전을 업데이트 한다
 # -------------------------------------------------------------------------
 def update_kicomav(path):
-    print
+    print ()
 
     try:
         url = 'https://raw.githubusercontent.com/hanul93/kicomav-db/master/update_v3/'  # 서버 주소를 나중에 바꿔야 한다.
@@ -466,7 +466,9 @@ def update_kicomav(path):
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update Stop', FOREGROUND_GREY | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
-    except:
+    except Exception as e:
+        if (g_options.opt_verbose):
+            print(e)
         cprint('\n[', FOREGROUND_GREY)
         cprint('Update failed', FOREGROUND_RED | FOREGROUND_INTENSITY)
         cprint(']\n', FOREGROUND_GREY)
@@ -496,7 +498,8 @@ def download_file(url, filename, path, gz=False, fnhook=None):
         cprint(filename + ' ', FOREGROUND_GREY)
 
     # 파일을 다운로드 한다
-    urllib.urlretrieve(rurl, pwd, fnhook)
+    #urllib.urlretrieve(rurl, pwd, fnhook)
+    urllib.request.urlretrieve(rurl, pwd, fnhook)
 
     if gz:
         data = gzip.open(pwd, 'rb').read()
@@ -526,7 +529,7 @@ def download_file_k2(url, filename, path, gz=False, fnhook=None):
         cprint(filename + ' ', FOREGROUND_GREY)
 
     # 파일을 다운로드 한다
-    urllib.urlretrieve(rurl, pwd, fnhook)
+    urllib.request.urlretrieve(rurl, pwd, fnhook)
 
     if gz:
         data = gzip.open(pwd, 'rb').read()
@@ -551,7 +554,7 @@ def get_download_list(url, path):
         download_file(url, 'update.cfg', pwd)
 
         buf = open(os.path.join(pwd, 'update.cfg'), 'r').read()
-        p_lists = re.compile(r'([A-Fa-f0-9]{40}) (.+)')
+        p_lists = re.compile(rb'([A-Fa-f0-9]{40}) (.+)')
         lines = p_lists.findall(buf)
 
         for line in lines:
@@ -562,7 +565,7 @@ def get_download_list(url, path):
             if chek_need_update(os.path.join(pwd, fname), fhash) == 1:
                 # 다르면 업데이트 목록에 추가
                 down_list.append(fname)
-    except:
+    except Exception as e:
         pass
 
     return down_list
@@ -592,7 +595,7 @@ def chek_need_update(file, hash):
 # -------------------------------------------------------------------------
 def listvirus_callback(plugin_name, vnames):
     for vname in vnames:
-        print '%-50s [%s.kmd]' % (vname, plugin_name)
+        print ('%-50s [%s.kmd]' % (vname, plugin_name))
 
 
 # -------------------------------------------------------------------------
@@ -648,15 +651,17 @@ def get_terminal_sizex():
 def convert_display_filename(real_filename):
     # 출력용 이름
     fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-    if isinstance(real_filename, types.UnicodeType):
-        display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
-    else:
-        display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+#   old code python2
+#    if isinstance(real_filename, types.UnicodeType):
+#        display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
+#    else:
+#        display_filename = unicode(real_filename, fsencoding).encode(sys.stdout.encoding, 'replace')
+    display_filename = real_filename.encode(sys.stdout.encoding, 'replace')
 
     if display_filename[0] == '/' or display_filename[0] == '\\':
-        return display_filename[1:]
+        return str(display_filename[1:], fsencoding)
     else:
-        return display_filename
+        return str(display_filename, fsencoding)
 
 def display_line(filename, message, message_color):
     max_sizex = get_terminal_sizex() - 1
@@ -670,7 +675,7 @@ def display_line(filename, message, message_color):
     else:
         able_size = max_sizex - len_msg
         able_size -= 5  # ...
-        min_size = able_size / 2
+        min_size = able_size // 2
         if able_size % 2 == 0:
             fname1 = filename[:min_size-1]
         else:
@@ -774,7 +779,7 @@ def scan_callback(ret_value):
             log_print(msg)
 
             ch = getch().lower()
-            print ch
+            print (ch)
             log_print(ch + '\n')
 
             if ret_value['scan_state'] == kernel.INFECTED and ch == 'd':
@@ -917,7 +922,7 @@ def import_error_callback(module_name):
     if g_options.opt_debug:
         if not PLUGIN_ERROR:
             PLUGIN_ERROR = True
-            print
+            print ()
             print_error('Invalid plugin: \'%s\'' % module_name)
 
 
@@ -930,8 +935,8 @@ def print_result(result):
     global g_options
     global g_delta_time
 
-    print
-    print
+    print ()
+    print ()
 
     cprint('Results:\n', FOREGROUND_GREY | FOREGROUND_INTENSITY)
     cprint('Folders           :%d\n' % result['Folders'], FOREGROUND_GREY | FOREGROUND_INTENSITY)
@@ -955,7 +960,7 @@ def print_result(result):
     t_s = int(float(t[2]))
     cprint('Scan time         :%02d:%02d:%02d\n' % (t_h, t_m, t_s), FOREGROUND_GREY | FOREGROUND_INTENSITY)
 
-    print
+    print ()
 
 
 # -------------------------------------------------------------------------
@@ -983,7 +988,7 @@ def main():
         return 0
     elif options == 'ILLEGAL_OPTION':  # 정의되지 않은 옵션을 사용한 경우
         print_usage()
-        print 'Error: %s' % args  # 에러 메시지가 담겨 있음
+        print ('Error: %s' % args)  # 에러 메시지가 담겨 있음
         return 0
 
     # 프로그램이 실행중인 폴더
@@ -1034,26 +1039,26 @@ def main():
     # 플러그인 엔진 설정
     plugins_path = os.path.join(k2_pwd, 'plugins')
     if not k2.set_plugins(plugins_path, import_error_callback):
-        print
+        print()
         print_error('KICOM Anti-Virus Engine set_plugins')
         return 0
 
     kav = k2.create_instance()  # 백신 엔진 인스턴스 생성
     if not kav:
-        print
+        print()
         print_error('KICOM Anti-Virus Engine create_instance')
         return 0
 
     kav.set_options(options)  # 옵션을 설정
 
     if not kav.init(import_error_callback):  # 전체 플러그인 엔진 초기화
-        print
+        print()
         print_error('KICOM Anti-Virus Engine init')
         return 0
 
     if options.opt_debug:
         if PLUGIN_ERROR:  # 로딩 실패한 플러그인 엔진과 엔진 버전을 구분하기 위해 사용
-            print
+            print()
 
     # 엔진 버전을 출력
     c = kav.get_version()

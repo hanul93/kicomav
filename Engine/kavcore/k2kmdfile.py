@@ -7,15 +7,24 @@ import hashlib
 import zlib
 import marshal
 import imp
+import importlib
 import sys
 import os
 import py_compile
 import random
 import shutil
-import k2rc4
-import k2rsa
-import k2timelib
+import binascii
+import pickle
+import types
 
+try:
+    from . import k2rc4
+    from . import k2rsa
+    from . import k2timelib
+except ImportError:
+    import k2rc4
+    import k2rsa
+    import k2timelib
 
 # ---------------------------------------------------------------------
 # make(src_fname)
@@ -30,8 +39,10 @@ def make(src_fname, debug=False):
     fname = src_fname  # 암호화 대상 파일
 
     if fname.split('.')[1] == 'py':  # 파이썬 파일을 컴파일 한다.
-        py_compile.compile(fname)    # 컴파일
+        #py_compile.compile(fname)    # 컴파일
         pyc_name = fname+'c'         # 컴파일 이후 파일명
+        py_compile.compile(fname, pyc_name, None, True)    # 컴파일
+        
     else:  # 파이썬 파일이 아닐 경우 확장자를 pyc로 하여 복사한다.
         pyc_name = fname.split('.')[0]+'.pyc'
         shutil.copy(fname, pyc_name)
@@ -41,15 +52,15 @@ def make(src_fname, debug=False):
     # -----------------------------------------------------------------
     # 공개키를 로딩한다.
     rsa_pu = k2rsa.read_key('key.pkr')
-    # print 'pkr : ', rsa_pu
+    # print ('pkr : ', rsa_pu)
 
     # 개인키를 로딩한다.
     rsa_pr = k2rsa.read_key('key.skr')
-    # print 'skr : ', rsa_pr
+    # print ('skr : ', rsa_pr)
 
     if not (rsa_pr and rsa_pu):  # 키 파일을 찾을 수 없다
         if debug:
-            print 'ERROR : Canot find the Key files!'
+            print ('ERROR : Canot find the Key files!')
         return False
 
     # -----------------------------------------------------------------
@@ -58,7 +69,7 @@ def make(src_fname, debug=False):
     # 헤더 : 시그너처(KAVM)+예약영역 : [[KAVM][[날짜][시간]...]
     # -----------------------------------------------------------------
     # 시그너처(KAVM)을 추가한다.
-    kmd_data = 'KAVM'
+    kmd_data = bytearray(b'KAVM')
 
     # 현재 날짜와 시간을 구한다.
     ret_date = k2timelib.get_now_date()
@@ -68,7 +79,11 @@ def make(src_fname, debug=False):
     val_date = struct.pack('<H', ret_date)
     val_time = struct.pack('<H', ret_time)
 
-    reserved_buf = val_date + val_time + (chr(0) * 28)  # 예약 영역
+    #reserved_buf = val_date + val_time + (chr(0) * 28)  # 예약 영역
+    reserved_buf = bytearray(val_date)
+    reserved_buf += val_time
+    #reserved_buf += (chr(0) * 28).encode('latin-1')  # 예약 영역
+    reserved_buf += bytes(28)
 
     # 날짜/시간 값이 포함된 예약 영역을 만들어 추가한다.
     kmd_data += reserved_buf
@@ -79,7 +94,7 @@ def make(src_fname, debug=False):
     random.seed()
 
     while 1:
-        tmp_kmd_data = ''  # 임시 본문 데이터
+        tmp_kmd_data = bytearray(b'')  # 임시 본문 데이터
 
         # RC4 알고리즘에 사용할 128bit 랜덤키 생성
         key = ''
@@ -97,7 +112,7 @@ def make(src_fname, debug=False):
         # 생성된 RC4 키에 문제 없음을 확인한다.
         if key == d_key and len(key) == len(d_key):
             # 개인키로 암호화 된 RC4 키를 임시 버퍼에 추가한다.
-            tmp_kmd_data += e_key
+            tmp_kmd_data += bytes(e_key, 'latin-1')
 
             # 생성된 pyc 파일 압축하기
             buf1 = open(pyc_name, 'rb').read()
@@ -125,11 +140,12 @@ def make(src_fname, debug=False):
             # 헤더와 본문에 대해 MD5를 3번 연속 구한다.
             md5 = hashlib.md5()
             md5hash = kmd_data + tmp_kmd_data  # 헤더와 본문을 합쳐서 MD5 계산
+            
             for i in range(3):
                 md5.update(md5hash)
-                md5hash = md5.hexdigest()
+                md5hash = md5.hexdigest().encode('latin-1')
 
-            m = md5hash.decode('hex')
+            m = bytes.fromhex(md5hash.decode('latin-1')).decode('latin-1')
 
             e_md5 = k2rsa.crypt(m, rsa_pr)  # MD5 결과를 개인키로 암호화
             if len(e_md5) != 32:  # 암호화에 오류가 존재하면 다시 생성
@@ -139,7 +155,7 @@ def make(src_fname, debug=False):
 
             if m == d_md5:  # 원문과 복호화 결과가 같은가?
                 # 헤더, 본문, 꼬리를 모두 합친다.
-                kmd_data += tmp_kmd_data + e_md5
+                kmd_data += tmp_kmd_data + bytes(e_md5, 'latin-1')
                 break  # 무한 루프를 종료한다.
 
     # -----------------------------------------------------------------
@@ -158,13 +174,13 @@ def make(src_fname, debug=False):
             os.remove(pyc_name)
 
             if debug:
-                print '    Success : %-13s ->  %s' % (fname, kmd_name)
+                print ('    Success : %-13s ->  %s' % (fname, kmd_name))
             return True
         else:
             raise IOError
     except IOError:
         if debug:
-            print '    Fail : %s' % fname
+            print ('    Fail : %s' % fname)
         return False
 
 
@@ -180,7 +196,7 @@ def ntimes_md5(buf, ntimes):
     md5hash = buf
     for i in range(ntimes):
         md5.update(md5hash)
-        md5hash = md5.hexdigest()
+        md5hash = md5.hexdigest().encode('latin-1')
 
     return md5hash
 
@@ -200,7 +216,7 @@ class KMDFormatError(Exception):
 # KMD 관련 상수
 # ---------------------------------------------------------------------
 class KMDConstants:
-    KMD_SIGNATURE = 'KAVM'  # 시그너처
+    KMD_SIGNATURE = b'KAVM'  # 시그너처
 
     KMD_DATE_OFFSET = 4  # 날짜 위치
     KMD_DATE_LENGTH = 2  # 날짜 크기
@@ -256,20 +272,22 @@ class KMD(KMDConstants):
         tmp = self.__kmd_data[self.KMD_DATE_OFFSET:
                               self.KMD_DATE_OFFSET + self.KMD_DATE_LENGTH]
         self.date = k2timelib.convert_date(struct.unpack('<H', tmp)[0])
-        # print self.date
+        # print (self.date)
 
         # KMD 파일 시간 읽기
         tmp = self.__kmd_data[self.KMD_TIME_OFFSET:
                               self.KMD_TIME_OFFSET + self.KMD_TIME_LENGTH]
         self.time = k2timelib.convert_time(struct.unpack('<H', tmp)[0])
-        # print self.time
+        # print (self.time)
 
         # KMD 파일에서 MD5 읽기
         e_md5hash = self.__get_md5()
-
+        e_md5hash = binascii.hexlify(e_md5hash.encode('latin-1'))
+        
         # 무결성 체크
         md5hash = ntimes_md5(self.__kmd_data[:self.KMD_MD5_OFFSET], 3)
-        if e_md5hash != md5hash.decode('hex'):
+#        if e_md5hash != md5hash.decode('hex'):
+        if e_md5hash != md5hash:
             raise KMDFormatError('Invalid KMD MD5 hash.')
 
         # KMD 파일에서 RC4 키 읽기
@@ -278,12 +296,15 @@ class KMD(KMDConstants):
         # KMD 파일에서 본문 읽기
         e_kmd_data = self.__get_body()
         if debug:
-            print len(e_kmd_data)
+            print (len(e_kmd_data))
 
         # 압축 해제하기
+        if type(e_kmd_data) != bytes:
+            e_kmd_data = e_kmd_data.encode('latin-1')
+
         self.body = zlib.decompress(e_kmd_data)
         if debug:
-            print len(self.body)
+            print (len(self.body))
 
     # ---------------------------------------------------------------------
     # __get_rc4_key(self)
@@ -325,15 +346,24 @@ class KMD(KMDConstants):
 # 리턴값 : 로딩된 모듈 Object 
 # ---------------------------------------------------------------------
 def load(mod_name, buf):
-    if buf[:4] == '03F30D0A'.decode('hex'):  # puc 시그너처가 존재하는가?
+    # old code python3
+    #if buf[:4].hex().encode('latin-1') == b'03f30d0a':  # puc 시그너처가 존재하는가?
+
+    # surfree
+    # PUC 시그니처를 Python 버전에 맞는 MAGIC_NUMBER 사용
+    # from _bootstrap_external.py
+    #
+    # Python 2.7a0 (62211) => '\x03\xf3' + '\x0d\x0a'
+    # Python Python 3.8b4 (3143)
+    if buf[:4] == importlib.util.MAGIC_NUMBER:
         try:
-            code = marshal.loads(buf[8:])  # pyc에서 파이썬 코드를 로딩한다.
-            module = imp.new_module(mod_name)  # 새로운 모듈 생성한다.
+            code = marshal.loads(buf[16:])  # pyc에서 파이썬 코드를 로딩한다.
+            module = types.ModuleType(mod_name) # 새로운 모듈 생성한다.
             exec (code, module.__dict__)  # pyc 파이썬 코드와 모듈을 연결한다.
             sys.modules[mod_name] = module  # 전역에서 사용가능하게 등록한다.
-
             return module
-        except:
+        except Exception as e:
+            print('Failed to load module exception "', mod_name, '", cause: ', e)
             return None
     else:
         return None

@@ -61,7 +61,7 @@ def DecodeStreamName(name):
     for ch in och:
         ret_str += struct.pack('<H', ch)
 
-    # print ret_str.decode('UTF-16LE', 'replace')
+    # print (ret_str.decode('UTF-16LE', 'replace'))
     return ret_str
 
 
@@ -255,9 +255,9 @@ class OleFile:
             kavutil.vprint('Header')
             kavutil.vprint(None, 'Big Block Size', '%d' % self.bsize)
             kavutil.vprint(None, 'Small Block Size', '%d' % self.ssize)
-            print
+            print ()
             kavutil.HexDump().Buffer(self.mm, 0, 0x60)
-            print
+            print ()
 
         if self.bsize % 0x200 != 0 or self.ssize != 0x40:  # 이상 파일 정보 처리
             return False
@@ -269,7 +269,7 @@ class OleFile:
         '''
         # 상당히 많은 데이터가 출력되어 주석 처리
         if self.verbose:
-            print
+            print ()
             if num_of_bbd_blocks < 109:
                 kavutil.HexDump().Buffer(self.mm, 0x4c, num_of_bbd_blocks * 4)
             else:
@@ -278,7 +278,7 @@ class OleFile:
                 next_b = xbbd_start_block
                 for i in range(num_of_xbbd_blocks):
                     t_data = get_bblock(self.mm, next_b, self.bsize)
-                    print
+                    print ()
                     kavutil.HexDump().Buffer(self.mm, (next_b+1) * self.bsize)
                     next_b = kavutil.get_uint32(t_data, self.bsize-4)
         '''
@@ -298,9 +298,9 @@ class OleFile:
 
         if self.verbose:
             open('bbd.dmp', 'wb').write(self.bbd)
-            print
+            print ()
             kavutil.vprint('BBD')
-            print
+            print ()
             kavutil.HexDump().Buffer(self.bbd, 0, 0x80)
 
         # Root 읽기
@@ -314,10 +314,10 @@ class OleFile:
 
         if self.verbose:
             open('root.dmp', 'wb').write(self.root)
-            print
+            print ()
             kavutil.vprint('ROOT')
             kavutil.vprint(None, 'Start Blocks', '%d' % root_startblock)
-            print
+            print ()
             kavutil.HexDump().Buffer(self.root, 0, 0x80)
 
         # sbd 읽기
@@ -336,11 +336,11 @@ class OleFile:
 
         if self.verbose:
             open('sbd.dmp', 'wb').write(self.sbd)
-            print
+            print ()
             kavutil.vprint('SBD')
             kavutil.vprint(None, 'Start Blocks', '%d' % sbd_startblock)
             kavutil.vprint(None, 'Num of SBD Blocks', '%d' % num_of_sbd_blocks)
-            print
+            print ()
             kavutil.HexDump().Buffer(self.sbd, 0, 0x80)
 
         # PPS 읽기
@@ -390,7 +390,7 @@ class OleFile:
             return False
 
         if self.verbose:
-            print
+            print ()
             kavutil.vprint('Property Storage')
             '''
             print '    %-2s %-20s %4s %-8s %-8s %-8s %-8s %-8s' % ('No', 'Name', 'Type', 'Prev', 'Next', 'Dir', 'SB',
@@ -402,9 +402,9 @@ class OleFile:
                                                                      p['Next'], p['Dir'], p['Start'], p['Size'])
             '''
 
-            print '    %-2s %-32s %4s %-4s %-4s %-4s %8s %8s' % ('No', 'Name', 'Type', 'Prev', 'Next', ' Dir', 'SB',
-                                                                   'Size')
-            print '    ' + ('-' * 74)
+            print ('    %-2s %-32s %4s %-4s %-4s %-4s %8s %8s' % ('No', 'Name', 'Type', 'Prev', 'Next', ' Dir', 'SB',
+                                                                   'Size'))
+            print ('    ' + ('-' * 74))
 
             for p in self.pps:
                 if p['Valid'] is False:  # 유효한 Tree가 아니면 다음
@@ -417,7 +417,7 @@ class OleFile:
                 t += '       - ' if p['Start'] == 0xffffffff else '%8X ' % p['Start']
 
                 tname = p['Name'].encode(sys.stdout.encoding, 'replace')
-                print '    ' + '%2d %-35s %d %22s %8d' % (self.pps.index(p), tname, p['Type'], t, p['Size'])
+                print ('    ' + '%2d %-35s %d %22s %8d' % (self.pps.index(p), tname, p['Type'], t, p['Size']))
 
         # PPS 전체 경로 구하기
         self.__deep = 0
@@ -431,9 +431,9 @@ class OleFile:
         # small block link 얻기
         self.small_block = get_block_link(self.pps[0]['Start'], self.bbd_fat)
         if self.verbose:
-            print
+            print ()
             kavutil.vprint('Small Blocks')
-            print self.small_block
+            print (self.small_block)
 
         return True
 
@@ -512,15 +512,17 @@ class OleFile:
             p = {'Node': node, 'Name': name[1:], 'Type': self.pps[node]['Type']}
             self.__full_list.append(p)
 
-        if self.pps[node]['Dir'] != 0xFFFFFFFFL:
+        if self.pps[node]['Dir'] != 0xFFFFFFFF:
             self.__deep += 1
             self.__get_pps_path(self.pps[node]['Dir'], name)
             self.__deep -= 1
 
-        if self.pps[node]['Prev'] != 0xFFFFFFFFL:
+#        if self.pps[node]['Prev'] != 0xFFFFFFFFL:
+        if self.pps[node]['Prev'] != 0xFFFFFFFF:
             self.__get_pps_path(self.pps[node]['Prev'], prefix)
 
-        if self.pps[node]['Next'] != 0xFFFFFFFFL:
+#        if self.pps[node]['Next'] != 0xFFFFFFFFL:
+        if self.pps[node]['Next'] != 0xFFFFFFFF:
             self.__get_pps_path(self.pps[node]['Next'], prefix)
 
         return 0
@@ -624,7 +626,7 @@ class OleFile:
                         data += self.parent.mm[off:off + self.read_size]
 
                 if self.parent.verbose:
-                    print
+                    print ()
                     kavutil.vprint(pps['Name'])
                     kavutil.HexDump().Buffer(data, 0, 80)
 
@@ -1031,7 +1033,7 @@ class OleWriteStream:
         self.__set_bblock(n, buf)
 
         if self.verbose:
-            print
+            print ()
             buf = get_bblock(self.mm, n, self.bsize)
             kavutil.HexDump().Buffer(buf, 0, 0x200)
 
@@ -1449,7 +1451,7 @@ if __name__ == '__main__':
 
     # o = OleFile('normal.hwp', write_mode=True, verbose=True)
     o = OleFile('a82d381c20cfdf47d603b4b2b840136ed32f71d2757c64c898dc209868bb57d6', write_mode=True, verbose=True)
-    print o.listdir()
+    print (o.listdir())
     o.delete('_VBA_PROJECT_CUR/VBA')  # Root 수정, Next 수정
     o.close()
 

@@ -18,14 +18,14 @@ import zipfile
 # -------------------------------------------------------------------------
 def vprint(header, section=None, msg=None):
     if header:
-        print '[*] %s' % header
+        print ('[*] %s' % header)
 
     if section:
         if len(msg) > 50:
             new_msg = msg[:22] + ' ... ' + msg[-22:]
         else:
             new_msg = msg
-        print '    [-] %-20s: %s' % (section, new_msg)
+        print ('    [-] %-20s: %s' % (section, new_msg))
 
 
 # -------------------------------------------------------------------------
@@ -62,9 +62,10 @@ class PatternMD5:
         # 이는 향후 (size % 개수) + 1을 해서 size가 어느 그룹에 존재하는지를 확인하게 됨
         self.sig_group_count = {}
 
-        fl = glob.glob(os.path.join(plugins_path, '*.s??'))
+        fl = glob.glob1(plugins_path, '*.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -217,9 +218,9 @@ class PatternMD5:
         for sig_key in self.sig_times.keys():
             for sig_prefix in self.sig_times[sig_key].keys():
                 for idx in self.sig_times[sig_key][sig_prefix].keys():
-                    # print '[-]', n - self.sig_times[sig_key][sig_prefix][idx]
+                    # print ('[-]', n - self.sig_times[sig_key][sig_prefix][idx])
                     if n - self.sig_times[sig_key][sig_prefix][idx] > 3 * 60:
-                        # print '[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx)
+                        # print ('[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx))
                         if sig_prefix == 'i':  # 1차 패턴
                             self.sig_p1s[sig_key].pop(idx)
                         elif sig_prefix == 'c':  # 2차 패턴
@@ -238,9 +239,10 @@ class PatternMD5:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -258,9 +260,10 @@ class PatternMD5:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
@@ -286,9 +289,10 @@ class PatternVDB:
         self.sig_times = {}  # 메모리 관리를 위해 시간 정보를 가짐
         self.plugins = plugins_path
 
-        fl = glob.glob(os.path.join(plugins_path, 've.s??'))
+        fl = glob.glob1(plugins_path, 've.s??')
         fl.sort()
         for name in fl:
+            name = os.path.join(plugins_path, name)
             obj = p_md5_pattern_ext.search(name)
             if obj:
                 idx = obj.groups()[0]  # ex:01
@@ -427,9 +431,9 @@ class PatternVDB:
         for sig_key in self.sig_times.keys():
             for sig_prefix in self.sig_times[sig_key].keys():
                 for idx in self.sig_times[sig_key][sig_prefix].keys():
-                    # print '[-]', n - self.sig_times[sig_key][sig_prefix][idx]
+                    # print ('[-]', n - self.sig_times[sig_key][sig_prefix][idx])
                     if n - self.sig_times[sig_key][sig_prefix][idx] > 4:  # (3 * 60) :
-                        # print '[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx)
+                        # print ('[*] Delete sig : %s.%s%s' % (sig_key, sig_prefix, idx))
                         if sig_prefix == 'i':  # 1차 패턴
                             self.sig_p1s[sig_key].pop(idx)
                         elif sig_prefix == 'c':  # 2차 패턴
@@ -448,9 +452,10 @@ class PatternVDB:
     def get_sig_num(self, sig_key):
         sig_num = 0
 
-        fl = glob.glob(os.path.join(self.plugins, '%s.c??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.c??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 buf = open(fname, 'rb').read(12)
                 if buf[0:4] == 'KAVS':
@@ -468,9 +473,10 @@ class PatternVDB:
     # ---------------------------------------------------------------------
     def get_sig_vlist(self, sig_key):
         sig_vname = []
-        fl = glob.glob(os.path.join(self.plugins, '%s.n??' % sig_key))
+        fl = glob.glob1(self.plugins, '%s.n??' % sig_key)
 
         for fname in fl:
+            fname = os.path.join(self.plugins, fname)
             try:
                 sig_vname += self.__load_sig(fname)
             except IOError:
@@ -576,7 +582,7 @@ class HexDump:
                 r_char = size - r_size
                 r_size = size
 
-            # print line_start, r_char
+            # print (line_start, r_char)
             line = fp.read(r_char)
             if len(line) == 0:
                 break
@@ -590,7 +596,7 @@ class HexDump:
             # 문자 값
             output += line_start * " "
             output += "".join(['.', c][self.IsPrint(c)] for c in line)
-            print output
+            print (output)
             col += width
             line_start = 0
             if r_size == size:
@@ -615,8 +621,8 @@ class HexDump:
         # [width*col ... width * (col+1)]
         r_size = 0
         line_start = row + (col * width)
-        # print hex(line_start), hex(width*(col+1))
-        # print hex(row), hex(col)
+        # print (hex(line_start), hex(width*(col+1)))
+        # print (hex(row), hex(col))
         while True:
             line = buf[line_start:width * (col + 1)]
 
@@ -625,7 +631,7 @@ class HexDump:
             if ((r_size + len(line)) < size):
                 pass
             else:
-                # print hex(line_start), hex(line_start + (size - r_size))
+                # print (hex(line_start), hex(line_start + (size - r_size)))
                 line = line[0:(size - r_size)]
                 r_size = size - len(line)
             # 주소 값
@@ -638,7 +644,7 @@ class HexDump:
             # 문자 값
             output += row * " "
             output += "".join(['.', c][self.IsPrint(c)] for c in line)
-            print output
+            print (output)
             line_start = width * (col + 1)
             col += 1
             row = 0
@@ -668,6 +674,8 @@ class HexDump:
 # -------------------------------------------------------------------------
 def is_textfile(buf):
     n_buf = len(buf)
+
+    buf = buf.decode('latin-1')
 
     n_text = len(p_text.findall(buf))
 
@@ -823,7 +831,7 @@ class Feature:
 # ----------------------------------------------------------------------------
 def make_zip(arc_name, file_infos):
     if open(arc_name, 'rb').read(2) == 'PK':
-        # print '[-] zip :', arc_name
+        # print ('[-] zip :', arc_name)
         zfile = zipfile.ZipFile(arc_name, 'w')
 
         for file_info in file_infos:
@@ -831,16 +839,16 @@ def make_zip(arc_name, file_infos):
             try:
                 with open(rname, 'rb') as fp:
                     buf = fp.read()
-                    # print '[-] filename :', rname, len(buf)
-                    # print '[-] rname :',
+                    # print ('[-] filename :', rname, len(buf))
+                    # print ('[-] rname :',)
                     a_name = file_info.get_filename_in_archive()
                     zfile.writestr(a_name, buf, compress_type=zipfile.ZIP_DEFLATED)
             except IOError:
-                # print file_info.get_filename_in_archive()
+                # print (file_info.get_filename_in_archive())
                 pass
 
         zfile.close()
-        # print '[-] close()\n'
+        # print ('[-] close()\n')
 
 
 # -------------------------------------------------------------------------

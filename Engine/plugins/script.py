@@ -9,7 +9,7 @@ import kernel
 import kavutil
 
 
-KICOMAV_BAT_MAGIC = '<KicomAV:BAT>'
+KICOMAV_BAT_MAGIC = b'<KicomAV:BAT>'
 
 
 # -------------------------------------------------------------------------
@@ -31,20 +31,20 @@ class KavMain:
         self.p_script_head = re.compile(r'\s*<\s*(script|iframe)', re.IGNORECASE)
 
         # scrip/iframe 정보가 html 내부에 있는지 확인하는 정규표현식
-        s = r'<\s*(script|iframe).*?>([\d\D]*?)<\s*/(script|iframe)\s*>'
+        s = rb'<\s*(script|iframe).*?>([\d\D]*?)<\s*/(script|iframe)\s*>'
         self.p_script_in_html = re.compile(s, re.IGNORECASE)
 
         # 주석문 및 공백 제거를 위한 정규표현식
-        self.p_http = re.compile(r'https?://')
-        # self.p_script_cmt1 = re.compile(r'//.*|/\*[\d\D]*?\*/')
-        self.p_script_cmt1 = re.compile(r'//.*')
-        self.p_script_cmt2 = re.compile(r'/\*.*?\*/', re.DOTALL)
-        self.p_script_cmt3 = re.compile(r'(#|\bREM\b).*', re.IGNORECASE)
-        self.p_space = re.compile(r'[\s]')
+        self.p_http = re.compile(rb'https?://')
+        # self.p_script_cmt1 = re.compile(rb'//.*|/\*[\d\D]*?\*/')
+        self.p_script_cmt1 = re.compile(rb'//.*')
+        self.p_script_cmt2 = re.compile(rb'/\*.*?\*/', re.DOTALL)
+        self.p_script_cmt3 = re.compile(rb'(#|\bREM\b).*', re.IGNORECASE)
+        self.p_space = re.compile(rb'[\s]')
 
         # BAT 주석문
-        self.p_bat_cmt1 = re.compile(r'\bREM\s+.*', re.IGNORECASE)
-        self.p_bat_cmt2 = re.compile(r'[\^\`]', re.IGNORECASE)
+        self.p_bat_cmt1 = re.compile(rb'\bREM\s+.*', re.IGNORECASE)
+        self.p_bat_cmt2 = re.compile(rb'[\^\`]', re.IGNORECASE)
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -98,6 +98,7 @@ class KavMain:
         buf = mm[:4096]
 
         if kavutil.is_textfile(buf):  # Text 파일인가?
+            buf = buf.decode('latin-1')
             obj = self.p_text_format.match(buf)  # 첫 시작 단어로 파일 포맷 인식하기
             if obj:
                 t = obj.groups()[0].lower()
@@ -182,9 +183,11 @@ class KavMain:
                     return data
 
             elif arc_engine_id == 'arc_bat':
-                buf = self.p_bat_cmt1.sub('', buf)
-                data = self.p_bat_cmt2.sub('', buf)
-                return KICOMAV_BAT_MAGIC + data
+                buf = self.p_bat_cmt1.sub(b'', buf)
+                data = self.p_bat_cmt2.sub(b'', buf)
+                ret = bytearray(KICOMAV_BAT_MAGIC)
+                ret += data
+                return ret
 
         return None
 
@@ -283,11 +286,11 @@ class KavMain:
                 raise ValueError  # 해당 포맷이 포함되을때만 script 엔진 검사
 
             if 'ff_bat' in fileformat and mm[:13] == KICOMAV_BAT_MAGIC:
-                p = re.compile(r'set\s+(\w+)=', re.IGNORECASE)
+                p = re.compile(rb'set\s+(\w+)=', re.IGNORECASE)
                 t_set = p.findall(mm)
                 t_count = 0
                 for k in t_set:
-                    p = re.compile('echo\s+.+?%s' % k)
+                    p = re.compile(b'echo\s+.+?%s' % k)
                     if p.search(mm):
                         t_count += 1
 
@@ -297,20 +300,20 @@ class KavMain:
             if kavutil.is_textfile(mm[:4096]):
                 buf = mm[:]
 
-                buf = self.p_http.sub('', buf)  # http:// 제거
-                buf = self.p_script_cmt1.sub('', buf)  # 주석문 제거
+                buf = self.p_http.sub(b'', buf)  # http:// 제거
+                buf = self.p_script_cmt1.sub(b'', buf)  # 주석문 제거
 
                 # 속도 개선을 위해 두 주석문이 보일때 실제 제거 작업
                 pos2 = -1
-                pos1 = buf.find('/*')
+                pos1 = buf.find(b'/*')
                 if pos1 != -1:
-                    pos2 = buf.rfind('*/')
+                    pos2 = buf.rfind(b'*/')
 
                 if 0 <= pos1 < pos2:
-                    buf = self.p_script_cmt2.sub('', buf)  # 주석문 제거
+                    buf = self.p_script_cmt2.sub(b'', buf)  # 주석문 제거
 
-                buf = self.p_script_cmt3.sub('', buf)  # 주석문 제거
-                buf = self.p_space.sub('', buf)  # 공백 제거
+                buf = self.p_script_cmt3.sub(b'', buf)  # 주석문 제거
+                buf = self.p_space.sub(b'', buf)  # 공백 제거
                 buf = buf.lower()  # 영어 소문자로 통일
 
                 size = len(buf)

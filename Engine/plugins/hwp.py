@@ -74,9 +74,9 @@ class KavMain:
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
         self.handle = {}
-        self.hwp_ole = re.compile('bindata/bin\d+\.ole$', re.IGNORECASE)
+        self.hwp_ole = re.compile(b'bindata/bin\d+\.ole$', re.IGNORECASE)
 
-        s = r'n\x00e\x00w\x00(\x20\x00)+A\x00c\x00t\x00i\x00v\x00e\x00X\x00O\x00b\x00j\x00e\x00c\x00t\x00'
+        s = rb'n\x00e\x00w\x00(\x20\x00)+A\x00c\x00t\x00i\x00v\x00e\x00X\x00O\x00b\x00j\x00e\x00c\x00t\x00'
         self.hwp_js = re.compile(s, re.IGNORECASE)
         return 0  # 플러그인 엔진 초기화 성공
 

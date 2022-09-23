@@ -164,7 +164,7 @@ class KavMain(kernel.PluginsMain):
     def format(self, filehandle, filename, filename_ex):
         buf = k2io.k2memcpy(filehandle, 0, 3)  # read magic of bz2
 
-        if k2io.k2memcmp(buf, 'BZh'):
+        if k2io.k2memcmp(buf, b'BZh'):
             t = k2io.k2dict()
             k2io.k2dict_append(t, 'ff_bz2', 'bz2')
 
