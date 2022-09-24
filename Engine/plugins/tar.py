@@ -20,7 +20,7 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        self.p_tar_magic = re.compile(r'[\d\x20\x00]+')
+        self.p_tar_magic = re.compile(rb'[\d\x20\x00]+')
         self.handle = {}  # 압축 파일 핸들
         return 0  # 플러그인 엔진 초기화 성공
 

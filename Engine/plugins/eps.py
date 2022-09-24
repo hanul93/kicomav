@@ -24,12 +24,12 @@ class KavMain:
         self.handle = {}  # 압축 파일 핸들
         self.verbose = verbose
 
-        self.p_eps = re.compile(r'(\bexec\b)|(\bdef\b)|(\bexch\b)|(\bstring\b)|' +
-                                r'(\breadhexstring\b)|(\bcurrentfile\b)|(\bwritestring\b)|' +
-                                r'(\bhexstring\b)'
+        self.p_eps = re.compile(rb'(\bexec\b)|(\bdef\b)|(\bexch\b)|(\bstring\b)|' +
+                                rb'(\breadhexstring\b)|(\bcurrentfile\b)|(\bwritestring\b)|' +
+                                rb'(\bhexstring\b)'
                                )
-        self.p_hex1 = re.compile(r'<\s*[0-9A-Fa-f\s]+>')
-        self.p_hex2 = re.compile(r'[0-9A-Fa-f]{10,}')
+        self.p_hex1 = re.compile(rb'<\s*[0-9A-Fa-f\s]+>')
+        self.p_hex2 = re.compile(rb'[0-9A-Fa-f]{10,}')
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -82,11 +82,11 @@ class KavMain:
         try:
             if 'ff_eps' in fileformat:
                 if self.verbose:
-                    print '-' * 79
+                    print ('-' * 79)
                     kavutil.vprint('Engine')
                     kavutil.vprint(None, 'Engine', 'eps.kmd')
                     kavutil.vprint(None, 'File name', os.path.split(filename)[-1])
-                    print
+                    print ()
 
                 scan_ptns = []
                 eps_keywords = fileformat['ff_eps']
@@ -96,7 +96,7 @@ class KavMain:
                     kavutil.vprint('EPS Keyword')
                     for i, name in enumerate(eps_keywords):
                         kavutil.vprint(None, 'Keyword #%d' % (i+1), name)
-                    print
+                    print ()
 
                 if 'string' in eps_keywords:
                     scan_ptns.append(self.p_hex1)
@@ -112,7 +112,7 @@ class KavMain:
                         kavutil.vprint('HEX #%d' % (i+1))
                         for i, x in enumerate(t_hex):
                             kavutil.vprint(None, 'Hex String #%d' % (i+1), x)
-                        print
+                        print ()
 
                     # 화이트 리스트 제거
                     s_hex = ''.join(t_hex)

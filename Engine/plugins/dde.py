@@ -67,22 +67,22 @@ class KavMain:
     # 리턴값 : 0 - 성공, 0 이외의 값 - 실패
     # ---------------------------------------------------------------------
     def init(self, plugins_path, verbose=False):  # 플러그인 엔진 초기화
-        s = r'"begin"(.+?)"end"'
+        s = rb'"begin"(.+?)"end"'
         self.p_dde_text = re.compile(s, re.IGNORECASE)
 
-        s = r'<w:fldSimple\s+?w:instr=\s*?"(.+?)"\s*>'
+        s = rb'<w:fldSimple\s+?w:instr=\s*?"(.+?)"\s*>'
         self.p_instr = re.compile(s, re.IGNORECASE)
 
-        s = r'\bdde(auto)?\b'
+        s = rb'\bdde(auto)?\b'
         self.p_dde = re.compile(s, re.IGNORECASE)
 
-        s = r'\\system32\b(.+)\.exe'
+        s = rb'\\system32\b(.+)\.exe'
         self.p_cmd = re.compile(s, re.IGNORECASE)
 
-        s = r'\<[\d\D]+?\>'
+        s = rb'\<[\d\D]+?\>'
         self.p_tag = re.compile(s)
 
-        s = r'\x13\s*dde(auto)?\b[^\x00]+'
+        s = rb'\x13\s*dde(auto)?\b[^\x00]+'
         self.p_dde2 = re.compile(s, re.IGNORECASE)
 
         return 0  # 플러그인 엔진 초기화 성공
@@ -220,7 +220,7 @@ class KavMain:
     # CVE-2017-0199 악성코드를 진단한다.
     # ---------------------------------------------------------------------
     def __scan_cve_2017_0199_docx(self, data):
-        if data.find('<o:OLEObject Type="Link" ProgID="Word.Document.8"') != -1:
+        if data.find(b'<o:OLEObject Type="Link" ProgID="Word.Document.8"') != -1:
             return True
 
         return False

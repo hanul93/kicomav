@@ -1,21 +1,20 @@
-import "pe"
-
 rule IsPeFile {
-    meta:
-        ref = "https://github.com/godaddy/yara-rules/blob/master/example.yara"
-    strings:
+meta:
+    ref = "https://github.com/godaddy/yara-rules/blob/master/example.yara"
+strings:
 		$mz = "MZ"
+
 	condition:
 		$mz at 0 and uint32(uint32(0x3C)) == 0x4550
 }
 
 rule Hwp_Malware1
 {
-    meta:
-        author = "Kei Choi (hanul93@gmail.com)"
-        date = "2017-08-23"
-        KicomAV = "Trojan.PS.Agent.yra"
-    strings:
+meta:
+	author = "Kei Choi (hanul93@gmail.com)"
+	date = "2017-08-23"
+	KicomAV = "Trojan.PS.Agent.yra"
+strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $string1 = "1 bitshift add" nocase
         $string2 = "(KERNEL32.DLL)" nocase
@@ -28,11 +27,11 @@ rule Hwp_Malware1
 
 rule Hwp_Malware2
 {
-    meta:
-        author = "Kei Choi (hanul93@gmail.com)"
-        date = "2017-08-23"
-        KicomAV = "Trojan.PS.Agent.yrb"
-    strings:
+meta:
+	author = "Kei Choi (hanul93@gmail.com)"
+	date = "2017-08-23"
+	KicomAV = "Trojan.PS.Agent.yrb"
+strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $regex2 = "90909090"
         $string1 = "putinterval def" nocase
@@ -44,16 +43,61 @@ rule Hwp_Malware2
 
 rule Hwp_Malware3
 {
-    meta:
-        author = "Kei Choi (hanul93@gmail.com)"
-        date = "2017-08-23"
-        KicomAV = "Trojan.PS.Agent.yrc"
+meta:
+	author = "Kei Choi (hanul93@gmail.com)"
+	date = "2017-08-23"
+	KicomAV = "Trojan.PS.Agent.yrc"
     strings:
         $regex1 = /<[0-9A-Fa-f]{500,}/
         $string1 = "4 mod get xor put" nocase
         $string2 = "exec" nocase
     condition:
         all of them
+}
+
+
+rule WannaCry : Ransomware
+{
+meta:
+	author = "Kei Choi"
+	date = "2018-04-04"
+    KicomAV = "Trojan-Ransom.Win32.Wanna.gen"
+	description = "Ransomware_WannaCry Yara Rule"
+	hash0 = "a4cbf2307cafc733506e465b5a686307"
+	hash1 = "f4856b368dc74f04adb9c4548993f148"
+	hash2 = "04e1e9bacc659ae64fc2ae3a637a2daa"
+	hash3 = "b1d52d54af3002b6775258a28bb38953"
+	hash4 = "77a5be0a7d0c0ded340269d2ca9b8b94"
+	hash5 = "aa089f31594076f4a1a4f5c76656a9db"
+	hash6 = "4dcdb23838a010aa05f81447e826e65e"
+	hash7 = "0bee63f915fe72daee9360f8f168bc64"
+	hash8 = "c969cab67a026fb98309b62d35d6c605"
+	hash9 = "ae72a3d3b9ee295436ba281171c50538"
+	hash10 = "3503df16479880fdf484ace875ff3588"
+	hash11 = "d69044b6e7fb5dfa6e07b4dfa0e06d15"
+	hash12 = "9f2f3a01ddfbd0ddc65083f6472aa16c"
+	sample_filetype = "exe"
+	yaragenerator = "https://github.com/Xen0ph0n/YaraGenerator"
+strings:
+	$string0 = "gcblhgnjinjinjinjilhgjgfjfe"
+	$string1 = "}yxfbagcb"
+	$string2 = "V22dN::t"
+	$string3 = "\\WINDOWS" wide
+	$string4 = "XhHpSeA"
+	$string5 = "_Tidy@"
+	$string6 = "qnn]YXeaaifenjisontpoplkkgfplkqmlokjhdc"
+	$string7 = "kgfhdciedfba"
+	$string8 = "s.wnry"
+	$string9 = "Amazon"
+	$string10 = "$8,4-6'96$:."
+	$string11 = "mihhdcgcbgcbgcbgcbgbaxts"
+	$string12 = "1exception@@UAE@XZ"
+	$string13 = "OMMuss"
+	$string14 = "$allocator@G@2@@std@@2IB"
+	$string15 = "Qkkbal"
+	$string16 = "CryptImportKey"
+condition:
+	16 of them and IsPeFile
 }
 
 
@@ -104,66 +148,43 @@ rule APT34_Malware_HTA {
       filesize < 60KB and ( 1 of ($x*) or all of ($s*) )
 }
 
-rule Exploit_HWP_Agent_b
-{
+rule Trojan_JS_Malware1 {
+   meta:
+      hash1 = "000461e3edf7eee69ed45f0831858db2b0636f3059d31162040015d1330a0cee"
+      KicomAV = "Trojan.JS.Generic"
+   strings:
+
+      $regex1 = /[0-9A-Fa-f]{500}/
+      
+      $hex1 = "function"
+      $hex2 = "eval(eval"
+
+   condition:
+       $hex1 in (0..4096) and all of them
+      
+}
+
+rule HWP_eps_exploit1 {
     meta:
-        author = "Kei Choi"
-        date = "2018-06-19"
-        KicomAV = "Exploit.HWP.Agent.b"
+        hash1 = "a68169aba0691c337241ea1049d8d848765dcfc35a9e43897c51379979b48455"
+        KicomAV = "Exploit.HWP.CVE-2015-2545"
     strings:
-        $s1 = "kernel32.dll" nocase
-        $s2 = /1\s+get\s+<636C6F736566696C65>\s+cvx\s+exec/
-        $regex1 = /<[0-9A-Fa-f]{500,}/
+        $regex1 = /[0-9A-Fa-f]{200}/
+        $regex2 = /3.{46}D>\s+token\s+pop\s+exch\s+pop\s+exec\b/ nocase
     condition:
-        all of them
+        $regex1 in (0..4096) and filesize < 20KB and all of them
+}
+
+rule HWP_Trojan_Agent1 {
+    meta:
+        hash1 = "cd6a12cc693e98e4f47d2161e9fe99d04895472d964575c749bbdd460f0fefdc"
+        KicomAV = "Exploit.HWP.Agent"
+    strings:
+        $regex1 = /[0-9A-Fa-f]{200}/
+        $regex2 = /\bcopy\s*get\s*\d{1,}\s*xor\s+put\s+ar\s*}for\b/ nocase
+    condition:
+        $regex1 in (0..4096) and filesize < 20KB and all of them
 }
 
 
-rule Virus_Win32_PolyRansom_a
-{
-    meta:
-        author = "Kei Choi"
-        date = "2018-06-26"
-        KicomAV = "Virus.Win32.PolyRansom.a"
-    strings:
-        $s1 = { b? ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 ?? ?? ?? 0? 00 }
-        $s2 = { b? ?? ?? 0? 00 b? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 81 ?? ?? ?? 0? 00 }
-    condition:
-        $s1 at pe.entry_point or $s2 at pe.entry_point
-}
-
-rule Trojan_JS_Agent_gen_1
-{
-    meta:
-        author = "Kei Choi"
-        date = "2019-12-08"
-        KicomAV = "Trojan.JS.Agent.gen"
-    strings:
-        $a1 = "CreateObject" nocase
-        $a2 = "ActiveXObject" nocase
-        $s1 = ".type" nocase
-        $s2 = ".open" nocase
-        $s3 = ".write" nocase
-        $s4 = ".savetofile" nocase
-        $s5 = ".run" nocase
-    condition:
-        1 of ($a*) and all of ($s*)
-}
-
-
-rule Trojan_BAT_Agent_gen_1
-{
-    meta:
-        author = "Kei Choi"
-        date = "2019-12-08"
-        KicomAV = "Trojan.BAT.Agent.gen"
-    strings:
-        $mz = "<KicomAV:BAT>"
-        $s1 = "echo" nocase
-        $s2 = ".downloadstring" nocase
-        $s3 = "windowspowershell" nocase
-        $s4 = "powershell.exe" nocase
-    condition:
-        all of them
-}
 

@@ -17,7 +17,7 @@ def analysis_ole10native(mm, verbose=False):
     fileformat = {}
 
     try:
-        if mm[:2] == '\x02\x00':
+        if mm[:2] == b'\x02\x00':
             size = len(mm)
             fileformat['size'] = size  # 포맷 주요 정보 저장
 
@@ -45,7 +45,7 @@ def analysis_ole10native(mm, verbose=False):
                 raise ValueError
 
             if verbose:
-                print
+                print ()
                 kavutil.vprint('Ole10Native Stream')
                 kavutil.vprint(None, 'Size', '0x%08X' % size)
                 kavutil.vprint(None, 'Label', label)
@@ -54,11 +54,11 @@ def analysis_ole10native(mm, verbose=False):
                 kavutil.vprint(None, 'Data Offset', '0x%08X' % (off + 4))
                 kavutil.vprint(None, 'Data Size', '0x%08X' % data_size)
 
-                print
+                print ()
                 kavutil.vprint('Data Dump')
-                print
+                print ()
                 kavutil.HexDump().Buffer(mm[:], off + 4, 0x80)
-                print
+                print ()
 
             return fileformat
     except ValueError:
@@ -121,7 +121,7 @@ class KavMain:
 
         mm = filehandle
 
-        if mm[:2] == '\x02\x00' and filename_ex.find('_Ole10Native') != -1:
+        if mm[:2] == b'\x02\x00' and filename_ex.find('_Ole10Native') != -1:
             fileformat = analysis_ole10native(mm, self.verbose)
             if fileformat:
                 ret = {'ff_ole10native': fileformat}

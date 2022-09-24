@@ -7,9 +7,10 @@ import struct
 import kernel
 import kavutil
 import zlib
-import cPickle
+#import cPickle
+import pickle
 import cryptolib
-import StringIO
+from io import StringIO
 
 try:
     import yara
@@ -176,7 +177,7 @@ class KavMain:
 
         if cert_off != 0 and cert_size != 0:
             if self.verbose:
-                print '-' * 79
+                print ('-' * 79)
                 kavutil.vprint('Engine')
                 kavutil.vprint(None, 'Engine', 'adware.kmd')
 

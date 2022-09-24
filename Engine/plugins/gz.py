@@ -57,7 +57,7 @@ class KavMain:
         ret = {}
 
         mm = filehandle
-        if mm[0:3] == '\x1F\x8B\x08':  # 헤더 체크
+        if mm[0:3] == b'\x1F\x8B\x08':  # 헤더 체크
             ret['ff_gz'] = 'gz'
             return ret
 

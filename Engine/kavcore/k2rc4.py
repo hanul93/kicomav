@@ -39,16 +39,19 @@ class RC4:
         t_str = []
 
         for i in range(len(data)):
-            t_str.append(ord(data[i]))
+            # surfree
+#            t_str.append(ord(data[i]))
+            t_str.append(data[i])
 
         for i in range(len(t_str)):
             t_str[i] ^= self.__gen_k()
 
-        ret_s = ''
+        ret_s = bytearray(b'')
         for i in range(len(t_str)):
-            ret_s += chr(t_str[i])
+#            ret_s += chr(t_str[i])
+            ret_s.append(t_str[i])
 
-        return ret_s
+        return bytes(ret_s)
 
     # -----------------------------------------------------------------
     # __init_rc4(self)

@@ -12,9 +12,9 @@ import kavutil
 # -------------------------------------------------------------------------
 # objdata 추출 관련 함수들
 # -------------------------------------------------------------------------
-p_rtf_tags = re.compile(r'\\([^\\{}]*)')
-p_rtf_tag = re.compile(r'\\\s*(#|\*|[a-z\x00]*)(\d*)(.*)', re.I)
-p_obj_tag = re.compile(r'\\objdata\b', re.I)
+p_rtf_tags = re.compile(rb'\\([^\\{}]*)')
+p_rtf_tag = re.compile(rb'\\\s*(#|\*|[a-z\x00]*)(\d*)(.*)', re.I)
+p_obj_tag = re.compile(rb'\\objdata\b', re.I)
 
 
 # {} 개수를 체크해서 최종 닫혀진 괄호까지의 데이터를 추출한다.
@@ -48,7 +48,7 @@ def __keyword_sub(obj):
         s += join_data(None, None, d[:n].encode('hex') + d[n:])
     else:
         pass
-        # print '[*] Key :', tag
+        # print ('[*] Key :', tag)
         # s += join_data(None, None, data)
 
     return s
@@ -115,7 +115,7 @@ class RtfFile:
         self.fp = None
         self.mm = None
 
-        self.p = re.compile(r'[A-Fa-f0-9]+')
+        self.p = re.compile(rb'[A-Fa-f0-9]+')
 
         self.num_objdata = 0  # RTF에 삽입된 objdata의 수
         self.objdata = {}  # objdata
@@ -134,7 +134,7 @@ class RtfFile:
 
             self.num_objdata = len(p_obj_tag.findall(mm))
             if self.verbose:
-                print '[*] objdata : %d' % self.num_objdata
+                print ('[*] objdata : %d' % self.num_objdata)
 
             # objdata를 추출한다.
             i = 1
@@ -152,14 +152,14 @@ class RtfFile:
                     data_len = int(h[off + 6:off + 8] + h[off + 4:off + 6] + h[off + 2:off + 4] + h[off:off + 2], 16)
 
                     if self.verbose:
-                        print name_len
-                        print name
-                        print hex(data_len)
+                        print (name_len)
+                        print (name)
+                        print (hex(data_len))
 
                     t = h[24 + (name_len * 2) + 24:24 + (name_len * 2) + 24 + (data_len * 2)]
 
                     if self.verbose:
-                        print hex(len(t))
+                        print (hex(len(t)))
 
                     obj_name = 'RTF #%d' % i
                     self.objdata[obj_name] = t.decode('hex')
@@ -204,19 +204,19 @@ class KavMain:
         self.verbose = verbose
         self.handle = {}  # 압축 파일 핸들
 
-        cve_2010_3333_magic = r'\bpfragments\b'
+        cve_2010_3333_magic = rb'\bpfragments\b'
         self.cve_2010_3333_magic = re.compile(cve_2010_3333_magic, re.IGNORECASE)
 
-        cve_2010_3333_1 = r'pfragments\b[\d\D]*?\\sv\b[\d\D]*?(\d+)|\\sv\b[\d\D]*?(\d+)[\d\D]*?pfragments\b'
+        cve_2010_3333_1 = rb'pfragments\b[\d\D]*?\\sv\b[\d\D]*?(\d+)|\\sv\b[\d\D]*?(\d+)[\d\D]*?pfragments\b'
         self.prog_cve_2010_3333_1 = re.compile(cve_2010_3333_1, re.IGNORECASE)
 
-        cve_2010_3333_2 = r'\\sn[\W]{1,20}?pfragments\b'
+        cve_2010_3333_2 = rb'\\sn[\W]{1,20}?pfragments\b'
         self.prog_cve_2010_3333_2 = re.compile(cve_2010_3333_2, re.IGNORECASE)
 
-        cve_2014_1761 = r'\\listoverridecount(\d+)'
+        cve_2014_1761 = rb'\\listoverridecount(\d+)'
         self.prog_cve_2014_1761 = re.compile(cve_2014_1761, re.IGNORECASE)
 
-        eps_dropper = r'exec\s+(4d5a)?([0-9a-f]{2})+50450000'
+        eps_dropper = rb'exec\s+(4d5a)?([0-9a-f]{2})+50450000'
         self.prog_eps_dropper = re.compile(eps_dropper, re.IGNORECASE)
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -269,7 +269,7 @@ class KavMain:
 
                     if val != 2 and val != 4 and val != 8:
                         if self.verbose:
-                            print '[*] RTF :', val
+                            print ('[*] RTF :', val)
 
                         return True, 'Exploit.RTF.CVE-2010-3333.a', 0, kernel.INFECTED
 
@@ -284,13 +284,13 @@ class KavMain:
                 val = int(t.groups()[0])
 
                 if self.verbose:
-                    print '[*] RTF :', val
+                    print ('[*] RTF :', val)
 
                 if val >= 25:
                     t1 = re.findall(r'{\\lfolevel}', mm)
                     if t1:
                         if self.verbose:
-                            print '[*] N :', len(t1)
+                            print ('[*] N :', len(t1))
                         if len(t1) > val:
                             return True, 'Exploit.RTF.CVE-2014-1761', 0, kernel.INFECTED
         else:

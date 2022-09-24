@@ -154,7 +154,7 @@ class KavMain:
 
         mm = filehandle
         data = mm[0:0xe]
-        if data == 'InstallShield\x00':  # 헤더 체크
+        if data == b'InstallShield\x00':  # 헤더 체크
             ret['ff_installshield'] = 'InstallShield'
             return ret
 
