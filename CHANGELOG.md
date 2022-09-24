@@ -1,3 +1,24 @@
+## v0.33 (Mar 17, 2020)
+
+* **Engine :**
+  * k2engine: Fixed a bug(#16) that failed to scan folders containing bracket characters ('[]')
+
+* **Plugins Modules :**
+  * 7z: Added recompression
+  * alz: Added recompression
+  * bat: New support
+  * bz: Added recompression
+  * egg: Added recompression
+  * elf: Added parse Program Headers of Elf 64bit files (#12)
+  * gz: Added recompression
+  * lnk: New support
+  * macro: Fixed decompress of module of vba
+  * tar: Added recompression
+  * xz: Added recompression
+
+* **Command Line Interface :**
+  * k2: Fixed KicomAV update flow (#10)
+
 ## v0.32 (Aug 1, 2019)
 
 * **Engine :**
