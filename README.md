@@ -5,7 +5,8 @@
 [![License](https://img.shields.io/badge/license-gpl2-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-windows-lightgrey.svg)
 ![Platform](https://img.shields.io/badge/platform-linux-lightgrey.svg)
-![Platform](https://img.shields.io/badge/platform-mac-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-mac-lightgrey.svg)<br>
+![](https://img.shields.io/badge/Python-V3.8%20~-brightgreen)
 
 KicomAV is an open source (GPL v2) antivirus engine designed for detecting malware and disinfecting it. This antivirus engine is created and maintained by [Kei Choi](http://www.hanul93.com).
 
