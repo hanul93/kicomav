@@ -1,3 +1,8 @@
+# v0.33b (Sep 24, 2022)
+
+* **Engine :**
+  * Project ported from Python 2 to Python 3
+
 ## v0.33 (Mar 17, 2020)
 
 * **Engine :**
