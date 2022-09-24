@@ -974,7 +974,7 @@ def main():
     options, args = parser_options()
     g_options = options  # 글로벌 options 셋팅
 
-    if os.name == 'nt' and not isinstance(options, types.StringType):
+    if os.name == 'nt' and not isinstance(options, str):
         if options.opt_nocolor:
             NOCOLOR = True
 
