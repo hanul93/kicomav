@@ -17,6 +17,7 @@ KicomAV is an open source (GPL v2) antivirus engine designed for detecting malwa
 * [pylzma](https://github.com/fancycode/pylzma)
 * [yara](https://github.com/plusvic/yara)
 * [backports.lzma](https://github.com/peterjc/backports.lzma)
+* [six](https://github.com/benjaminp/six)
 
 ## Quick start
 
