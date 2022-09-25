@@ -26,7 +26,7 @@ import os
 import sys
 import types
 import hashlib
-import urllib
+import urllib.request
 import time
 import struct
 import datetime
@@ -554,7 +554,7 @@ def get_download_list(url, path):
         download_file(url, 'update.cfg', pwd)
 
         buf = open(os.path.join(pwd, 'update.cfg'), 'r').read()
-        p_lists = re.compile(rb'([A-Fa-f0-9]{40}) (.+)')
+        p_lists = re.compile(r'([A-Fa-f0-9]{40}) (.+)')
         lines = p_lists.findall(buf)
 
         for line in lines:
