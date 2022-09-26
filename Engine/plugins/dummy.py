@@ -2,7 +2,6 @@
 # Author: Kei Choi(hanul93@gmail.com)
 
 
-import six
 import kernel
 import k2io
 
