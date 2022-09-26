@@ -3,7 +3,6 @@
 
 import os
 import mmap
-import six
 import kernel
 
 
@@ -56,10 +55,6 @@ def k2write(filehandle, data):
 # -------------------------------------------------------------------------
 def k2seek(filehandle, offset, mode=SEEK_SET):
     if filehandle:
-        if six.PY2:
-            filehandle.seek(offset, mode)
-            return filehandle.tell()
-
         return filehandle.seek(offset, mode)
 
     return None
@@ -121,17 +116,11 @@ def k2mmap(filehandle):
 # Convert String to Bytes(PY3)
 # -------------------------------------------------------------------------
 def k2byte(data):
-    if six.PY3 and isinstance(data, str):
-        return data.encode('utf-8')
-
-    return data  # PY2: str, PY3: byte
+    return data.encode('utf-8')
 
 
 def k2ord(ch):
-    if six.PY3 and isinstance(ch, int):
-        return ch
-
-    return ord(ch)
+    return ch
 
 
 def k2split(str1, sep):
