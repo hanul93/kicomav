@@ -1,3 +1,9 @@
+# v0.33c (Sep 26, 2022)
+
+* **Engine :**
+  * k2engine: Fixed python source code import error
+  * k2io: Removeed six module
+
 # v0.33b (Sep 24, 2022)
 
 * **Engine :**
