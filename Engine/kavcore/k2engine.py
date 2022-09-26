@@ -3,8 +3,7 @@
 
 
 import os
-import sys
-import importlib.util
+from importlib.machinery import SourceFileLoader
 from io import StringIO
 import datetime
 import types
@@ -116,14 +115,11 @@ class Engine:
                 name = kmd_name.split('.')[0]
                 if k2const.K2DEBUG:
                     k = None
-#                   old code python2
-#                    module = imp.load_source(name, os.path.splitext(kmd_path)[0] + '.py')
-
-                    spec = importlib.util.spec_from_file_location(name, os.path.splitext(kmd_path)[0] + '.py')
-                    module = importlib.util.module_from_spec(spec)
-                    sys.modules[name] = module
-                    if os.name != 'nt' and name != 'cab':
-                        spec.loader.exec_module(module)
+                    module = SourceFileLoader(name, os.path.splitext(kmd_path)[0] + '.py').load_module()
+                    try:
+                        os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
+                    except OSError:
+                        pass
 
                     try:
                         os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
