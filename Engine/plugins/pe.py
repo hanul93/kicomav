@@ -540,7 +540,7 @@ class KavMain:
         81 7D E0 4E 75 6C 6C                          cmp     [ebp+var_20], 'lluN'
         '''
 
-        self.p_nsis = bytes.fromhex('817DDCEFBEADDE7569817DE8496E7374')
+        self.p_nsis = bytes.fromhex('EFBEADDE75')
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -640,7 +640,7 @@ class KavMain:
                         if len(t) != 16:
                             break
 
-                        if t == '\xEF\xBE\xAD\xDENullsoftInst':
+                        if t == b'\xEF\xBE\xAD\xDENullsoftInst':
                             ret['ff_nsis'] = {'Offset': i * 0x200}
                             break
 

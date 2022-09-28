@@ -38,6 +38,7 @@ LPVOID = c_void_p
 UINT_PTR = c_uint
 SIZE_T = c_uint
 
+
 class StructNsisHeader(Structure):
     _pack_ = 1
     _fields_ = [
@@ -301,7 +302,7 @@ class NSISHeader:
 
     def __set_value(self):
         # 유니코드 데이터 셋인가?
-        if self.header_data[self.nh.strings:self.nh.strings + 2] == '\x00\x00':
+        if self.header_data[self.nh.strings:self.nh.strings + 2] == b'\x00\x00':
             self.is_unicode = 2  # 유니코드 맞음
         else:
             self.is_unicode = 1
@@ -311,7 +312,7 @@ class NSISHeader:
         # NSIS 헤더의 정보중 데이터 영역의 특정 위치에 글자를 확인하여 Ver3인지 체크
         off = self.nh.strings + (0x11 * self.is_unicode)
         d = self.header_data[off:off + (14 * self.is_unicode)]
-        self.ver3 = bool(self.__binary_unicode_to_str(d) == "CommonFilesDir")
+        self.ver3 = bool(self.__binary_unicode_to_str(d) == b"CommonFilesDir")
 
         if self.ver3:
             self.ns_skip_code = -self.ns_skip_code & 0xff
@@ -326,8 +327,7 @@ class NSISHeader:
 
     def __binary_str_to_unicode(self, s):
         if self.is_unicode == 2:
-            s = s.decode('utf-8', errors='replace')
-            s = str(buffer(s))
+            return s.decode('utf-16le')
 
         return s
 
@@ -343,13 +343,17 @@ class NSISHeader:
 
         static_user_vars = len(NsisVarNames)
         if n_data in range(static_user_vars):
-            return '$' + NsisVarNames[n_data]
+            s = '$' + NsisVarNames[n_data]
         else:
-            return '$%d' % (n_data - static_user_vars)
+            s = '$%d' % (n_data - static_user_vars)
+
+        if self.is_unicode == 2:
+            return s.encode('utf-16le')
+        return s
 
     def __decode_short(self, off):
-        a = ord(self.header_data[off])
-        b = ord(self.header_data[off + 1])
+        a = self.header_data[off]
+        b = self.header_data[off + 1]
         n_data = ((b & ~0x80) << 7) | (a & ~0x80)
 
         return n_data
@@ -367,14 +371,17 @@ class NSISHeader:
             char = self.header_data[off:off + (1 * self.is_unicode)]
             off += (1 * self.is_unicode)
 
-            while char != '\x00' * self.is_unicode and len(char) != 0:
+            while char != b'\x00' * self.is_unicode and len(char) != 0:
                 if self.is_unicode == 2:
                     ch = struct.unpack('<H', char)[0]
                 else:
                     ch = ord(char)
 
                 if (ch >= self.ns_codes_start) if self.ver3 else (ch < self.ns_codes_start):
-                    str_data += char
+                    if self.is_unicode == 2:
+                        str_data += self.__binary_str_to_unicode(bytes(char))
+                    else:
+                        str_data += char
                 elif ch == self.ns_var_code:
                     n_data = self.__decode_short(off)
                     off += 2
@@ -384,7 +391,7 @@ class NSISHeader:
                 off += (1 * self.is_unicode)
             # end while
 
-            str_data = self.__binary_unicode_to_str(str_data)
+            # str_data = self.__binary_unicode_to_str(str_data)
 
             return str_data
         else:
@@ -401,7 +408,7 @@ class NSISHeader:
             val = self.header_data[off:off + 4]
 
             # if nr.which == 20:  # EW_EXTRACTFILE
-            if val == '\x14\x00\x00\x00':  # EW_EXTRACTFILE
+            if val == b'\x14\x00\x00\x00':  # EW_EXTRACTFILE
                 nr = StructNsisRecord()
                 memmove(addressof(nr), self.header_data[off:], sizeof(nr))
 
@@ -410,7 +417,7 @@ class NSISHeader:
                     ft_dec = struct.unpack('>Q', struct.pack('>ll', nr.parm4, nr.parm3))[0]
 
                     # UnixTimeToFileTime http://support.microsoft.com/kb/167296
-                    dt = datetime.datetime.fromtimestamp((ft_dec - 116444736000000000) / 10000000)
+                    dt = datetime.datetime.fromtimestamp((ft_dec - 116444736000000000) / 10000000000)
                 except struct.error:
                     pass
                 except ValueError:
@@ -421,7 +428,7 @@ class NSISHeader:
 
                 self.files[file_name] = (file_offset, dt, nr.which)
             # elif nr.which == 62:  # EW_WRITEUNINSTALLER
-            elif val == '\x3e\x00\x00\x00':  # EW_WRITEUNINSTALLER
+            elif val == b'\x3e\x00\x00\x00':  # EW_WRITEUNINSTALLER
                 nr = StructNsisRecord()
                 memmove(addressof(nr), self.header_data[off:], sizeof(nr))
 
@@ -604,10 +611,10 @@ class KavMain:
                 foff = fileformat['ff_attach']['Attached_Pos']
 
                 # NSIS가 맞나?
-                if mm[foff+4:foff+20] == '\xEF\xBE\xAD\xDENullsoftInst':
+                if mm[foff+4:foff+20] == b'\xEF\xBE\xAD\xDENullsoftInst':
                     buf = mm[:]
                     fmd5 = cryptolib.md5(buf).decode('hex')  # 파일 전체 MD5 생성
-                    header = 'NSIS' + struct.pack('<L', malware_id) + fmd5
+                    header = b'NSIS' + struct.pack('<L', malware_id) + fmd5
 
                     rname = tempfile.mktemp(prefix='ktmp')
                     open(rname, 'wb').write(mm[foff:])
@@ -673,7 +680,7 @@ class KavMain:
     # 압축 파일 핸들을 닫는다.
     # ---------------------------------------------------------------------
     def arcclose(self):
-        for fname in self.handle.keys():
+        for fname in list(self.handle.keys()):
             zfile = self.handle[fname]
             zfile.close()
             self.handle.pop(fname)
