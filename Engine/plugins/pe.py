@@ -160,7 +160,7 @@ class PE:
                      'Sections': None, 'EntryPointRaw': 0, 'FileAlignment': 0}
 
         try:
-            if mm[0:2] != 'MZ':  # MZ로 시작하나?
+            if mm[0:2] != b'MZ':  # MZ로 시작하나?
                 raise ValueError
 
             dos_header = DOS_HEADER()
@@ -170,7 +170,7 @@ class PE:
             pe_pos = dos_header.e_lfanew
 
             # PE 인가?
-            if mm[pe_pos:pe_pos + 4] != 'PE\x00\x00':
+            if mm[pe_pos:pe_pos + 4] != b'PE\x00\x00':
                 raise ValueError
 
             pe_format['PE_Position'] = pe_pos
@@ -211,7 +211,7 @@ class PE:
 
             # Data Directory 읽기
             data_directory_size = ctypes.sizeof(DATA_DIRECTORY())  # data_directory_size : 8
-            num_data_directory = (opthdr_size - optional_header_size) / data_directory_size
+            num_data_directory = (opthdr_size - optional_header_size) // data_directory_size
             off_data_directory = pe_pos + 4 + file_header_size + optional_header_size
 
             for i in range(num_data_directory):
@@ -236,7 +236,7 @@ class PE:
                 ctypes.memmove(ctypes.addressof(section_header), mm[s:], section_header_size)
 
                 sec_name = ctypes.cast(section_header.Name, ctypes.c_char_p)
-                section['Name'] = sec_name.value.replace('\x00', '')
+                section['Name'] = sec_name.value.replace(b'\x00', b'')
                 section['VirtualSize'] = section_header.Misc_VirtualSize
                 section['RVA'] = section_header.VirtualAddress
                 section['SizeRawData'] = section_header.SizeOfRawData
@@ -366,7 +366,7 @@ class PE:
                 # print (hex(imp_off), imp_size)
                 imp_data = mm[imp_off:imp_off+imp_size]
                 if len(imp_data) == imp_size:
-                    for i in range(imp_size / 0x14):  # DLL 정보 크기가 0x14
+                    for i in range(imp_size // 0x14):  # DLL 정보 크기가 0x14
                         try:
                             dll_rva = kavutil.get_uint32(imp_data, (i*0x14)+0xC)
                             api_rva = kavutil.get_uint32(imp_data, (i * 0x14))
@@ -505,7 +505,7 @@ class PE:
 
             if rva <= t_rva < rva + size:
                 if self.pe_file_align:
-                    foff = (section['PointerRawData'] / self.pe_file_align) * self.pe_file_align
+                    foff = (section['PointerRawData'] // self.pe_file_align) * self.pe_file_align
                 else:
                     foff = section['PointerRawData']
                 t_off = t_rva - rva + foff
@@ -540,7 +540,7 @@ class KavMain:
         81 7D E0 4E 75 6C 6C                          cmp     [ebp+var_20], 'lluN'
         '''
 
-        self.p_nsis = '817DDCEFBEADDE7569817DE8496E7374'.decode('hex')
+        self.p_nsis = bytes.fromhex('817DDCEFBEADDE7569817DE8496E7374')
 
         return 0  # 플러그인 엔진 초기화 성공
 
@@ -600,7 +600,7 @@ class KavMain:
 
         for sec in pe_format['Sections']:
             if pe_file_align:
-                off = (sec['PointerRawData'] / pe_file_align) * pe_file_align
+                off = (sec['PointerRawData'] // pe_file_align) * pe_file_align
             else:
                 off = sec['PointerRawData']
             size = sec['SizeRawData']
@@ -626,7 +626,7 @@ class KavMain:
             # NSIS 코드가 .text 영역에 존재하는지 체크한다.
             text_sec = pe_format['Sections'][0]
             if pe_file_align:
-                off = (text_sec['PointerRawData'] / pe_file_align) * pe_file_align
+                off = (text_sec['PointerRawData'] // pe_file_align) * pe_file_align
             else:
                 off = text_sec['PointerRawData']
             size = text_sec['SizeRawData']
