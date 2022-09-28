@@ -116,10 +116,6 @@ class Engine:
                 if k2const.K2DEBUG:
                     k = None
                     module = SourceFileLoader(name, os.path.splitext(kmd_path)[0] + '.py').load_module()
-                    try:
-                        os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
-                    except OSError:
-                        pass
 
                     try:
                         os.remove(os.path.splitext(kmd_path)[0] + '.pyc')
