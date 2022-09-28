@@ -96,9 +96,12 @@ class KavMain:
     # 리턴값 : 악성코드 리스트
     # ---------------------------------------------------------------------
     def listvirus(self):  # 진단 가능한 악성코드 리스트
-        vlist = kavutil.handle_pattern_vdb.get_sig_vlist('ve')
-
         vlists = []
+        vlist = []
+
+        for n in kavutil.handle_pattern_vdb.get_sig_vlist('ve'):
+            vlist.append(n.decode())
+
         vlists.append('Virus.Win32.Small.a')
         vlists.append('Virus.Win32.SuperThreat.b')
 

@@ -283,7 +283,9 @@ class KavMain:
     # 리턴값 : 악성코드 리스트
     # ---------------------------------------------------------------------
     def listvirus(self):  # 진단 가능한 악성코드 리스트
-        vlist = kavutil.handle_pattern_md5.get_sig_vlist('adware')
+        vlist = []
+        for n in kavutil.handle_pattern_md5.get_sig_vlist('adware'):
+            vlist.append(n.decode())
         vlist = list(set(vlist))
         vlist.sort()
 
@@ -313,6 +315,6 @@ class KavMain:
         info['kmd_name'] = 'adware'  # 엔진 파일 이름
         s_num = kavutil.handle_pattern_md5.get_sig_num('adware') * 2  # 진단/치료 가능한 악성코드 수
         s_num += self.sig_num_yara
-        info['sig_num'] =s_num
+        info['sig_num'] = s_num
 
         return info
