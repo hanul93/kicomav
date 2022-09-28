@@ -116,7 +116,10 @@ def k2mmap(filehandle):
 # Convert String to Bytes(PY3)
 # -------------------------------------------------------------------------
 def k2byte(data):
-    return data.encode('utf-8')
+    if isinstance(data, str):
+        return data.encode('utf-8')
+
+    return data
 
 
 def k2ord(ch):

@@ -7,7 +7,7 @@ import mmap
 import struct
 
 
-MAGIC = 'MEI\014\013\012\013\016'
+MAGIC = b'MEI\014\013\012\013\016'
 
 
 class CArchiveFile:
