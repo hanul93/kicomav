@@ -151,7 +151,7 @@ class KavMain:
     # 압축 파일 핸들을 닫는다.
     # ---------------------------------------------------------------------
     def arcclose(self):
-        for fname in self.handle.keys():
+        for fname in list(self.handle.keys()):
             hfile = self.handle[fname]
             # 버퍼라 close 하지 않고 del 처리만 하자
             del hfile

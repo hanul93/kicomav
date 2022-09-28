@@ -138,7 +138,7 @@ class KavMain:
     # 압축 파일 핸들을 닫는다.
     # ---------------------------------------------------------------------
     def arcclose(self):
-        for fname in self.handle.keys():
+        for fname in list(self.handle.keys()):
             tfile = self.handle[fname]
             tfile.close()
             self.handle.pop(fname)
