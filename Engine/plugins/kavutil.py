@@ -571,11 +571,11 @@ class HexDump:
         fp = open(fname, "rb")
         fp.seek(start)
         row = start % width  # 열
-        col = (start / width) * width  # 행
+        col = (start // width) * width  # 행
         r_size = 0
         line_start = row
         while True:
-            if (r_size + (width - line_start) < size):
+            if r_size + (width - line_start) < size:
                 r_char = (width - line_start)  # 읽어야할 문자 수
                 r_size += (width - line_start)
             else:
@@ -589,14 +589,13 @@ class HexDump:
             # 주소 값
             output = "%08X : " % col
             # Hex 값
-            output += line_start * "   " \
-                      + "".join("%02x " % ord(c) for c in line)
+            output += line_start * "   " + "".join("%02x " % c for c in line)
             output += "  " \
                       + (width - (line_start + r_char)) * "   "
             # 문자 값
             output += line_start * " "
-            output += "".join(['.', c][self.IsPrint(c)] for c in line)
-            print (output)
+            output += "".join(['.', chr(c)][self.IsPrint(c)] for c in line)
+            print(output)
             col += width
             line_start = 0
             if r_size == size:
@@ -616,7 +615,7 @@ class HexDump:
         if len(buf) < size:
             size = len(buf)
         row = start % width  # 열
-        col = (start / width)  # 행
+        col = (start // width)  # 행
         # [row ... width*col]
         # [width*col ... width * (col+1)]
         r_size = 0
@@ -628,23 +627,21 @@ class HexDump:
 
             if len(line) == 0:
                 break
-            if ((r_size + len(line)) < size):
+            if (r_size + len(line)) < size:
                 pass
             else:
                 # print (hex(line_start), hex(line_start + (size - r_size)))
                 line = line[0:(size - r_size)]
                 r_size = size - len(line)
             # 주소 값
-            output = "%08X : " % ((line_start / width) * width)
+            output = "%08X : " % ((line_start // width) * width)
             # Hex 값
-            output += row * "   " \
-                      + "".join("%02x " % ord(c) for c in line)
-            output += "  " \
-                      + (width - (row + len(line))) * "   "
+            output += row * "   " + "".join("%02x " % c for c in line)
+            output += "  " + (width - (row + len(line))) * "   "
             # 문자 값
             output += row * " "
-            output += "".join(['.', c][self.IsPrint(c)] for c in line)
-            print (output)
+            output += "".join(['.', chr(c)][self.IsPrint(c)] for c in line)
+            print(output)
             line_start = width * (col + 1)
             col += 1
             row = 0
@@ -660,8 +657,8 @@ class HexDump:
     #          False : 출력 할 수 없는 문자
     # -------------------------------------------------------------------------
     def IsPrint(self, char):
-        c = ord(char)
-        if c >= 0x20 and c < 0x80:
+        c = char
+        if 0x20 <= c < 0x80:
             return True
         else:
             return False
