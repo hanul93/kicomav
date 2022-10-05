@@ -286,7 +286,7 @@ class PE:
                                 # 사용자가 정의한 이름 추출
                                 string_off = (type_id & 0x7FFFFFFF) + rsrc_off
                                 len_name = kavutil.get_uint16(mm, string_off)
-                                rsrc_type_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
+                                rsrc_type_name = (mm[string_off + 2:string_off + 2 + (len_name * 2):2]).decode()
                             elif type_id == 0xA:
                                 rsrc_type_name = 'RCDATA'
                             else:
@@ -312,7 +312,7 @@ class PE:
 
                                     len_name = kavutil.get_uint16(mm, string_off)
                                     rsrc_name_id_name = mm[string_off + 2:string_off + 2 + (len_name * 2):2]
-                                    string_name = rsrc_type_name + '/' + rsrc_name_id_name
+                                    string_name = rsrc_type_name + '/' + rsrc_name_id_name.decode()
                                 else:
                                     string_name = rsrc_type_name + '/' + hex(name_id_id).upper()[2:]
 
@@ -440,7 +440,7 @@ class PE:
 
                 debug_data = mm[debug_off:debug_off + debug_size]
 
-                if debug_data[:4] == 'RSDS':
+                if debug_data[:4] == b'RSDS':
                     pe_format['PDB_Name'] = debug_data[0x18:]
                 else:
                     pe_format['PDB_Name'] = 'Not support Type : %s' % debug_data[:4]
@@ -494,6 +494,7 @@ class PE:
                     print ()
 
         except (ValueError, struct.error) as e:
+            print(e)
             return None
 
         return pe_format
@@ -705,98 +706,3 @@ class KavMain:
     # ---------------------------------------------------------------------
     def arcclose(self):
         pass
-
-    # ---------------------------------------------------------------------
-    # feature(self, filehandle, filename, fileformat, malware_id)
-    # 파일의 Feature를 추출한다.
-    # 입력값 : filehandle  - 파일 핸들
-    #         filename    - 파일 이름
-    #         fileformat  - 파일 포맷
-    #         filename_ex - 파일 이름 (압축 내부 파일 이름)
-    #         malware_id  - 악성코드 ID
-    # 리턴값 : Feature 추출 성공 여부
-    # ---------------------------------------------------------------------
-    def feature(self, filehandle, filename, fileformat, filename_ex, malware_id):  # Feature 추출
-        try:
-            mm = filehandle
-
-            # 미리 분석된 파일 포맷중에 PE 포맷이 있는가?
-            if 'ff_pe' in fileformat:
-                buf = mm[:]
-                fmd5 = cryptolib.md5(buf).decode('hex')  # 파일 전체 MD5 생성
-                header = 'PE\x00\x00' + struct.pack('<L', malware_id) + fmd5
-
-                pe = PE(mm, False, filename)
-                pe_format = pe.parse()
-                if not pe_format:
-                    return None
-
-                pe_off = pe_format['PE_Position']  # pe.DOS_HEADER.e_lfanew
-                ep = pe_format['EntryPoint']  # pe.OPTIONAL_HEADER.AddressOfEntryPoint
-
-                text_off = 0
-                text_size = 0
-
-                for sec in pe_format['Sections']:  # pe.sections:
-                    rva = sec['RVA']  # sec.VirtualAddress
-                    vsize = sec['VirtualSize']  # sec.Misc_VirtualSize
-                    if rva <= ep <= rva + vsize:
-                        text_off = sec['PointerRawData']  # sec.PointerToRawData
-                        text_size = sec['SizeRawData']  # sec.SizeOfRawData
-                        break
-
-                # Feature 추출
-                f = kavutil.Feature()
-
-                data = ''
-                # 1. text 섹션에 대해서 엔트로피를 추출한다.
-                data += f.entropy(mm[text_off:text_off + text_size])
-
-                # 2. PE 헤더 정보를 추출한다.
-                data += mm[pe_off + 6:pe_off + 6 + 256]
-
-                # 3. DATA 섹션 2-gram 추출하기
-                data_off = 0
-                data_size = 0
-
-                for sec in pe_format['Sections']:  # pe.sections:
-                    if sec['Characteristics'] & 0x40000040 == 0x40000040:  # if DATA and Read
-                        data_off = sec['PointerRawData']  # sec.PointerToRawData
-                        data_size = sec['SizeRawData']  # sec.SizeOfRawData
-                        break
-
-                data += f.k_gram(mm[data_off:data_off + data_size], 2)
-
-                # 4. Import API 해시 추가하기
-                def import_api(l_pe_format):
-                    api_hash = set()
-
-                    l_data = ''
-
-                    if 'Import_API' in l_pe_format:
-                        imp_api = pe_format['Import_API']
-                        # print (imp_api)
-
-                        for dll in imp_api.keys():
-                            for api in dll:
-                                api_name = ('%s:%s' % (dll, api)).lower()
-                                api_hash.add(struct.pack('<H', cryptolib.CRC16().calculate(api_name)))
-
-                        t = list(api_hash)
-                        l_data = ''.join(t)
-
-                    if len(l_data) < 256:
-                        l_data += '\x00' * (256 - len(l_data))
-
-                    return l_data[:256]
-
-                data += import_api(pe_format)
-
-                open('pe.bin', 'ab').write(header + data)  # Feature 파일 생성
-
-                return True
-        except IOError:
-            pass
-
-        # Feature 추출 실패했음을 리턴한다.
-        return False
