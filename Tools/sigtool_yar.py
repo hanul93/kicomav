@@ -7,15 +7,12 @@ import os
 import struct
 import yara
 import zlib
-#import cPickle
+
+# import cPickle
 import pickle
 
 
-s = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-) + os.sep + 'Engine' + os.sep + 'kavcore'
+s = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.sep + "Engine" + os.sep + "kavcore"
 
 sys.path.append(s)
 
@@ -25,16 +22,15 @@ import k2timelib
 # -------------------------------------------------------------------------
 # virus.db 파일에서 Rule의 숫자를 얻는다.
 # -------------------------------------------------------------------------
-re_rule = rb'rule\s+\w+'
+re_rule = rb"rule\s+\w+"
 
 
 # -------------------------------------------------------------------------
 # 파일을 생성한다.
 # -------------------------------------------------------------------------
 def save_file(fname, data):
-    fp = open(fname, 'wb')
-    fp.write(data)
-    fp.close()
+    with open(fname, "wb") as fp:
+        fp.write(data)
 
 
 # -------------------------------------------------------------------------
@@ -43,37 +39,41 @@ def save_file(fname, data):
 def make_signature(fname):
     p_rule = re.compile(re_rule)
 
-    buf = open(fname, 'rb').read()
+    with open(fname, "rb") as fp:
+        buf = fp.read()
+
     sig_num = len(p_rule.findall(buf))
 
     c = yara.compile(fname)
-    c.save(fname + '.yc')
+    c.save(fname + ".yc")
 
-    buf = open(fname + '.yc', 'rb').read()
-    os.remove(fname + '.yc')
+    with open(fname + ".yc", "rb") as fp:
+        buf = fp.read()
+
+    os.remove(fname + ".yc")
 
     # 현재 날짜와 시간을 구한다.
     ret_date = k2timelib.get_now_date()
     ret_time = k2timelib.get_now_time()
 
     # 날짜와 시간 값을 2Byte로 변경한다.
-    val_date = struct.pack('<H', ret_date)
-    val_time = struct.pack('<H', ret_time)
+    val_date = struct.pack("<H", ret_date)
+    val_time = struct.pack("<H", ret_time)
 
     # 크기 파일 저장 : ex) script.a01
     name = os.path.splitext(fname)[0]
-    sname = '%s.y01' % name
+    sname = "%s.y01" % name
     t = zlib.compress(buf)
-    t = 'KAVS' + struct.pack('<L', sig_num) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", sig_num) + val_date + val_time + t
     save_file(sname, t)
 
 
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print ('Usage : sigtool_yar.py [sig text]')
+        print("Usage : sigtool_yar.py [sig text]")
         exit(0)
 
     sin_fname = sys.argv[1]

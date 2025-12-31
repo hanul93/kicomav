@@ -1,3 +1,31 @@
+# v0.40 (Dec 30, 2025)
+
+* **Engine :**
+  * Added high-level Scanner API for easy file and directory scanning
+  * Added parallel scanning support with configurable worker threads (--parallel, --workers)
+  * Implemented worker pool for optimized performance
+  * Batched file discovery for faster scanning start
+  * Optimized worker initialization overhead
+  * Fixed py7zr API compatibility after version upgrade
+
+* **Configuration :**
+  * Renamed environment variables: YARA_RULES_SYSTEM → SYSTEM_RULES_BASE, YARA_RULES_USER → USER_RULES_BASE
+  * Changed .env file location to ~/.kicomav/.env
+  * Added warning messages when .env is not configured
+  * Added KICOMAV_SUPPRESS_WARNINGS option
+
+* **Update System :**
+  * Added update.cfg timestamp parsing for "Last updated" display
+  * Added __last_update__ fallback when update.cfg is not available
+  * Fixed update.cfg deletion issue after signature updates
+
+* **Package :**
+  * Changed license from GPL v2 to MIT
+  * Added PyPI support (pip install kicomav)
+  * Added `k2` command-line entry point
+  * Renamed Engine folder to kicomav for proper package structure
+  * Requires Python 3.10+
+
 # v0.33c (Sep 26, 2022)
 
 * **Engine :**

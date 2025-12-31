@@ -1,0 +1,10 @@
+black
+coverage
+yara-python
+py7zr==1.1.0
+pylzma
+pycabfile
+rarfile
+dotenv
+rich
+requests

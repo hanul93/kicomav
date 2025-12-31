@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include .env.example
+include pyproject.toml
+recursive-include kicomav *.py *.lst

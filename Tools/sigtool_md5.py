@@ -9,11 +9,7 @@ import struct
 import marshal
 import zlib
 
-s = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-) + os.sep + 'Engine' + os.sep + 'kavcore'
+s = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.sep + "Engine" + os.sep + "kavcore"
 
 sys.path.append(s)
 
@@ -21,66 +17,63 @@ import k2timelib
 
 
 # -------------------------------------------------------------------------
-# 한 파일에 생성할 악성코드 패턴 최대 개수
+# Number of signatures to create in one file
 # -------------------------------------------------------------------------
 MAX_COUNT = 100000
 
 # -------------------------------------------------------------------------
-# virus.db 파일에서 사용할 주석문 정규표현식
+# Regular expression for comments in virus.db file
 # -------------------------------------------------------------------------
-re_comment = r'#.*'
+re_comment = rb"#.*"
 
 # -------------------------------------------------------------------------
-# 자료 구조
+# Data structure
 # -------------------------------------------------------------------------
-size_sig = []  # 크기와 ID 저장
-p1_sig = {}  # MD5 앞쪽 6Byte
-p2_sig = []  # MD5 앞쪽 10Byte
-name_sig = []  # 악성코드 이름
+size_sig = []  # Size and ID storage
+p1_sig = {}  # MD5 first 6 bytes
+p2_sig = []  # MD5 first 10 bytes
+name_sig = []  # Virus name
 
 
 def printProgress(_off, _all):
     if _off != 0:
-        percent = (_off * 100.) / _all
+        percent = (_off * 100.0) / _all
 
         s_num = int(percent / 5)
         space_num = 20 - s_num
 
-        sys.stdout.write('[*] Download : [')
-        sys.stdout.write('#' * s_num)
-        sys.stdout.write(' ' * space_num)
-        sys.stdout.write('] ')
-        sys.stdout.write('%3d%%  (%d/%d)\r' % (int(percent), _off, _all))
+        sys.stdout.write("[*] Download : [")
+        sys.stdout.write("#" * s_num)
+        sys.stdout.write(" " * space_num)
+        sys.stdout.write("] ")
+        sys.stdout.write("%3d%%  (%d/%d)\r" % (int(percent), _off, _all))
 
 
 # -------------------------------------------------------------------------
-# 텍스트 라인을 분석해서 악성코드 패턴을 위한 자료구조를 만든다.
+# Analyze text line and create data structure for virus pattern
 # -------------------------------------------------------------------------
 def add_signature(line):
-    t = line.split(':')
+    t = line.split(b":")
 
     size = int(t[0])  # size
-    fmd5 = t[1].decode('hex')  # MD5를 텍스트에서 바이너리로 바꾼다.
+    fmd5 = bytes.fromhex(t[1].decode("utf-8"))  # Convert MD5 from text to binary
     name = t[2]
 
-    # 크기 추가
+    # Add size
     size_sig.append(size)
 
-    p1 = fmd5[:6]  # 앞쪽 6Byte
-    p2 = fmd5[6:]  # 뒤쪽 10Byte
-
-    # p2_sig.append(p2)  # 2차 악성코드 패턴 추가
-    # p2_id = p2_sig.index(p2)
+    p1 = fmd5[:6]  # First 6 bytes
+    p2 = fmd5[6:]  # Last 10 bytes
 
     p2_id = len(p2_sig)
 
-    # 혹시 기존 p1이 존재하는가?
+    # Check if existing p1
     if p1 in p1_sig:
         p1_sig[p1].append(p2_id)
     else:
         p1_sig[p1] = [p2_id]
 
-    if name in name_sig:  # 이미 등록된 이름이면 id만 획득
+    if name in name_sig:  # If the name is already registered, get the id
         name_id = name_sig.index(name)
     else:
         name_id = len(name_sig)
@@ -90,105 +83,101 @@ def add_signature(line):
 
 
 # -------------------------------------------------------------------------
-# 자료구조에 담긴 정보를 악성코드 패턴 파일로 저장한다.
+# Save information in data structure to virus pattern file
 # -------------------------------------------------------------------------
 def save_signature(fname, _id):
-    # 현재 날짜와 시간을 구한다.
+    # Get current date and time
     ret_date = k2timelib.get_now_date()
     ret_time = k2timelib.get_now_time()
 
-    # 날짜와 시간 값을 2Byte로 변경한다.
-    val_date = struct.pack('<H', ret_date)
-    val_time = struct.pack('<H', ret_time)
+    # Convert date and time to 2 bytes
+    val_date = struct.pack("<H", ret_date)
+    val_time = struct.pack("<H", ret_time)
 
-    # 크기 파일 저장 : ex) script.s01
-    sname = '%s.s%02d' % (fname, _id)
-    t = zlib.compress(marshal.dumps(set(size_sig)))  # 중복된 데이터 삭제 후 저장
-    t = 'KAVS' + struct.pack('<L', len(size_sig)) + val_date + val_time + t
+    # Save size file : ex) script.s01
+    sname = "%s.s%02d" % (fname, _id)
+    t = zlib.compress(marshal.dumps(set(size_sig)))  # Remove duplicate data and save
+    t = b"KAVS" + struct.pack("<L", len(size_sig)) + val_date + val_time + t
     save_file(sname, t)
 
-    # 패턴 p1 파일 저장 : ex) script.i01
-    sname = '%s.i%02d' % (fname, _id)
+    # Save pattern p1 file : ex) script.i01
+    sname = "%s.i%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(p1_sig))
-    t = 'KAVS' + struct.pack('<L', len(p1_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(p1_sig)) + val_date + val_time + t
     save_file(sname, t)
 
-    # 패턴 p2 파일 저장 : ex) script.c01
-    sname = '%s.c%02d' % (fname, _id)
+    # Save pattern p2 file : ex) script.c01
+    sname = "%s.c%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(p2_sig))
-    t = 'KAVS' + struct.pack('<L', len(p2_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(p2_sig)) + val_date + val_time + t
     save_file(sname, t)
 
-    # 악성코드 이름 파일 저장 : ex) script.n01
-    sname = '%s.n%02d' % (fname, _id)
+    # Save virus name file : ex) script.n01
+    sname = "%s.n%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(name_sig))
-    t = 'KAVS' + struct.pack('<L', len(name_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(name_sig)) + val_date + val_time + t
     save_file(sname, t)
 
 
 # -------------------------------------------------------------------------
-# 파일을 생성한다.
+# Create a file
 # -------------------------------------------------------------------------
 def save_file(fname, data):
-    fp = open(fname, 'wb')
-    fp.write(data)
-    fp.close()
+    with open(fname, "wb") as fp:
+        fp.write(data)
 
 
 # -------------------------------------------------------------------------
-# ID별로 파일을 생성한다.
+# Create a file by ID
 # -------------------------------------------------------------------------
 def save_sig_file(fname, _id):
-    # 주어진 패턴 파일명을 이용해서 sig 파일을 만듦
+    # Create a sig file using the given pattern file name
     t = os.path.abspath(fname)
     _, t = os.path.split(t)
     name = os.path.splitext(t)[0]
     save_signature(name, _id)
 
-    # 초기화
+    # Initialize
     global size_sig
     global p1_sig
     global p2_sig
     global name_sig
 
-    size_sig = []  # 크기와 ID 저장
-    p1_sig = {}  # MD5 앞쪽 6Byte
-    p2_sig = []  # MD5 앞쪽 10Byte
-    name_sig = []  # 악성코드 이름
+    size_sig = []  # Size and ID storage
+    p1_sig = {}  # First 6 bytes
+    p2_sig = []  # First 10 bytes
+    name_sig = []  # Virus name
 
 
 # -------------------------------------------------------------------------
-# 텍스트 형태의 악성코드 패턴 DB 파일을 분석해서 악성코드 패턴 파일들을 생성한다.
+# Analyze text-based virus pattern DB file and create virus pattern files
 # -------------------------------------------------------------------------
 def make_signature(fname, _id):
-    fp = open(fname, 'rb')
+    with open(fname, "rb") as fp:
+        idx = 0
 
-    idx = 0
+        while True:
+            line = fp.readline()
+            if not line:
+                break
 
-    while True:
-        line = fp.readline()
-        if not line:
-            break
+            # Remove comments and white spaces
+            line = re.sub(re_comment, b"", line)
+            line = line.strip()  # re.sub(r'\s', '', line)
 
-        # 주석문 및 화이트 스페이스 제거
-        line = re.sub(re_comment, '', line)
-        line = line.strip()  # re.sub(r'\s', '', line)
+            if len(line) == 0:
+                continue  # If nothing, go to next line
 
-        if len(line) == 0:
-            continue  # 아무것도 없다면 다음줄로...
+            add_signature(line)
 
-        add_signature(line)
+            idx += 1
+            printProgress(idx, MAX_COUNT)
 
-        idx += 1
-        printProgress(idx, MAX_COUNT)
-
-        if idx >= MAX_COUNT:
-            print ('[*] %s : %d' % (fname, _id))
-            save_sig_file(fname, _id)
-            idx = 0
-            _id += 1
-
-    fp.close()
+            if idx >= MAX_COUNT:
+                print("[*] %s : %d" % (fname, _id))
+                save_sig_file(fname, _id)
+                idx = 0
+                _id += 1
 
     save_sig_file(fname, _id)
 
@@ -196,10 +185,13 @@ def make_signature(fname, _id):
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print ('Usage : sigtool_md5.py [sig text] [id]')
+        print("Usage : sigtool_md5.py [sig text] [id]")
         exit(0)
+
+    sin_fname = ""
+    _id = 1
 
     if len(sys.argv) == 2:
         sin_fname = sys.argv[1]
@@ -208,4 +200,5 @@ if __name__ == '__main__':
         sin_fname = sys.argv[1]
         _id = int(sys.argv[2])
 
-    make_signature(sin_fname, _id)
+    if os.path.exists(sin_fname):
+        make_signature(sin_fname, _id)

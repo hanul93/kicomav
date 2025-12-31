@@ -9,11 +9,7 @@ import struct
 import marshal
 import zlib
 
-s = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-) + os.sep + 'Engine' + os.sep + 'kavcore'
+s = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.sep + "Engine" + os.sep + "kavcore"
 
 sys.path.append(s)
 
@@ -28,7 +24,7 @@ MAX_COUNT = 100000
 # -------------------------------------------------------------------------
 # virus.db 파일에서 사용할 주석문 정규표현식
 # -------------------------------------------------------------------------
-re_comment = r'#.*'
+re_comment = rb"#.*"
 
 # -------------------------------------------------------------------------
 # 자료 구조
@@ -41,33 +37,33 @@ name_sig = []  # 악성코드 이름
 
 def printProgress(_off, _all):
     if _off != 0:
-        percent = (_off * 100.) / _all
+        percent = (_off * 100.0) / _all
 
         s_num = int(percent / 5)
         space_num = 20 - s_num
 
-        sys.stdout.write('[*] Download : [')
-        sys.stdout.write('#' * s_num)
-        sys.stdout.write(' ' * space_num)
-        sys.stdout.write('] ')
-        sys.stdout.write('%3d%%  (%d/%d)\r' % (int(percent), _off, _all))
+        sys.stdout.write("[*] Download : [")
+        sys.stdout.write("#" * s_num)
+        sys.stdout.write(" " * space_num)
+        sys.stdout.write("] ")
+        sys.stdout.write("%3d%%  (%d/%d)\r" % (int(percent), _off, _all))
 
 
 # -------------------------------------------------------------------------
 # 텍스트 라인을 분석해서 악성코드 패턴을 위한 자료구조를 만든다.
 # -------------------------------------------------------------------------
 def add_signature(line):
-    t = line.split(':')
+    t = line.split(b":")
 
     size = int(t[0], 16)  # flag를 기존 mdb의 크기처럼 처리 단, 16진수로 처리됨
 
-    cs1 = t[1].split(',')  # CS1
+    cs1 = t[1].split(b",")  # CS1
     cs1_flag = int(cs1[0].strip(), 16)
     cs1_off = int(cs1[1].strip(), 16)
     cs1_size = int(cs1[2].strip(), 16)
     cs1_crc32 = int(cs1[3].strip(), 16)
 
-    cs2 = t[2].split(',')  # CS2
+    cs2 = t[2].split(b",")  # CS2
     cs2_flag = int(cs2[0].strip(), 16)
     cs2_off = int(cs2[1].strip(), 16)
     cs2_size = int(cs2[2].strip(), 16)
@@ -100,31 +96,31 @@ def save_signature(fname, _id):
     ret_time = k2timelib.get_now_time()
 
     # 날짜와 시간 값을 2Byte로 변경한다.
-    val_date = struct.pack('<H', ret_date)
-    val_time = struct.pack('<H', ret_time)
+    val_date = struct.pack("<H", ret_date)
+    val_time = struct.pack("<H", ret_time)
 
     # 크기 파일 저장 : ex) script.s01
-    sname = '%s.s%02d' % (fname, _id)
+    sname = "%s.s%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(size_sig))
-    t = 'KAVS' + struct.pack('<L', len(size_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(size_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 패턴 p1 파일 저장 : ex) script.i01
-    sname = '%s.i%02d' % (fname, _id)
+    sname = "%s.i%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(p1_sig))
-    t = 'KAVS' + struct.pack('<L', len(p1_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(p1_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 패턴 p2 파일 저장 : ex) script.c01
-    sname = '%s.c%02d' % (fname, _id)
+    sname = "%s.c%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(p2_sig))
-    t = 'KAVS' + struct.pack('<L', len(p2_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(p2_sig)) + val_date + val_time + t
     save_file(sname, t)
 
     # 악성코드 이름 파일 저장 : ex) script.n01
-    sname = '%s.n%02d' % (fname, _id)
+    sname = "%s.n%02d" % (fname, _id)
     t = zlib.compress(marshal.dumps(name_sig))
-    t = 'KAVS' + struct.pack('<L', len(name_sig)) + val_date + val_time + t
+    t = b"KAVS" + struct.pack("<L", len(name_sig)) + val_date + val_time + t
     save_file(sname, t)
 
 
@@ -132,9 +128,8 @@ def save_signature(fname, _id):
 # 파일을 생성한다.
 # -------------------------------------------------------------------------
 def save_file(fname, data):
-    fp = open(fname, 'wb')
-    fp.write(data)
-    fp.close()
+    with open(fname, "wb") as fp:
+        fp.write(data)
 
 
 # -------------------------------------------------------------------------
@@ -163,34 +158,31 @@ def save_sig_file(fname, _id):
 # 텍스트 형태의 악성코드 패턴 DB 파일을 분석해서 악성코드 패턴 파일들을 생성한다.
 # -------------------------------------------------------------------------
 def make_signature(fname, _id):
-    fp = open(fname, 'rb')
+    with open(fname, "rb") as fp:
+        idx = 0
 
-    idx = 0
+        while True:
+            line = fp.readline()
+            if not line:
+                break
 
-    while True:
-        line = fp.readline()
-        if not line:
-            break
+            # 주석문 및 화이트 스페이스 제거
+            line = re.sub(re_comment, b"", line)
+            line = line.strip()  # re.sub(r'\s', '', line)
 
-        # 주석문 및 화이트 스페이스 제거
-        line = re.sub(re_comment, '', line)
-        line = line.strip()  # re.sub(r'\s', '', line)
+            if len(line) == 0:
+                continue  # 아무것도 없다면 다음줄로...
 
-        if len(line) == 0:
-            continue  # 아무것도 없다면 다음줄로...
+            add_signature(line)
 
-        add_signature(line)
+            idx += 1
+            printProgress(idx, MAX_COUNT)
 
-        idx += 1
-        printProgress(idx, MAX_COUNT)
-
-        if idx >= MAX_COUNT:
-            print ('[*] %s : %d' % (fname, _id))
-            save_sig_file(fname, _id)
-            idx = 0
-            _id += 1
-
-    fp.close()
+            if idx >= MAX_COUNT:
+                print("[*] %s : %d" % (fname, _id))
+                save_sig_file(fname, _id)
+                idx = 0
+                _id += 1
 
     save_sig_file(fname, _id)
 
@@ -198,9 +190,9 @@ def make_signature(fname, _id):
 # -------------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print ('Usage : sigtool_vdb.py [sig text] [id]')
+        print("Usage : sigtool_vdb.py [sig text] [id]")
         exit(0)
 
     if len(sys.argv) == 2:
