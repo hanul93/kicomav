@@ -45,9 +45,114 @@ KicomAV is an open source (MIT License) antivirus engine designed for detecting 
     k2 --update
     ```
 
-## 2. Releases
+## 2. Features
 
 ***
+
+* **Multi-format scanning**: Files, archives (ZIP, RAR, 7z, CAB, ALZ, EGG, APK, OneNote), and nested containers
+* **YARA integration**: Custom YARA rules support for advanced threat detection
+* **Intelligent caching**: Dual-cache system with scan mode awareness for consistent, fast rescans
+* **Exclusion rules**: Flexible file/directory exclusion with glob patterns
+* **Parallel scanning**: Multi-threaded scanning for improved performance
+* **Daemon mode**: REST API and clamd-compatible socket protocol
+* **Cross-platform**: Windows, Linux, macOS support
+* **Library API**: Use as a Python library in your projects
+* **PyInstaller support**: Scan PyInstaller executables (Windows PE and Linux ELF)
+
+## 3. Components
+
+***
+
+KicomAV provides three command-line tools:
+
+| Tool | Description |
+|------|-------------|
+| **k2** | Main scanner - scan files and directories for malware |
+| **k2d** | Daemon server - REST API and socket protocol service |
+| **k2c** | Client - communicate with k2d daemon |
+
+* **Standalone scanning**: Use `k2` directly for local file scanning
+* **Client-server mode**: Run `k2d` as a service, use `k2c` to send scan requests
+
+## 4. Daemon Mode (k2d & k2c)
+
+***
+
+KicomAV can run as a daemon server, providing both REST API (port 8311) and clamd-compatible socket protocol (port 3311).
+
+### Server (k2d)
+
+```bash
+# Start daemon server
+k2d
+
+# Start with API key authentication
+k2d --generate-key
+```
+
+### Client (k2c)
+
+```bash
+# Check server status
+k2c --ping
+
+# Scan a file
+k2c /path/to/file
+
+# Scan from stdin
+k2c --stream < suspicious.exe
+```
+
+### REST API Example
+
+```bash
+# Health check
+curl http://127.0.0.1:8311/ping
+
+# Scan a file
+curl -X POST -F "file=@suspicious.exe" http://127.0.0.1:8311/scan/file
+```
+
+## 5. Releases
+
+***
+
+## v0.41 (Jan 23, 2026)
+
+* **Engine :**
+  * Added dual-cache system for improved scan consistency
+    * `scan_cache` for regular file scanning
+    * `archive_cache` for archive-specific caching with `opt_arc` separation
+  * Added k2security module for security validation
+  * Fixed resource cleanup in k2engine
+
+* **Plugins Modules :**
+  * apk: Added APK archive support
+  * onenote: Added Microsoft OneNote file format support
+  * elf: Added ELF-based PyInstaller support
+  * nsis: Fixed resource cleanup and improved error messages for unknown formats
+  * script: Fixed infinite loop when scanning malformed BAT files
+  * pe: Fixed resource cleanup for PE files
+  * tar/zip: Fixed resource cleanup
+
+* **Security :**
+  * Added input validation for archive extraction
+  * Added path traversal protection
+  * Added resource limit controls
+
+* **Daemon Mode (k2d & k2c) :**
+  * k2d: Added daemon server with REST API (port 8311) and clamd-compatible socket protocol (port 3311)
+  * k2d: Added API key authentication support
+  * k2d: Added concurrent scan request handling with worker pool
+  * k2c: Added command-line client for k2d daemon
+  * k2c: Added file/directory scanning via HTTP and socket protocols
+  * k2c: Added stream scanning from stdin
+
+* **Documentation :**
+  * Added Components section introducing k2, k2c, k2d tools
+  * Added Scan Cache section with Cache Architecture and Performance Impact
+  * Added Archive Exploration API documentation with `list_archive`, `extract_archive`, `read_archive` examples
+  * Updated README.md structure for better readability
 
 ## v0.40 (Dec 30, 2025)
 
@@ -318,7 +423,7 @@ KicomAV is an open source (MIT License) antivirus engine designed for detecting 
 * Initial release
 
 
-## 3. Supporters
+## 6. Supporters
 
 ***
 
