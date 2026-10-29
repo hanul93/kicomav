@@ -24,6 +24,7 @@ from kicomav.kavcore.k2config import get_config as get_base_config
 DEFAULT_HTTP_HOST = "127.0.0.1"
 DEFAULT_HTTP_PORT = 8311
 DEFAULT_SOCKET_PORT = 3311
+DEFAULT_SOCKET_HOST = "127.0.0.1"
 DEFAULT_SOCKET_PATH = "/var/run/kicomav/k2d.sock"
 DEFAULT_MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 DEFAULT_MAX_WORKERS = 4
@@ -79,6 +80,7 @@ class DaemonConfig:
 
     # Socket settings
     socket_enabled: bool = True
+    socket_host: str = DEFAULT_SOCKET_HOST
     socket_port: int = DEFAULT_SOCKET_PORT
     socket_path: str = DEFAULT_SOCKET_PATH
 
@@ -113,6 +115,7 @@ class DaemonConfig:
             http_port=_get_env_int("K2D_HTTP_PORT", DEFAULT_HTTP_PORT),
             # Socket settings
             socket_enabled=_get_env_bool("K2D_SOCKET_ENABLED", True),
+            socket_host=_get_env_str("K2D_SOCKET_HOST", DEFAULT_SOCKET_HOST),
             socket_port=_get_env_int("K2D_SOCKET_PORT", DEFAULT_SOCKET_PORT),
             socket_path=_get_env_str("K2D_SOCKET_PATH", DEFAULT_SOCKET_PATH),
             # Resource limits
@@ -156,6 +159,26 @@ class DaemonConfig:
         # Authentication
         if self.require_auth and not self.api_key:
             errors.append("API key required when require_auth is enabled")
+
+        # Fail closed: never expose a non-loopback listener without authentication
+        import ipaddress
+
+        def _is_loopback(host: str) -> bool:
+            if host in ("localhost", ""):
+                return True
+            try:
+                return ipaddress.ip_address(host).is_loopback
+            except ValueError:
+                return False
+
+        if self.http_enabled and not _is_loopback(self.http_host) and not self.require_auth:
+            errors.append(
+                f"HTTP server bound to non-loopback {self.http_host} requires require_auth=True"
+            )
+        if self.socket_enabled and not _is_loopback(self.socket_host) and not self.require_auth:
+            errors.append(
+                f"Socket server bound to non-loopback {self.socket_host} requires require_auth=True"
+            )
 
         return errors
 

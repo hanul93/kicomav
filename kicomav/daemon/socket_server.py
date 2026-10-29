@@ -454,6 +454,14 @@ class SocketServer:
 async def run_socket_server() -> None:
     """Run the socket server."""
     config = get_daemon_config()
+
+    # Refuse to start on an insecure configuration (e.g. network-exposed, no auth)
+    config_errors = config.validate()
+    if config_errors:
+        for err in config_errors:
+            logger.error("Invalid daemon configuration: %s", err)
+        return
+
     scanner = get_scanner()
 
     # Initialize scanner
@@ -466,7 +474,7 @@ async def run_socket_server() -> None:
     try:
         # Start TCP server
         if config.socket_enabled:
-            await server.start_tcp("0.0.0.0", config.socket_port)
+            await server.start_tcp(config.socket_host, config.socket_port)
 
             # Start Unix socket on non-Windows
             if sys.platform != "win32":

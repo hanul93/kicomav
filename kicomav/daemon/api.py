@@ -372,6 +372,14 @@ def run_api_server():
     import uvicorn
 
     config = get_daemon_config()
+
+    # Refuse to start on an insecure configuration (e.g. network-exposed, no auth)
+    config_errors = config.validate()
+    if config_errors:
+        for err in config_errors:
+            logger.error("Invalid daemon configuration: %s", err)
+        raise SystemExit(1)
+
     app = create_api_app()
 
     uvicorn.run(
