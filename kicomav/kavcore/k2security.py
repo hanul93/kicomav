@@ -629,6 +629,12 @@ def safe_marshal_load_toc(data: bytes, max_entries: int = 100000) -> any:
         toc = marshal.loads(data)
     except (ValueError, EOFError) as e:
         raise MarshalSecurityError(f"Failed to unmarshal TOC: {e}")
+    except Exception as e:
+        # A tiny TOC can encode a huge length prefix (list/tuple/str/bytes),
+        # driving marshal.loads() into a massive allocation -> MemoryError.
+        # The input-size cap above does not bound the decoded allocation, so
+        # catch everything here instead of letting it escape to the scanner.
+        raise MarshalSecurityError(f"Unmarshal TOC error: {type(e).__name__}: {e}")
 
     # Validate result type
     if not isinstance(toc, (list, dict)):
