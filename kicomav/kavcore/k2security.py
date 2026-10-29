@@ -489,6 +489,33 @@ class MarshalSecurityError(SecurityError):
     pass
 
 
+# Data-only types that KicomAV signature tools emit (sigtool_*.py use set()).
+_SIG_SAFE_TYPES = (type(None), bool, int, float, complex, str, bytes, bytearray)
+
+
+def _assert_signature_safe(obj, depth: int = 0, max_depth: int = 20) -> None:
+    """Reject non-data objects (e.g. code objects) in deserialized signature data.
+
+    marshal.loads() can yield code objects and other non-data types; signature
+    data must only ever be scalars/containers. Allows the container types the
+    signature tools emit (list/tuple/dict/set/frozenset).
+    """
+    if depth > max_depth:
+        raise MarshalSecurityError("Signature structure too deep")
+    if isinstance(obj, _SIG_SAFE_TYPES):
+        return
+    if isinstance(obj, (tuple, list, set, frozenset)):
+        for item in obj:
+            _assert_signature_safe(item, depth + 1, max_depth)
+        return
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            _assert_signature_safe(k, depth + 1, max_depth)
+            _assert_signature_safe(v, depth + 1, max_depth)
+        return
+    raise MarshalSecurityError(f"Unsafe type in signature data: {type(obj).__name__}")
+
+
 def safe_marshal_load_kavs(
     data: bytes,
     hmac_key: bytes = None,
@@ -537,10 +564,15 @@ def safe_marshal_load_kavs(
             raise MarshalSecurityError("HMAC verification failed - file may be tampered")
 
         try:
-            decompressed = zlib.decompress(compressed_data)
-            return marshal.loads(decompressed)
-        except (zlib.error, ValueError) as e:
+            decompressed = safe_zlib_decompress(
+                compressed_data, max_size=MAX_SIGNATURE_FILE_SIZE, max_ratio=2**31)
+            obj = marshal.loads(decompressed)
+        except (zlib.error, ValueError, EOFError, DecompressionBombError) as e:
             raise MarshalSecurityError(f"Decompression/unmarshal failed: {e}")
+        except Exception as e:  # marshal may raise MemoryError/TypeError/RecursionError
+            raise MarshalSecurityError(f"Unmarshal error: {type(e).__name__}: {e}")
+        _assert_signature_safe(obj)
+        return obj
 
     # Legacy format (KAVS)
     elif magic == KAVS_MAGIC:
@@ -556,10 +588,15 @@ def safe_marshal_load_kavs(
         try:
             # KAVS format: 4-byte magic + 8-byte metadata + compressed data
             compressed_data = data[12:]
-            decompressed = zlib.decompress(compressed_data)
-            return marshal.loads(decompressed)
-        except (zlib.error, ValueError) as e:
+            decompressed = safe_zlib_decompress(
+                compressed_data, max_size=MAX_SIGNATURE_FILE_SIZE, max_ratio=2**31)
+            obj = marshal.loads(decompressed)
+        except (zlib.error, ValueError, EOFError, DecompressionBombError) as e:
             raise MarshalSecurityError(f"Decompression/unmarshal failed: {e}")
+        except Exception as e:  # marshal may raise MemoryError/TypeError/RecursionError
+            raise MarshalSecurityError(f"Unmarshal error: {type(e).__name__}: {e}")
+        _assert_signature_safe(obj)
+        return obj
 
     else:
         raise MarshalSecurityError(f"Unknown file format: {magic!r}")
@@ -592,6 +629,12 @@ def safe_marshal_load_toc(data: bytes, max_entries: int = 100000) -> any:
         toc = marshal.loads(data)
     except (ValueError, EOFError) as e:
         raise MarshalSecurityError(f"Failed to unmarshal TOC: {e}")
+    except Exception as e:
+        # A tiny TOC can encode a huge length prefix (list/tuple/str/bytes),
+        # driving marshal.loads() into a massive allocation -> MemoryError.
+        # The input-size cap above does not bound the decoded allocation, so
+        # catch everything here instead of letting it escape to the scanner.
+        raise MarshalSecurityError(f"Unmarshal TOC error: {type(e).__name__}: {e}")
 
     # Validate result type
     if not isinstance(toc, (list, dict)):
